@@ -134,7 +134,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
       }
       requestAnimationFrame(dw)
     }
-    rs();w.addEventListener("resize",rs);dw()
+    rs();window.addEventListener("resize",rs);dw()
   }())catch(e){}
 
   // ---- Snow ----
@@ -155,7 +155,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
       }
       requestAnimationFrame(dw)
     }
-    rs();w.addEventListener("resize",function(){rs();init()});init();dw()
+    rs();window.addEventListener("resize",function(){rs();init()});init();dw()
   }())catch(e){}
 
   function tS(){snow=!snow;S.textContent=snow?"\u2744 NIEVE":"\u2600 SIN NIEVE"}
