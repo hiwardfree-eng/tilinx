@@ -1,6 +1,6 @@
 import sys, os, re, time, json, threading, secrets
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import BOT_TOKEN, CHAT_IPS_PATH
+from config import BOT_TOKEN, CHAT_IPS_PATH, ADMIN_ID
 from logger import log
 from keys import redeem_key, list_keys
 from database import load as load_db
@@ -246,6 +246,62 @@ def bot_poll():
                         "🛡️ Versión 2.0\n"
                         "📞 @tilinX_fast"
                     )
+
+                elif text == "/clients" or text == "/users" or text == "/ips":
+                    if chat_id != ADMIN_ID:
+                        bot_send(chat_id, "🚫 Comando solo para administradores.")
+                        continue
+                    # Load all data
+                    chat_data = {}
+                    if os.path.exists(CHAT_IPS_PATH):
+                        chat_data = json.loads(open(CHAT_IPS_PATH, encoding="utf-8").read())
+                    db = load_db()
+                    keys_data = list_keys()
+                    keys_map = {k["code"]: k for k in keys_data}
+                    now = time.time()
+                    lines = []
+                    lines.append("<b>📋 CLIENTES REGISTRADOS</b>\n")
+                    for cid_str, ip in sorted(chat_data.items()):
+                        cid = int(cid_str)
+                        ip_info = db.get(ip, {})
+                        key_code = ip_info.get("key_used", "N/A")
+                        key_status = "N/A"
+                        key_label = ""
+                        if key_code != "N/A" and key_code in keys_map:
+                            k = keys_map[key_code]
+                            key_label = k.get("label", "")
+                            expires = k.get("created_at", 0) + k.get("duration", 0)
+                            if k.get("used") and expires > now:
+                                key_status = "✅ Activa"
+                            elif k.get("used") and expires <= now:
+                                key_status = "⏳ Expirada"
+                            elif not k.get("used"):
+                                key_status = "🆕 Sin usar"
+                            else:
+                                key_status = "❓ Desconocido"
+                        used_at = ip_info.get("used_at", "")
+                        if used_at:
+                            used_at = time.strftime("%d/%m %H:%M", time.localtime(used_at if isinstance(used_at, (int, float)) else 0))
+                        lines.append(
+                            f"👤 <b>Chat</b>: <code>{cid}</code>\n"
+                            f"  🌐 IP: <code>{ip}</code>\n"
+                            f"  🔑 Key: <code>{key_code}</code> {key_label}\n"
+                            f"  📌 Estado: {key_status}\n"
+                            f"  🕐 Uso: {used_at}\n"
+                        )
+                    footer = f"\n<b>Total:</b> {len(chat_data)} cliente(s)"
+                    if len(lines) > 1:
+                        msg = "\n".join(lines) + footer
+                    else:
+                        msg = "<b>📋 No hay clientes registrados aún.</b>"
+                    # Telegram max msg length ~4096; split if needed
+                    while len(msg) > 4000:
+                        idx = msg.rfind("\n", 0, 4000)
+                        if idx < 0:
+                            idx = 4000
+                        bot_send(chat_id, msg[:idx])
+                        msg = msg[idx:]
+                    bot_send(chat_id, msg)
 
                 elif text.startswith("/redeem") or text.startswith("/login"):
                     parts = text.split()
