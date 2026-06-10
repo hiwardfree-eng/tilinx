@@ -85,19 +85,22 @@ document.addEventListener("DOMContentLoaded", function() {
     function drawBg() {
       ctx.clearRect(0, 0, w, h);
 
-      // Matrix rain columns
-      ctx.font = "14px monospace";
+      // Matrix rain columns (brighter)
+      ctx.font = "16px monospace";
       for (var c = 0; c < matrixCols.length; c++) {
         var char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
-        ctx.fillStyle = "rgba(180,80,255,0.12)";
+        ctx.fillStyle = "rgba(180,80,255,0.25)";
         ctx.fillText(char, c * 24, matrixCols[c]);
-        ctx.fillStyle = "rgba(0,255,65,0.06)";
+        ctx.fillStyle = "rgba(0,255,65,0.12)";
         ctx.fillText(char, c * 24 + 2, matrixCols[c] + 2);
+        // extra glow
+        ctx.fillStyle = "rgba(180,80,255,0.06)";
+        ctx.fillText(char, c * 24 - 1, matrixCols[c] - 1);
         matrixCols[c] += 8 + Math.random() * 6;
         if (matrixCols[c] > h && Math.random() > 0.98) matrixCols[c] = Math.random() * -100;
       }
 
-      // Floating particles (purple)
+      // Floating particles (purple, brighter)
       for (var i = 0; i < particles.length; i++) {
         var p = particles[i];
         p.x += p.vx;
@@ -106,16 +109,21 @@ document.addEventListener("DOMContentLoaded", function() {
         if (p.y < 0 || p.y > h) p.vy *= -1;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(180,80,255,0.5)";
+        ctx.fillStyle = "rgba(180,80,255,0.6)";
+        ctx.fill();
+        // glow
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(180,80,255,0.15)";
         ctx.fill();
         // inner glow
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(200,150,255,0.7)";
+        ctx.fillStyle = "rgba(200,150,255,0.9)";
         ctx.fill();
       }
 
-      // Lines between particles (closer = stronger)
+      // Lines between particles (closer = stronger, brighter)
       for (var i = 0; i < particles.length; i++) {
         for (var j = i + 1; j < particles.length; j++) {
           var dx = particles[i].x - particles[j].x;
@@ -125,9 +133,9 @@ document.addEventListener("DOMContentLoaded", function() {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            var alpha = 0.12 * (1 - dist / 150);
+            var alpha = 0.18 * (1 - dist / 150);
             ctx.strokeStyle = "rgba(180,80,255," + alpha + ")";
-            ctx.lineWidth = 0.8;
+            ctx.lineWidth = 1;
             ctx.stroke();
           }
         }
