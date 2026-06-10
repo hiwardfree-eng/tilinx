@@ -41,6 +41,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 .inp::placeholder{color:rgba(0,255,65,0.12);font-size:11px}
 .boot{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .4s}
 .boot.hide{opacity:0;pointer-events:none}
+.noscript-msg{position:fixed;inset:0;z-index:200;background:#000;display:flex;align-items:center;justify-content:center;color:rgba(0,255,65,0.6);font-family:monospace;font-size:14px;text-align:center;padding:30px}
 .boot-ascii{font-size:6px;line-height:1.1;color:var(--p);text-shadow:0 0 15px var(--p);text-align:center;white-space:pre;margin-bottom:16px}
 .boot-bar{width:280px;height:3px;background:rgba(0,20,0,0.8);border:1px solid var(--gd);border-radius:4px;overflow:hidden;margin:6px auto}
 .boot-fill{height:100%;width:0%;background:var(--g);box-shadow:0 0 12px var(--g);transition:width .15s}
@@ -69,6 +70,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   <div class="boot-bar"><div class="boot-fill" id="bf"></div></div>
   <div class="boot-txt" id="bt">INICIALIZANDO...</div>
 </div>
+<noscript><div class="noscript-msg">JavaScript requerido para la terminal.<br>Activá JavaScript y recargá.</div></noscript>
 
 <div class="term" id="term">
   <div class="thdr">
@@ -97,6 +99,8 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   var h=[],hi=-1,snow=true
   var tIdx=-1,tMatches=[],tOrig=""
   var S=document.getElementById("sbtn")
+  // Fail-safe: force hide boot after 8s if JS error blocks normal boot
+  setTimeout(function(){if(BOOT)BOOT.classList.add("hide")},8000)
 
   // ---- Boot ----
   BA.textContent=
