@@ -14,6 +14,32 @@
   --bg:#060410;--surface:rgba(16,10,35,0.95);--surface2:rgba(22,14,46,0.9);
   --border:rgba(139,92,246,0.22);--border-lt:rgba(139,92,246,0.1);
   --text:#ede9fe;--muted:rgba(196,181,253,0.5);
+  --font-primary:'Inter',system-ui,sans-serif;
+  --font-deco:'Cinzel Decorative',serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --ray-color:rgba(139,92,246,0.12);
+}
+/* ── Animated Rays ── */
+@keyframes rayMove{
+  0%{transform:translateX(-30%) rotate(0deg);opacity:0}
+  10%{opacity:1}
+  90%{opacity:1}
+  100%{transform:translateX(130%) rotate(3deg);opacity:0}
+}
+.ray-container{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.ray{
+  position:absolute;width:120%;height:3px;
+  background:linear-gradient(90deg,transparent,var(--ray-color),transparent);
+  animation:rayMove 8s ease-in-out infinite;
+  top:10%;left:-10%;opacity:0
+}
+.ray:nth-child(2){top:30%;animation-delay:2.5s;height:2px;width:80%}
+.ray:nth-child(3){top:50%;animation-delay:5s;height:4px;width:100%}
+.ray:nth-child(4){top:70%;animation-delay:1.2s;height:2px;width:90%}
+.ray:nth-child(5){top:85%;animation-delay:3.8s;height:3px;width:60%}
+.ray:nth-child(6){top:20%;animation-delay:6.5s;height:2px;width:110%;background:linear-gradient(90deg,transparent,var(--pink),transparent)}
+.ray:nth-child(7){top:60%;animation-delay:4.3s;height:3px;width:70%;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
+.ray:nth-child(8){top:40%;animation-delay:7.2s;height:2px;width:140%}
 }
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif}
 #matrix{position:fixed;inset:0;z-index:0;pointer-events:none}
@@ -25,7 +51,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #pg-panel{flex-direction:row}
 .sidebar{width:230px;flex-shrink:0;background:rgba(8,4,20,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0 10px;backdrop-filter:blur(20px)}
 .sb-brand{display:flex;align-items:center;gap:11px;padding:22px 12px 18px}
-.sb-brand .bolt{width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#c084fc);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 16px rgba(139,92,246,0.45)}
+.sb-brand .bolt{width:36px;height:36px;border-radius:10px;flex-shrink:0;object-fit:cover;box-shadow:0 0 16px rgba(139,92,246,0.45)}
 .sb-brand .name{font-family:'Cinzel Decorative',serif;font-size:1.05rem;font-weight:900;background:linear-gradient(135deg,#e9d5ff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.05em}
 .sb-brand .sub{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);-webkit-text-fill-color:rgba(196,181,253,0.5);margin-top:1px}
 .sb-divider{height:1px;background:var(--border-lt);margin:6px 0 10px}
@@ -39,7 +65,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#c084fc);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:#fff;flex-shrink:0}
 .sb-uname{font-size:.84rem;font-weight:700;color:#d8d0f0}
 .sb-role{font-size:.68rem;color:var(--muted)}
-.btn-logout{margin-left:auto;background:none;border:none;color:rgba(240,160,160,0.4);cursor:pointer;padding:4px;border-radius:6px;transition:color .13s}
+.btn-logout,.btn-settings{background:none;border:none;cursor:pointer;padding:4px;border-radius:6px;transition:color .13s}
+.btn-settings{color:rgba(196,181,253,0.35)}
+.btn-settings:hover{color:var(--purple-lt)}
+.btn-logout{color:rgba(240,160,160,0.4)}
 .btn-logout:hover{color:#f87171}
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:radial-gradient(ellipse 70% 50% at 60% 20%,rgba(139,92,246,0.05) 0%,transparent 60%)}
 .topbar{padding:11px 30px;border-bottom:1px solid var(--border-lt);font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(196,181,253,0.35);font-weight:700;flex-shrink:0;background:rgba(6,4,16,0.6)}
@@ -119,17 +148,27 @@ select option{background:#0c0720}
 .toast.success{background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399}
 .toast.error{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);color:#f87171}
 .toast.show{opacity:1;transform:translateY(0)}
+/* ── Settings Modal ── */
+#settings-overlay{display:none;z-index:800}
+#settings-overlay.show{display:flex}
+#settings-overlay .field label{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:4px}
+#settings-overlay input[type="color"]{width:100%;height:40px;padding:2px;border:1px solid var(--border);border-radius:8px;background:rgba(8,4,20,0.9);cursor:pointer}
 </style>
 </head>
 <body>
 <canvas id="matrix"></canvas>
+<div class="ray-container" id="ray-container">
+  <div class="ray"></div><div class="ray"></div><div class="ray"></div>
+  <div class="ray"></div><div class="ray"></div><div class="ray"></div>
+  <div class="ray"></div><div class="ray"></div>
+</div>
 
 <div id="pg-panel" class="page active">
 
   <aside class="sidebar">
     <a href="/" style="text-decoration:none">
       <div class="sb-brand">
-        <div class="bolt">⚡</div>
+        <img src="/assets/img/logo-icon.png" class="bolt" alt=""/>
         <div>
           <div class="name">tilinX</div>
           <div class="sub">Command Center</div>
@@ -157,6 +196,9 @@ select option{background:#0c0720}
         <div class="sb-uname">Admin</div>
         <div class="sb-role">Administrador</div>
       </div>
+      <button class="btn-settings" title="Personalizar" onclick="openSettings()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
       <button class="btn-logout" title="Cerrar sesión" onclick="doLogout()">
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       </button>
@@ -280,6 +322,56 @@ select option{background:#0c0720}
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn-primary" onclick="generateKey()">Generar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="settings-overlay" onclick="bgCloseS(event)">
+  <div class="modal" style="width:480px">
+    <h2>Personalizar Panel</h2>
+    <p>Colores, tipografía y efectos visuales.</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 18px">
+      <div class="field">
+        <label>Color Principal</label>
+        <input type="color" id="s-color" value="#8b5cf6" oninput="applyTheme()"/>
+      </div>
+      <div class="field">
+        <label>Color Secundario</label>
+        <input type="color" id="s-accent" value="#c084fc" oninput="applyTheme()"/>
+      </div>
+      <div class="field">
+        <label>Fondo</label>
+        <input type="color" id="s-bg" value="#060410" oninput="applyTheme()"/>
+      </div>
+      <div class="field">
+        <label>Texto</label>
+        <input type="color" id="s-text" value="#ede9fe" oninput="applyTheme()"/>
+      </div>
+      <div class="field">
+        <label>Brillo Rayos</label>
+        <input type="range" id="s-ray-bright" min="0" max="30" value="12" oninput="applyTheme()" style="width:100%;background:rgba(8,4,20,0.9);border-radius:12px;padding:8px 0;accent-color:#8b5cf6"/>
+      </div>
+      <div class="field">
+        <label>Rayos Activos</label>
+        <select id="s-ray-on" onchange="applyTheme()" style="padding:10px 14px;font-size:.85rem">
+          <option value="1">Activados</option>
+          <option value="0">Desactivados</option>
+        </select>
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Tipografía</label>
+        <select id="s-font" onchange="applyTheme()" style="padding:10px 14px;font-size:.85rem">
+          <option value="'Inter',system-ui,sans-serif">Inter (Moderna)</option>
+          <option value="'Segoe UI',system-ui,sans-serif">Segoe UI</option>
+          <option value="'JetBrains Mono',monospace">JetBrains Mono (Monoespaciada)</option>
+          <option value="'Courier New',monospace">Courier New</option>
+          <option value="'Arial',sans-serif">Arial</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="resetTheme()">Restaurar</button>
+      <button class="btn-ghost" onclick="closeSettings()">Cerrar</button>
     </div>
   </div>
 </div>
@@ -452,10 +544,65 @@ function toast(msg,type='success'){
   clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)
 }
 
+/* ── Settings ── */
+const DEFAULTS={
+  color:'#8b5cf6',accent:'#c084fc',bg:'#060410',text:'#ede9fe',
+  rayBright:'12',rayOn:'1',font:"'Inter',system-ui,sans-serif"
+}
+function applyTheme(){
+  const set=(id,v)=>document.documentElement.style.setProperty('--'+id,v)
+  set('purple',document.getElementById('s-color').value)
+  set('purple-lt',document.getElementById('s-accent').value)
+  set('bg',document.getElementById('s-bg').value)
+  set('text',document.getElementById('s-text').value)
+  const bright=parseInt(document.getElementById('s-ray-bright').value)/100
+  set('ray-color',`rgba(139,92,246,${bright})`)
+  const rayOn=document.getElementById('s-ray-on').value==='1'
+  document.getElementById('ray-container').style.display=rayOn?'':'none'
+  const ff=document.getElementById('s-font').value
+  set('font-primary',ff)
+  if(ff.includes('Mono')){set('font-deco',ff);set('font-mono',ff)}
+  else{set('font-deco',"'Cinzel Decorative',serif");set('font-mono','"JetBrains Mono",monospace')}
+  localStorage.setItem('tilinx-theme',JSON.stringify({
+    color:document.getElementById('s-color').value,
+    accent:document.getElementById('s-accent').value,
+    bg:document.getElementById('s-bg').value,
+    text:document.getElementById('s-text').value,
+    rayBright:document.getElementById('s-ray-bright').value,
+    rayOn:document.getElementById('s-ray-on').value,
+    font:document.getElementById('s-font').value
+  }))
+}
+function openSettings(){
+  const saved=JSON.parse(localStorage.getItem('tilinx-theme'))
+  if(saved){
+    document.getElementById('s-color').value=saved.color||DEFAULTS.color
+    document.getElementById('s-accent').value=saved.accent||DEFAULTS.accent
+    document.getElementById('s-bg').value=saved.bg||DEFAULTS.bg
+    document.getElementById('s-text').value=saved.text||DEFAULTS.text
+    document.getElementById('s-ray-bright').value=saved.rayBright||DEFAULTS.rayBright
+    document.getElementById('s-ray-on').value=saved.rayOn||DEFAULTS.rayOn
+    document.getElementById('s-font').value=saved.font||DEFAULTS.font
+  }else resetTheme()
+  document.getElementById('settings-overlay').classList.add('show')
+  applyTheme()
+}
+function closeSettings(){document.getElementById('settings-overlay').classList.remove('show')}
+function bgCloseS(e){if(e.target===document.getElementById('settings-overlay'))closeSettings()}
+function resetTheme(){
+  Object.entries(DEFAULTS).forEach(([k,v])=>{
+    const el=document.getElementById('s-'+(k==='color'?'color':k==='accent'?'accent':k==='rayBright'?'ray-bright':k==='rayOn'?'ray-on':k))
+    if(el)el.value=v
+  })
+  localStorage.removeItem('tilinx-theme')
+  applyTheme()
+}
+
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape')closeModal()
+  if(e.key==='Escape'){closeModal();closeSettings()}
   if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openModal()}
 })
+;(function(){const sv=localStorage.getItem('tilinx-theme');if(sv){const d=JSON.parse(sv);['color','accent','bg','text'].forEach(k=>document.documentElement.style.setProperty('--'+k,d[k==='color'?'color':k]));if(d.font)document.documentElement.style.setProperty('--font-primary',d.font)}})()
 
 loadKeys();loadIPs();loadActivity();loadSysStats()
 setInterval(loadActivity,10000);setInterval(loadSysStats,15000)
