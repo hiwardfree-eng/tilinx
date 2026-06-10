@@ -137,19 +137,29 @@ document.addEventListener("DOMContentLoaded", function() {
     drawBg();
   }
 
-  // ── Anti-devtools ──────────────────────────────────
+  // ── Anti-devtools (Enhanced) ──────────────────────
   document.addEventListener("contextmenu", function(e) { e.preventDefault(); });
+  document.addEventListener("dragstart", function(e) { e.preventDefault(); });
+  document.addEventListener("copy", function(e) { e.preventDefault(); });
+  document.addEventListener("cut", function(e) { e.preventDefault(); });
+  document.addEventListener("paste", function(e) { e.preventDefault(); });
+  document.addEventListener("selectstart", function(e) { e.preventDefault(); });
 
+  // Devtools detection - multiple methods
   var devtoolsOpen = false;
   var devtoolsCount = 0;
-  setInterval(function() {
+  var devtoolsInterval = setInterval(function() {
+    // Method 1: Size threshold
     var widthThreshold = window.outerWidth - window.innerWidth > 160;
     var heightThreshold = window.outerHeight - window.innerHeight > 160;
-    if (widthThreshold || heightThreshold) {
+    // Method 2: Firebug check
+    var firebug = window.Firebug && window.Firebug.chrome && window.Firebug.chrome.isInitialized;
+    if (widthThreshold || heightThreshold || firebug) {
       devtoolsCount++;
       if (devtoolsCount >= 2 && !devtoolsOpen) {
         devtoolsOpen = true;
         document.body.innerHTML = "<div style=\"display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:rgba(180,80,255,0.8);font-family:monospace;font-size:18px;text-align:center;padding:30px\">" + String.fromCharCode(128274) + " DevTools detected. Please close and reload.</div>";
+        clearInterval(devtoolsInterval);
       }
     } else {
       devtoolsCount = 0;
@@ -157,11 +167,29 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }, 1000);
 
+  // Block ALL developer shortcuts
   document.addEventListener("keydown", function(e) {
-    if (e.key === "F12" || (e.ctrlKey && e.shiftKey && ["I","C","J"].indexOf(e.key) !== -1) || (e.ctrlKey && e.key === "u")) {
+    // F12, Ctrl+Shift+I/C/J, Ctrl+U, Ctrl+S, Ctrl+Shift+U, Ctrl+Shift+P
+    if (e.key === "F12" ||
+        (e.ctrlKey && e.shiftKey && ["I","C","J","U","P"].indexOf(e.key) !== -1) ||
+        (e.ctrlKey && ["u","s","S","U","p","P","r","R"].indexOf(e.key) !== -1) ||
+        e.key === "PrintScreen" ||
+        (e.ctrlKey && e.key === "PrintScreen")) {
       e.preventDefault();
+      return false;
     }
   });
+
+  // Disable print
+  window.addEventListener("beforeprint", function(e) { e.preventDefault(); return false; });
+  window.addEventListener("afterprint", function(e) { e.preventDefault(); return false; });
+
+  // ── Session Keepalive ──────────────────────────────
+  if (window.location.pathname === "/admin") {
+    setInterval(function() {
+      fetch("/api/status", { method: "GET", cache: "no-store" }).catch(function() {});
+    }, 300000);
+  }
 
   // ── Mobile Menu ────────────────────────────────────
   var menuBtn = document.getElementById("menu-btn");

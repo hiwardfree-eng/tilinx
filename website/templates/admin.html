@@ -284,7 +284,7 @@ select option{background:#0c0720}
       <div class="tbl-wrap">
         <table>
           <thead><tr>
-            <th>Label</th><th>Key</th><th>Estado</th><th>Expira</th><th>Usos</th><th style="width:110px"></th>
+            <th>Label</th><th>Key</th><th>Estado</th><th>Expira</th><th>Usos</th><th style="width:160px"></th>
           </tr></thead>
           <tbody id="keys-tbody"></tbody>
         </table>
@@ -302,7 +302,7 @@ select option{background:#0c0720}
       <div class="tbl-wrap">
         <table>
           <thead><tr>
-            <th>Usuario</th><th>IP Address</th><th>Key Usada</th><th>Fecha acceso</th><th>Estado</th>
+            <th>Usuario</th><th>IP Address</th><th>Key Usada</th><th>Dispositivo</th><th>Fecha acceso</th><th>Estado</th>
           </tr></thead>
           <tbody id="ip-tbody"></tbody>
         </table>
@@ -329,6 +329,18 @@ select option{background:#0c0720}
         <option value="180">180 días</option>
         <option value="365">1 año</option>
         <option value="0">Sin expiración</option>
+      </select>
+    </div>
+    <div class="field" style="margin-top:16px">
+      <label>Dispositivos simultáneos</label>
+      <select id="m-devices">
+        <option value="1">1 dispositivo</option>
+        <option value="2">2 dispositivos</option>
+        <option value="3">3 dispositivos</option>
+        <option value="5">5 dispositivos</option>
+        <option value="10">10 dispositivos</option>
+        <option value="25">25 dispositivos</option>
+        <option value="50">50 dispositivos</option>
       </select>
     </div>
     <div class="modal-actions">
@@ -489,10 +501,11 @@ function renderKeys(){
       <td><div class="td-key">${x(k.key)}<button class="icon-btn" title="Copiar" onclick="copyKey('${x(k.key)}')">⧉</button></div></td>
       <td><span class="badge ${k.status==='active'?'active':'expired'}">${k.status==='active'?'Activa':'Expirada'}</span></td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#9888c8">${k.expires==='never'?'<span style="color:var(--muted)">∞ Sin límite</span>':k.expires}</td>
-      <td class="td-uses">${k.uses}</td>
+      <td class="td-uses" title="${k.active_ips&&k.active_ips.length?'IPs: '+x(k.active_ips.join(', ')):''}">${k.uses}/${k.max_devices}</td>
       <td style="white-space:nowrap">
-        <button class="icon-btn" title="Extender duración" onclick="extendKey('${x(k.key)}')">⏱</button>
+        <button class="icon-btn" title="Extender duración (+/- horas)" onclick="extendKey('${x(k.key)}')">⏱</button>
         ${k.uses>0?'<button class="icon-btn" title="Refrescar para reuso" onclick="refreshKey(\''+x(k.key)+'\')">↻</button>':''}
+        ${k.active_ips&&k.active_ips.length>0?'<button class="icon-btn" title="Revocar IPs activas" onclick="revokeIPs(\''+x(k.key)+'\')">⛔</button>':''}
         <button class="icon-btn del" title="Eliminar" onclick="deleteKey('${x(k.key)}')">✕</button>
       </td>
     </tr>
@@ -508,7 +521,7 @@ function toggleFilter(){
 }
 
 function openModal(){document.getElementById('modal-overlay').classList.add('open');setTimeout(()=>document.getElementById('m-label').focus(),100)}
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');document.getElementById('m-label').value='';document.getElementById('m-duration').value='30'}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');document.getElementById('m-label').value='';document.getElementById('m-duration').value='30';document.getElementById('m-devices').value='1'}
 function bgClose(e){if(e.target===document.getElementById('modal-overlay'))closeModal()}
 
 async function generateKey(){
@@ -518,11 +531,12 @@ async function generateKey(){
     inp.style.borderColor='#ef4444';inp.focus();setTimeout(()=>inp.style.borderColor='',1500);return
   }
   const days=parseInt(document.getElementById('m-duration').value)
+  const devices=parseInt(document.getElementById('m-devices').value)
   try{
-    const r=await fetch('/api/keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label,duration:days})})
+    const r=await fetch('/api/keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label,duration:days,max_devices:devices})})
     if(r.ok){
       closeModal();await loadKeys();await loadActivity()
-      toast('Key "'+label+'" creada exitosamente','success')
+      toast('Key "'+label+'" creada ('+devices+' disp)','success')
     }else toast('Error al crear key','error')
   }catch{toast('Error de conexión','error')}
 }
@@ -557,6 +571,22 @@ async function refreshKey(code){
   }catch{toast('Error de conexión','error')}
 }
 
+async function revokeIPs(code){
+  const key=keys.find(k=>k.key===code)
+  if(!key||!key.active_ips||!key.active_ips.length)return
+  const ips=key.active_ips.join(', ')
+  if(!confirm('¿Revocar todas las IPs activas de '+code+'?\nIPs: '+ips+'\n\nSe liberarán dispositivos.'))return
+  for(let i=0;i<key.active_ips.length;i++){
+    const ip=key.active_ips[i]
+    try{
+      await fetch('/api/keys/'+encodeURIComponent(code)+'/revoke-ip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ip})})
+    }catch{}
+  }
+  await loadKeys()
+  await loadActivity()
+  toast('IPs revocadas de '+code,'success')
+}
+
 function copyKey(k){
   navigator.clipboard.writeText(k).catch(()=>{})
   toast('Key copiada','success')
@@ -566,12 +596,13 @@ function renderIP(){
   const q=document.getElementById('search-ip').value.toLowerCase()
   let data=q?ipLog.filter(r=>r.ip.includes(q)||r.key.toLowerCase().includes(q)||r.user.toLowerCase().includes(q)):[...ipLog]
   const tb=document.getElementById('ip-tbody')
-  if(!data.length){tb.innerHTML='<tr><td colspan="5"><div class="empty">No hay conexiones registradas todavía.</div></td></tr>';return}
+  if(!data.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">No hay conexiones registradas todavía.</div></td></tr>';return}
   tb.innerHTML=data.map(r=>`
     <tr>
       <td><div class="td-user"><div class="user-dot">${(r.user||'?')[0].toUpperCase()}</div>${x(r.user||'?')}</div></td>
       <td><span class="ip-badge">${x(r.ip)}</span></td>
       <td style="font-weight:600;color:#ddd4ff">${x(r.key)}</td>
+      <td style="color:var(--muted);font-size:.8rem">${r.ok?r.device_index+'/'+r.max_devices:'—'}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:.77rem;color:#9888c8">${x(r.date)}</td>
       <td><span class="badge ${r.ok?'active':'expired'}">${r.ok?'OK':'Fallido'}</span></td>
     </tr>

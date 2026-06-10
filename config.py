@@ -22,5 +22,14 @@ PROXY_AUTH_USER = os.environ.get("TilinX_PROXY_AUTH_USER", "TilinX")
 PROXY_AUTH_PASS = os.environ.get("TilinX_PROXY_AUTH_PASS", "TilinX")
 PROXY_PORT = int(os.environ.get("TilinX_PROXY_PORT", "8884"))
 
-# ─── Entorno ────────────────────────────────────────────
-ENV = os.environ.get("TilinX_ENV", "production")  # development | testing | production
+# ─── Seguridad ─────────────────────────────────────────
+ENV = os.environ.get("TilinX_ENV", "production")
+RATE_LIMIT = int(os.environ.get("TilinX_RATE_LIMIT", "10"))
+SESSION_TIMEOUT = int(os.environ.get("TilinX_SESSION_TIMEOUT", "1800"))
+MAX_LOGIN_ATTEMPTS = int(os.environ.get("TilinX_MAX_LOGIN_ATTEMPTS", "5"))
+LOGIN_BLOCK_MINUTES = int(os.environ.get("TilinX_LOGIN_BLOCK_MINUTES", "15"))
+ADMIN_IP_WHITELIST = os.environ.get("TilinX_ADMIN_IP_WHITELIST", "").split(",")
+ADMIN_IP_BIND = os.environ.get("TilinX_ADMIN_IP_BIND", "0") == "1"
+CORS_ORIGIN = os.environ.get("TilinX_CORS_ORIGIN", "https://tilinx.onrender.com")
+CSRF_ENABLED = os.environ.get("TilinX_CSRF_ENABLED", "1") == "1"
+ENCRYPT_DB = os.environ.get("TilinX_ENCRYPT_DB", "1") == "1"

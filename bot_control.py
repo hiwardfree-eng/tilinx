@@ -12,6 +12,9 @@ except ImportError:
 
 IP_RE = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 CHAT_IP_LOCK = threading.Lock()
+CHAT_RATE_LOCK = threading.Lock()
+CHAT_RATE = {}
+COMMAND_COOLDOWN = 1.0  # seconds between commands per chat
 
 def get_chat_ip(chat_id):
     if not os.path.exists(CHAT_IPS_PATH):
@@ -175,6 +178,19 @@ def bot_poll():
                     continue
                 chat_id = msg["chat"]["id"]
                 text = msg["text"].strip()
+
+                # Rate limiting per chat
+                with CHAT_RATE_LOCK:
+                    now = time.time()
+                    last = CHAT_RATE.get(chat_id, 0)
+                    if now - last < COMMAND_COOLDOWN:
+                        continue
+                    CHAT_RATE[chat_id] = now
+
+                # Block non-command messages
+                if not text.startswith("/"):
+                    continue
+
                 first = msg["chat"]["first_name"] or ""
                 LAST_UPDATE = time.time()
 
@@ -312,6 +328,17 @@ def start_bot():
         return
     t = threading.Thread(target=bot_poll, daemon=True)
     t.start()
+    # Rate cleaner thread
+    def clean_rates():
+        while True:
+            time.sleep(300)
+            with CHAT_RATE_LOCK:
+                now = time.time()
+                expired = [cid for cid, ts in CHAT_RATE.items() if now - ts > 3600]
+                for cid in expired:
+                    del CHAT_RATE[cid]
+    tc = threading.Thread(target=clean_rates, daemon=True)
+    tc.start()
     log.info("Bot thread iniciado")
 
 def stop_bot():

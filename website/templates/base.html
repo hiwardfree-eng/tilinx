@@ -6,6 +6,9 @@
 <title>{% block title %}TilinX{% endblock %}</title>
 <meta name="description" content="TilinX - Advanced proxy platform">
 <meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-Frame-Options" content="DENY">
 <meta property="og:title" content="TilinX">
 <meta property="og:description" content="Advanced proxy platform">
 <meta property="og:type" content="website">
@@ -16,7 +19,7 @@
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 {% block head %}{% endblock %}
 </head>
-<body>
+<body style="-webkit-user-select:none;user-select:none;-webkit-touch-callout:none" oncontextmenu="return false" onkeydown="if(event.key==='F12'||(event.ctrlKey&&event.shiftKey&&['I','C','J','U','P'].indexOf(event.key)!==-1)||(event.ctrlKey&&['u','s','p','r'].indexOf(event.key.toLowerCase())!==-1)||event.key==='PrintScreen'){event.preventDefault();return false}">
 
 <canvas id="bg-canvas"></canvas>
 <canvas id="snow-canvas"></canvas>
@@ -42,6 +45,7 @@
 </footer>
 
 <script src="/assets/js/main.js"></script>
+<script>if(window.location.pathname==='/admin'){setInterval(function(){fetch('/api/status',{method:'GET',cache:'no-store'}).catch(function(){})},300000)}</script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
