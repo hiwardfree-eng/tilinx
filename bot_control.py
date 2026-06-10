@@ -42,13 +42,23 @@ async def cmd_redeem(update: Update, context: ContextTypes.DEFAULT_TYPE):
     }
     await update.message.reply_text(msgs.get(result, "❌ Error."), parse_mode=ParseMode.HTML)
 
-if __name__ == "__main__":
+def start_bot():
     if not BOT_TOKEN:
-        log.error("TilinX_BOT_TOKEN not set"); exit(1)
-    app = Application.builder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("redeem", cmd_redeem))
-    app.add_handler(MessageHandler(filters.TEXT, cmd_start))
-    log.info("🚀 TilinX Bot starting (registration only)...")
-    print("🚀 TilinX Bot running (registration only)...")
-    app.run_polling(drop_pending_updates=True)
+        log.warning("TilinX_BOT_TOKEN not set, bot disabled")
+        return
+    import asyncio
+    try:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        app = Application.builder().token(BOT_TOKEN).build()
+        app.add_handler(CommandHandler("start", cmd_start))
+        app.add_handler(CommandHandler("redeem", cmd_redeem))
+        app.add_handler(MessageHandler(filters.TEXT, cmd_start))
+        log.info("🚀 TilinX Bot starting (registration only)...")
+        print("🚀 TilinX Bot running (registration only)...")
+        app.run_polling(drop_pending_updates=True)
+    except Exception as e:
+        log.error(f"Bot error: {e}")
+
+if __name__ == "__main__":
+    start_bot()
