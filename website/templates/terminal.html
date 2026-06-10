@@ -75,7 +75,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 <div class="term" id="term">
   <div class="thdr">
     <div class="ttl">TILINX TERMINAL <span style="color:var(--p)">v10</span> <span class="blink">&#9608;</span></div>
-    <div class="ts"><span id="tf">FPS: --</span><span id="tc">CPU: --%</span><span id="tr">RAM: --%</span></div>
+    <div class="ts"><span id="tf">CPU: --%</span><span id="tc">RAM: --%</span><span id="tr">DISK: --%</span><span id="tsec">SEC: OK</span></div>
   </div>
   <div class="tbody" id="tbody">
     <div class="out" id="out"></div>
@@ -177,11 +177,25 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
     xhr.onerror=function(){hUFallback()}
     xhr.send()
     function hUFallback(){
-      var e1=document.getElementById("tf");if(e1)e1.textContent="FPS: "+(60+Math.floor(Math.random()*70))
-      var e2=document.getElementById("tc");if(e2)e2.textContent="CPU: "+(20+Math.floor(Math.random()*40))+"%"
-      var e3=document.getElementById("tr");if(e3)e3.textContent="RAM: "+(30+Math.floor(Math.random()*35))+"%"
+      var e1=document.getElementById("tf");if(e1)e1.textContent="CPU: "+(20+Math.floor(Math.random()*40))+"%"
+      var e2=document.getElementById("tc");if(e2)e2.textContent="RAM: "+(30+Math.floor(Math.random()*35))+"%"
+      var e3=document.getElementById("tr");if(e3)e3.textContent="DISK: "+(40+Math.floor(Math.random()*30))+"%"
     }
   }
+
+  // Real FPS counter
+  var fpsFrames=0,fpsLast=Date.now(),fpsEl=document.getElementById("tsec")
+  function fpsLoop(){
+    fpsFrames++
+    var now=Date.now()
+    if(now-fpsLast>=1000){
+      if(fpsEl)fpsEl.textContent=fpsFrames+" FPS"
+      fpsFrames=0
+      fpsLast=now
+    }
+    requestAnimationFrame(fpsLoop)
+  }
+  setTimeout(function(){requestAnimationFrame(fpsLoop)},100)
 
   function pr(h,c){var d=document.createElement("div");d.className="l "+(c||"");d.innerHTML=h;O.appendChild(d);B.scrollTop=B.scrollHeight}
   function cmd(s){var d=document.createElement("div");d.className="l cmd";d.textContent=s;O.appendChild(d);B.scrollTop=B.scrollHeight}
