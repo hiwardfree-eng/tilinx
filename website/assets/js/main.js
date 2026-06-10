@@ -171,13 +171,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }, 300000);
   }
 
-  // ── Mobile Menu ────────────────────────────────────
-  var menuBtn = document.getElementById("menu-btn");
-  var navLinks = document.getElementById("nav-links");
-  if (menuBtn && navLinks) {
-    menuBtn.addEventListener("click", function() { navLinks.classList.toggle("open"); });
-  }
-
   // ── Active nav link ────────────────────────────────
   var path = window.location.pathname;
   var links = document.querySelectorAll(".nav-links a");

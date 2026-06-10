@@ -97,10 +97,6 @@ def _get_fingerprint():
     return hashlib.md5(ua.encode()).hexdigest()
 
 # ─── Auth ─────────────────────────────────────────────────
-def require_auth():
-    if not session.get("logged_in"):
-        return redirect("/login")
-
 def log_event(event, detail="", level="info"):
     with app.app_context():
         l = Log(event=event, detail=detail, level=level)
@@ -521,6 +517,8 @@ def admin_index():
 # ─── 404 ───────────────────────────────────────────────────
 @app.errorhandler(404)
 def not_found(e):
+    if request.path.startswith("/api/"):
+        return {"error": "not found"}, 404
     return render_template("index.html"), 404
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>{% block title %}TilinX{% endblock %}</title>
 <meta name="description" content="TilinX - Advanced proxy platform">
 <meta name="robots" content="noindex, nofollow">
@@ -15,37 +15,177 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Cinzel+Decorative:wght@700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/style.css?v=2">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 {% block head %}{% endblock %}
+<style>
+/* ─── Page transition animations (mobile) ─────────────── */
+@media (max-width: 768px) {
+  .page-wrap {
+    animation: fadeInPage 0.35s ease-out;
+  }
+  @keyframes fadeInPage {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .page-wrap.slide-left {
+    animation: slideInRight 0.35s ease-out;
+  }
+  .page-wrap.slide-right {
+    animation: slideInLeft 0.35s ease-out;
+  }
+  @keyframes slideInRight {
+    from { transform: translateX(80px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideInLeft {
+    from { transform: translateX(-80px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+}
+</style>
 </head>
-<body style="-webkit-user-select:none;user-select:none;-webkit-touch-callout:none" oncontextmenu="return false" onkeydown="if(event.key==='F12'||(event.ctrlKey&&event.shiftKey&&['I','C','J','U','P'].indexOf(event.key)!==-1)||(event.ctrlKey&&['u','s','p','r'].indexOf(event.key.toLowerCase())!==-1)||event.key==='PrintScreen'){event.preventDefault();return false}">
-
-<canvas id="bg-canvas"></canvas>
-<canvas id="snow-canvas"></canvas>
+<body style="-webkit-user-select:none;user-select:none;-webkit-touch-callout:none">
 
 <nav>
   <a href="/home" class="nav-logo"><img src="/assets/img/bolt.png" class="nav-bolt" alt=""> TILINX</a>
-  <ul class="nav-links">
+  <ul class="nav-links" id="nav-links">
     <li><a href="/home">HOME</a></li>
     <li><a href="/terminal">TERMINAL</a></li>
     <li><a href="/status">STATUS</a></li>
     <li><a href="/downloads">INF DEL PROXY</a></li>
     <li><a href="/contact">CONTACT</a></li>
   </ul>
-  <div class="nav-right">
-    <button class="menu-btn" id="menu-btn">☰</button>
-  </div>
 </nav>
 
+<div class="page-wrap" id="page-wrap">
 {% block content %}{% endblock %}
+</div>
 
 <footer>
   <p>⚡ TILINX &mdash; <a href="/login" style="color:inherit;text-decoration:none;cursor:pointer" title="Admin Access">2026</a></p>
 </footer>
 
+<nav class="bottom-tabs" id="bottom-tabs">
+  <a href="/home" class="bt-tab" data-idx="0"><span class="bt-icon">⚡</span><span class="bt-lbl">HOME</span></a>
+  <a href="/terminal" class="bt-tab" data-idx="1"><span class="bt-icon">⌨</span><span class="bt-lbl">TERMINAL</span></a>
+  <a href="/status" class="bt-tab" data-idx="2"><span class="bt-icon">📡</span><span class="bt-lbl">STATUS</span></a>
+  <a href="/downloads" class="bt-tab" data-idx="3"><span class="bt-icon">⬇</span><span class="bt-lbl">PROXY</span></a>
+  <a href="/contact" class="bt-tab" data-idx="4"><span class="bt-icon">✉</span><span class="bt-lbl">CONTACT</span></a>
+</nav>
+
+<canvas id="bg-canvas"></canvas>
+<canvas id="snow-canvas"></canvas>
+
 <script src="/assets/js/main.js"></script>
 <script>if(window.location.pathname==='/admin'){setInterval(function(){fetch('/api/status',{method:'GET',cache:'no-store'}).catch(function(){})},300000)}</script>
 {% block scripts %}{% endblock %}
+
+<script>
+// ─── Swipe navigation (mobile) ───────────────────────────
+(function(){
+  var isMobile = window.innerWidth <= 768;
+  if (!isMobile) return;
+
+  var routes = ['/home','/terminal','/status','/downloads','/contact'];
+  var current = routes.indexOf(window.location.pathname);
+  if (current === -1) return;
+
+  var startX = 0, startY = 0, isDragging = false, swiping = false;
+  var wrap = document.getElementById('page-wrap');
+
+  function updateTab(idx) {
+    document.querySelectorAll('.bt-tab').forEach(function(t, i) {
+      t.classList.toggle('active', i === idx);
+    });
+  }
+  updateTab(current);
+
+  document.addEventListener('touchstart', function(e) {
+    startX = e.changedTouches[0].screenX;
+    startY = e.changedTouches[0].screenY;
+    isDragging = true;
+    swiping = false;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!isDragging) return;
+    var dx = e.changedTouches[0].screenX - startX;
+    var dy = e.changedTouches[0].screenY - startY;
+    if (Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      swiping = true;
+      var tr = Math.max(-80, Math.min(80, dx * 0.3));
+      wrap.style.transform = 'translateX(' + tr + 'px)';
+      wrap.style.transition = 'none';
+      wrap.style.opacity = 1 - Math.abs(dx) * 0.003;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    var dx = e.changedTouches[0].screenX - startX;
+    wrap.style.transform = '';
+    wrap.style.transition = '';
+    wrap.style.opacity = '';
+
+    if (!swiping || Math.abs(dx) < 50) return;
+
+    var dir = dx > 0 ? -1 : 1;
+    var next = current + dir;
+    if (next < 0 || next >= routes.length) return;
+
+    sessionStorage.setItem('slideDir', dir === 1 ? 'left' : 'right');
+    wrap.style.animation = 'none';
+    setTimeout(function() { window.location.href = routes[next]; }, 80);
+  }, { passive: true });
+
+  document.addEventListener('mousedown', function(e) {
+    if (window.innerWidth > 768) return;
+    startX = e.screenX;
+    startY = e.screenY;
+    isDragging = true;
+    swiping = false;
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    var dx = e.screenX - startX;
+    var dy = e.screenY - startY;
+    if (Math.abs(dx) > 20 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      swiping = true;
+      var tr = Math.max(-80, Math.min(80, dx * 0.3));
+      wrap.style.transform = 'translateX(' + tr + 'px)';
+      wrap.style.transition = 'none';
+      wrap.style.opacity = 1 - Math.abs(dx) * 0.003;
+    }
+  });
+
+  document.addEventListener('mouseup', function(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    var dx = e.screenX - startX;
+    wrap.style.transform = '';
+    wrap.style.transition = '';
+    wrap.style.opacity = '';
+
+    if (!swiping || Math.abs(dx) < 50) return;
+    var dir = dx > 0 ? -1 : 1;
+    var next = current + dir;
+    if (next < 0 || next >= routes.length) return;
+
+    sessionStorage.setItem('slideDir', dir === 1 ? 'left' : 'right');
+    wrap.style.animation = 'none';
+    setTimeout(function() { window.location.href = routes[next]; }, 80);
+  });
+
+  var slideDir = sessionStorage.getItem('slideDir');
+  if (slideDir && wrap) {
+    wrap.classList.add('slide-' + slideDir);
+    sessionStorage.removeItem('slideDir');
+  }
+})();
+</script>
+
 </body>
 </html>
