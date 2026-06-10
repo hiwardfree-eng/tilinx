@@ -78,551 +78,123 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 <button class="sbtn" id="sbtn">&#10052; NIEVE</button>
 
 <script>
-(function(){
-  var w=window
-  // ---- DOM refs ----
-  var O=document.getElementById("out"),I=document.getElementById("inp"),B=document.getElementById("tbody")
-  if(!O||!I)return
-
-  var h=[],hi=-1,snow=true
-  var tIdx=-1,tMatches=[],tOrig=""
-  var S=document.getElementById("sbtn")
-
-  I.focus();hA();hU()
-  setInterval(hU,2000)
-
-  // ---- Matrix ----
-  try{(function(){
-    var c=document.getElementById("mx");if(!c)return
-    var cx=c.getContext("2d"),ch="アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモラリルレロ01"
-    var w,h,dr=[];var W=18
-    function rs(){w=c.width=innerWidth;h=c.height=innerHeight;var n=Math.ceil(w/W);while(dr.length<n)dr.push(Math.random()*-h/W);dr=dr.slice(0,n)}
-    function dw(){
-      cx.fillStyle="rgba(0,0,0,0.06)";cx.fillRect(0,0,w,h)
-      for(var i=0;i<dr.length;i++){
-        cx.fillStyle="rgba(0,255,65,"+(Math.random()>0.95?0.7:0.06+Math.random()*0.14)+")";cx.font="12px JetBrains Mono,monospace"
-        cx.fillText(ch[Math.random()*ch.length|0],i*W,dr[i]*W)
-        if(dr[i]*W>h&&Math.random()>0.975)dr[i]=0
-        dr[i]+=0.4+Math.random()*0.3
-      }
-      requestAnimationFrame(dw)
-    }
-    rs();window.addEventListener("resize",rs);dw()
-  }())catch(e){}
-
-  // ---- Snow ----
-  try{(function(){
-    var c=document.getElementById("snow-c");if(!c)return
-    var cx=c.getContext("2d"),w,h,fl=[]
-    function rs(){w=c.width=innerWidth;h=c.height=innerHeight}
-    function init(){rs();for(var i=0;i<70;i++)fl.push({x:Math.random()*w,y:Math.random()*h,r:Math.random()*2.5+1,s:Math.random()*0.7+0.2,o:Math.random()*0.5+0.15,w:Math.random()*2-1})}
-    function dw(){
-      cx.clearRect(0,0,w,h)
-      if(snow)for(var i=0;i<fl.length;i++){
-        fl[i].y+=fl[i].s;fl[i].x+=Math.sin(fl[i].y*0.01)*0.3+fl[i].w*0.1
-        if(fl[i].y>h+10){fl[i].y=-10;fl[i].x=Math.random()*w}
-        if(fl[i].x<0)fl[i].x=w;if(fl[i].x>w)fl[i].x=0
-        cx.beginPath();cx.arc(fl[i].x,fl[i].y,fl[i].r,0,Math.PI*2)
-        cx.fillStyle="rgba(180,74,255,"+fl[i].o+")";cx.fill()
-        cx.shadowColor="rgba(180,74,255,0.4)";cx.shadowBlur=8
-      }
-      requestAnimationFrame(dw)
-    }
-    rs();window.addEventListener("resize",function(){rs();init()});init();dw()
-  }())catch(e){}
-
-  function tS(){snow=!snow;S.textContent=snow?"\u2744 NIEVE":"\u2600 SIN NIEVE"}
-  if(S)S.onclick=tS
-
-  function hU(){
-    var xhr=new XMLHttpRequest()
-    xhr.open("GET","/api/terminal-stats",true)
-    xhr.onload=function(){
-      if(xhr.status===200){
-        try{
-          var d=JSON.parse(xhr.responseText)
-          var e1=document.getElementById("tf");if(e1)e1.textContent="CPU: "+(d.cpu||"--")+"%"
-          var e2=document.getElementById("tc");if(e2)e2.textContent="RAM: "+(d.ram||"--")+"%"
-          var e3=document.getElementById("tr");if(e3)e3.textContent="DISK: "+(d.disk||"--")+"%"
-        }catch(e){hUFallback()}
-      }else{hUFallback()}
-    }
-    xhr.onerror=function(){hUFallback()}
-    xhr.send()
-    function hUFallback(){
-      var e1=document.getElementById("tf");if(e1)e1.textContent="CPU: "+(20+Math.floor(Math.random()*40))+"%"
-      var e2=document.getElementById("tc");if(e2)e2.textContent="RAM: "+(30+Math.floor(Math.random()*35))+"%"
-      var e3=document.getElementById("tr");if(e3)e3.textContent="DISK: "+(40+Math.floor(Math.random()*30))+"%"
-    }
-  }
-
-  // Real FPS counter
-  var fpsFrames=0,fpsLast=Date.now(),fpsEl=document.getElementById("tsec")
-  function fpsLoop(){
-    fpsFrames++
-    var now=Date.now()
-    if(now-fpsLast>=1000){
-      if(fpsEl)fpsEl.textContent=fpsFrames+" FPS"
-      fpsFrames=0
-      fpsLast=now
-    }
-    requestAnimationFrame(fpsLoop)
-  }
-  setTimeout(function(){requestAnimationFrame(fpsLoop)},100)
-
+var _term={
+  O:document.getElementById("out"),
+  I:document.getElementById("inp"),
+  B:document.getElementById("tbody"),
+  S:document.getElementById("sbtn"),
+  h:[],hi:-1,snow:true,
+  tIdx:-1,tMatches:[],tOrig:""
+};
+if(!_term.O||!_term.I){}else{(function(T){
+  var O=T.O,I=T.I,B=T.B,S=T.S;
   function pr(h,c){var d=document.createElement("div");d.className="l "+(c||"");d.innerHTML=h;O.appendChild(d);B.scrollTop=B.scrollHeight}
   function cmd(s){var d=document.createElement("div");d.className="l cmd";d.textContent=s;O.appendChild(d);B.scrollTop=B.scrollHeight}
-
   function fu(s){var d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);return d+"d "+h+"h "+m+"m"}
   function randIP(){var p=[];for(var i=0;i<4;i++)p.push(Math.floor(Math.random()*254+1));return p.join(".")}
   function padRight(s,n){while(s.length<n)s+=" ";return s}
   function repeatStr(s,n){var r="";while(n-->0)r+=s;return r}
-
-  // ---- Commands ----
-  function hA(f){
-    var g={
-      system:"Info del sistema",cpu:"Detalles CPU",ram:"Uso de RAM",gpu:"Info GPU",disk:"Uso del disco",
-      temp:"Temperatura",network:"Interfaces de red",internet:"Estado conexion",
-      ping:"<host> Prueba de latencia",fps:"Analizador FPS",optimizer:"Optimizar sistema",
-      boost:"Modo rendimiento",turbo:"Turbo +25%",ultra:"Ultra rendimiento",
-      sensitivity:"Analizar sensibilidad",crosshair:"Configurar mira",tracking:"Analisis tracking",
-      reaction:"Tiempo reaccion",training:"Centro entrenamiento",movement:"Analisis movimiento",
-      aimtest:"Prueba precision",godmode:"Activar todos los modulos",
-      services:"Servicios activos",monitor:"Monitor en vivo",status:"Estado sistema",
-      logs:"Registros",report:"Generar reporte",security:"Escaneo seguridad",
-      neofetch:"Info sistema estilo neofetch",whoami:"Usuario actual",
-      history:"Historial comandos",date:"Fecha y hora",clear:"Limpiar terminal",
-      snow:"Activar/desactivar nieve",matrix:"Efecto matrix",
-      color:"<color> Cambiar color (green,purple,blue,red,pink)",
-      uptime:"Tiempo activo",exit:"Cerrar sesion",restart:"Reiniciar",shutdown:"Apagar",help:"<cmd> Ayuda",
-      banner:"Mostrar banner ASCII",calc:"<expr> Calculadora",echo:"<text> Eco de texto",
-      sysinfo:"Info detallada del sistema (API)",hack:"Simulacion de hackeo",
-      env:"Variables de entorno",cls:"Limpiar terminal"
-    }
-    if(f&&g[f]){pr("<b style='color:var(--g)'>"+f+"</b> &mdash; "+g[f]);return}
-    pr("<span style='color:var(--p);font-weight:700'>╔══════════════════════════╗</span>")
-    pr("<span style='color:var(--p);font-weight:700'>║   TILINX TERMINAL V10    ║</span>")
-    pr("<span style='color:var(--p);font-weight:700'>╚══════════════════════════╝</span>")
-    pr("")
-    var gr=[["SISTEMA","system cpu ram gpu disk temp network internet uptime neofetch whoami date sysinfo".split(" ")],
-            ["MONITOREO","status monitor logs report security services ping".split(" ")],
-            ["GAMING","fps optimizer boost turbo ultra sensitivity crosshair tracking reaction training movement aimtest".split(" ")],
-            ["EPICO","godmode hack".split(" ")],
-            ["TERMINAL","help clear cls history snow matrix color echo banner calc env exit restart shutdown".split(" ")]]
-    for(var i=0;i<gr.length;i++){
-      pr("<span style='color:var(--pk)'>"+gr[i][0]+"</span>","bb")
-      for(var j=0;j<gr[i][1].length;j++){
-        var k=gr[i][1][j];pr("  <span style='color:var(--g);font-weight:700'>"+k+"</span>  <span style='color:rgba(0,255,65,0.4)'>"+(g[k]||"")+"</span>")
-      }
-      pr("")
-    }
-  }
-
   function box(t){pr("<span style='color:var(--gd)'>╔══════════════════════════════════╗</span>");pr("<span style='color:var(--g)'>║           "+t+(t.length<20?"         ":"")+"        ║</span>");pr("<span style='color:var(--gd)'>╚══════════════════════════════════╝</span>")}
-
-  // ---- System Commands ----
-  function cSystem(){
-    box("SYSTEM INFORMATION")
-    pr("OS ............. <span style='color:var(--g)'>TilinX OS v10.0.0</span>")
-    pr("Kernel ......... <span style='color:var(--g)'>6.8.0-tilinx-amd64</span>")
-    pr("Host ........... <span style='color:var(--g)'>TilinX-PRO-7</span>")
-    pr("Uptime ......... <span style='color:var(--g)'>"+fu(Math.floor(Math.random()*86400*14+3600))+"</span>")
-    pr("Shell .......... <span style='color:var(--g)'>TilinX SH v10</span>")
-    pr("Users .......... <span style='color:var(--g)'>root (admin)</span>")
+  function hA(f){
+    var g={system:"Info del sistema",cpu:"Detalles CPU",ram:"Uso de RAM",gpu:"Info GPU",disk:"Uso del disco",temp:"Temperatura",network:"Interfaces de red",internet:"Estado conexion",ping:"<host> Prueba de latencia",fps:"Analizador FPS",optimizer:"Optimizar sistema",boost:"Modo rendimiento",turbo:"Turbo +25%",ultra:"Ultra rendimiento",sensitivity:"Analizar sensibilidad",crosshair:"Configurar mira",tracking:"Analisis tracking",reaction:"Tiempo reaccion",training:"Centro entrenamiento",movement:"Analisis movimiento",aimtest:"Prueba precision",godmode:"Activar todos los modulos",services:"Servicios activos",monitor:"Monitor en vivo",status:"Estado sistema",logs:"Registros",report:"Generar reporte",security:"Escaneo seguridad",neofetch:"Info sistema estilo neofetch",whoami:"Usuario actual",history:"Historial comandos",date:"Fecha y hora",clear:"Limpiar terminal",snow:"Activar/desactivar nieve",matrix:"Efecto matrix",color:"<color> Cambiar color (green,purple,blue,red,pink)",uptime:"Tiempo activo",exit:"Cerrar sesion",restart:"Reiniciar",shutdown:"Apagar",help:"<cmd> Ayuda",banner:"Mostrar banner ASCII",calc:"<expr> Calculadora",echo:"<text> Eco de texto",sysinfo:"Info detallada del sistema (API)",hack:"Simulacion de hackeo",env:"Variables de entorno",cls:"Limpiar terminal"};
+    if(f&&g[f]){pr("<b style='color:var(--g)'>"+f+"</b> &mdash; "+g[f]);return}
+    pr("<span style='color:var(--p);font-weight:700'>╔══════════════════════════╗</span>");
+    pr("<span style='color:var(--p);font-weight:700'>║   TILINX TERMINAL V10    ║</span>");
+    pr("<span style='color:var(--p);font-weight:700'>╚══════════════════════════╝</span>");
+    pr("");
+    var gr=[["SISTEMA","system cpu ram gpu disk temp network internet uptime neofetch whoami date sysinfo".split(" ")],["MONITOREO","status monitor logs report security services ping".split(" ")],["GAMING","fps optimizer boost turbo ultra sensitivity crosshair tracking reaction training movement aimtest".split(" ")],["EPICO","godmode hack".split(" ")],["TERMINAL","help clear cls history snow matrix color echo banner calc env exit restart shutdown".split(" ")]];
+    for(var i=0;i<gr.length;i++){pr("<span style='color:var(--pk)'>"+gr[i][0]+"</span>","bb");for(var j=0;j<gr[i][1].length;j++){var k=gr[i][1][j];pr("  <span style='color:var(--g);font-weight:700'>"+k+"</span>  <span style='color:rgba(0,255,65,0.4)'>"+(g[k]||"")+"</span>")}pr("")}
   }
-  function cCpu(){
-    var u=20+Math.floor(Math.random()*50),f=(3.2+Math.random()*2.8).toFixed(1)
-    box("CPU INFORMATION")
-    pr("Model ......... <span style='color:var(--g)'>AMD Ryzen 9 "+Math.floor(5000+Math.random()*2000)+"X</span>")
-    pr("Cores ......... <span style='color:var(--g)'>"+Math.floor(Math.random()*4+8)+"C / "+Math.floor((Math.random()*4+8)*2)+"T</span>")
-    pr("Frequency ..... <span style='color:var(--g)'>"+f+" GHz</span>")
-    pr("Usage ......... <span style='color:var(--g)'>"+u+"%</span>")
-    pr("Temperature ... <span style='color:"+(u>60?"#ff4444":"var(--g)")+"'>"+(45+u*0.3).toFixed(1)+"°C</span>")
+  function tS(){T.snow=!T.snow;S.textContent=T.snow?"\u2744 NIEVE":"\u2600 SIN NIEVE"}
+  S.onclick=tS;
+  function hU(){
+    var xhr=new XMLHttpRequest();
+    xhr.open("GET","/api/terminal-stats",true);
+    xhr.onload=function(){if(xhr.status===200){try{var d=JSON.parse(xhr.responseText);var e1=document.getElementById("tf");if(e1)e1.textContent="CPU: "+(d.cpu||"--")+"%";var e2=document.getElementById("tc");if(e2)e2.textContent="RAM: "+(d.ram||"--")+"%";var e3=document.getElementById("tr");if(e3)e3.textContent="DISK: "+(d.disk||"--")+"%"}catch(e){hUFallback()}}else{hUFallback()}};
+    xhr.onerror=function(){hUFallback()};
+    xhr.send();
+    function hUFallback(){var e1=document.getElementById("tf");if(e1)e1.textContent="CPU: "+(20+Math.floor(Math.random()*40))+"%";var e2=document.getElementById("tc");if(e2)e2.textContent="RAM: "+(30+Math.floor(Math.random()*35))+"%";var e3=document.getElementById("tr");if(e3)e3.textContent="DISK: "+(40+Math.floor(Math.random()*30))+"%"}
   }
-  function cRam(){
-    var t=16+Math.floor(Math.random()*16),u=Math.floor(t*(0.3+Math.random()*0.4)),p=Math.floor(u/t*100)
-    box("MEMORY INFORMATION")
-    pr("Total ........ <span style='color:var(--g)'>"+t+" GB</span>")
-    pr("Used ......... <span style='color:"+(p>70?"#ff4444":"var(--g)")+"'>"+u+" GB ("+p+"%)</span>")
-    pr("Free ......... <span style='color:var(--g)'>"+(t-u)+" GB</span>")
-    pr("Type ......... <span style='color:var(--g)'>DDR5-6000</span>")
-  }
-  function cGpu(){
-    var gs=[{n:"NVIDIA GeForce RTX 4090",v:"24 GB GDDR6X"},{n:"NVIDIA GeForce RTX 5090",v:"32 GB GDDR7"},{n:"AMD Radeon RX 7900 XTX",v:"24 GB GDDR6"}]
-    var g=gs[Math.floor(Math.random()*gs.length)]
-    box("GPU INFORMATION")
-    pr("Model ........ <span style='color:var(--g)'>"+g.n+"</span>")
-    pr("VRAM ......... <span style='color:var(--g)'>"+g.v+"</span>")
-    pr("Temp ......... <span style='color:var(--g)'>"+(55+Math.floor(Math.random()*25))+"°C</span>")
-  }
-  function cDisk(){
-    box("DISK INFORMATION")
-    for(var i=0;i<4;i++){
-      var m=["/","/home","/var","/tmp"][i],t=Math.floor(100+Math.random()*400),u=Math.floor(t*(0.2+Math.random()*0.5)),p=Math.floor(u/t*100)
-      pr(m+"  "+t+"G  <span style='color:"+(p>75?"#ff4444":"var(--g)")+"'>"+p+"%</span>")
-    }
-  }
-  function cTemp(){
-    box("TEMPERATURES")
-    pr("CPU ........ <span style='color:var(--g)'>"+(45+Math.random()*30).toFixed(1)+"°C</span>")
-    pr("GPU ........ <span style='color:var(--g)'>"+(50+Math.random()*30).toFixed(1)+"°C</span>")
-    pr("MBoard ..... <span style='color:var(--g)'>"+(35+Math.random()*15).toFixed(1)+"°C</span>")
-  }
-  function cNetwork(){
-    box("NETWORK INTERFACES")
-    for(var i=0;i<4;i++)pr("eth"+i+"  "+randIP()+"  <span style='color:var(--g)'>UP</span>")
-  }
-  function cInternet(){
-    box("INTERNET STATUS")
-    pr("Status ..... <span style='color:var(--g)'>CONNECTED</span>")
-    pr("IP ......... <span style='color:var(--g)'>"+randIP()+"</span>")
-    pr("Latency .... <span style='color:var(--g)'>"+(5+Math.random()*40).toFixed(0)+" ms</span>")
-  }
-  function cPing(host){
-    if(!host){pr("Uso: ping &lt;host&gt;","y");return}
-    pr("Ping a "+host+"...")
-    var n=0
-    var it=setInterval(function(){
-      pr((n+1)+"  "+host+"  time="+(5+Math.random()*60).toFixed(1)+" ms","d")
-      n++;if(n>=4){clearInterval(it);pr("--- "+host+" ping statistics ---");pr("4 transmitted, 4 received, 0% loss")}
-    },600)
-  }
-  function cServices(){
-    box("SYSTEM SERVICES")
-    var sv=["tilinx-proxy","tilinx-api","tilinx-bot","nginx","postgresql","redis","docker","ssh","ufw","fail2ban"]
-    for(var i=0;i<sv.length;i++)    pr("  <span style='color:var(--g)'>\u25CF</span> "+padRight(sv[i],18)+" <span style='color:var(--g)'>active</span>")
-    pr("Total: "+sv.length+" servicios activos","d")
-  }
-  function cMonitor(){
-    pr("MONITOR EN VIVO (actualizando cada 2s) — Presiona cualquier tecla para salir.","y")
-    var run=true
-    var it=setInterval(function(){
-      if(!run){clearInterval(it);return}
-      var cpu=20+Math.floor(Math.random()*50),ram=30+Math.floor(Math.random()*40)
-      pr("["+new Date().toLocaleTimeString()+"] CPU: "+cpu+"%  RAM: "+ram+"%  DISK: "+(20+Math.floor(Math.random()*30))+"%","d")
-    },2000)
-    function hk(){run=false;clearInterval(it);pr("Monitor detenido.","d");document.removeEventListener("keydown",hk)}
-    document.addEventListener("keydown",hk)
-  }
-  function cStatus(){
-    box("SYSTEM STATUS")
-    var c=20+Math.floor(Math.random()*30),r=30+Math.floor(Math.random()*25)
-    pr("CPU ......... <span style='color:var(--g)'>"+c+"% - NORMAL</span>")
-    pr("RAM ......... <span style='color:var(--g)'>"+r+"% - NORMAL</span>")
-    pr("Network ..... <span style='color:var(--g)'>CONNECTED</span>")
-    pr("Security .... <span style='color:var(--g)'>ALL OK</span>")
-    pr("<span style='color:var(--g)'>OVERALL: OPERATIONAL</span>","bb")
-  }
-  function cLogs(){
-    box("SYSTEM LOGS")
-    var lg=["SYSTEM BOOT","SERVICE START: tilinx-proxy","SERVICE START: tilinx-api","NETWORK INIT: eth0","FIREWALL RULES LOADED","MEMORY TEST: PASSED","CPU INIT: 16 CORES","KERNEL LOAD: 6.8.0"]
-    for(var i=0;i<lg.length;i++)pr("  ["+new Date().toLocaleTimeString()+"] "+lg[i],"d")
-  }
-  function cReport(){
-    box("SYSTEM REPORT")
-    pr("Fecha: "+new Date().toLocaleString())
-    pr("Sistema: TilinX OS v10.0.0")
-    pr("Uptime: "+fu(Math.floor(Math.random()*86400*14+3600)))
-    pr("CPU: "+(20+Math.floor(Math.random()*25))+"% | RAM: "+(30+Math.floor(Math.random()*20))+"%")
-    pr("<span style='color:var(--g)'>Reporte generado.</span>")
-  }
-  function cSecurity(){
-    box("SECURITY SCAN")
-    var ch=[["Firewall","ACTIVO"],["Fail2Ban","ACTIVO"],["Rootkits","NINGUNO"],["Malware","LIMPIO"],["SSL/TLS","VALIDO"],["DDoS Protection","ACTIVO"],["Key System","ENCRIPTADO"]]
-    for(var i=0;i<ch.length;i++)pr("  "+padRight(ch[i][0],18)+" <span style='color:var(--g)'>"+ch[i][1]+"</span>")
-    pr("")
-    pr("<span style='color:var(--g);font-weight:700'>SEGURO — 7/7 CHECKS OK</span>")
-  }
-  function cFps(){
-    var fps=60+Math.floor(Math.random()*85),min=Math.max(40,fps-30-Math.floor(Math.random()*20)),max=fps+Math.floor(Math.random()*30)
-    box("FPS ANALYZER")
-    pr("Current FPS .. <span style='color:var(--g);font-size:16px;font-weight:700'>"+fps+"</span>")
-    pr("Minimum FPS .. <span style='color:#ff4444'>"+min+"</span>")
-    pr("Maximum FPS .. <span style='color:var(--g)'>"+max+"</span>")
-    pr("Performance .. <span style='color:"+(fps>=90?"var(--g)":"#ffdd44")+"'>"+(fps>=120?"EXCELLENT":fps>=90?"GOOD":"AVERAGE")+"</span>")
-  }
-  function cOptimizer(){
-    pr("OPTIMIZANDO...","y")
-    var p=0,st=["Analizando procesos...","Optimizando memoria...","Ajustando CPU...","Limpiando cache...","Optimizando disco...","Afinando red..."]
-    var it=setInterval(function(){
-      p+=Math.floor(Math.random()*12+5);if(p>=100){p=100;clearInterval(it)}
-      var bar="";for(var i=0;i<17;i++)bar+=i<Math.floor(p/6)?"\u2588":"\u2591"
-      pr("<span style='color:var(--g)'>["+bar+"]</span> "+p+"% - "+st[Math.min(Math.floor(st.length*(p/100)),st.length-1)],"d")
-    },250)
-    setTimeout(function(){pr("");pr("<span style='color:var(--g);font-weight:700'>OPTIMIZACION COMPLETA</span>")},3000)
-  }
-  function cBoost(){
-    box("PERFORMANCE MODE")
-    pr("CPU Priority ........ <span style='color:var(--g)'>HIGH</span>")
-    pr("Memory Opt. ......... <span style='color:var(--g)'>ENABLED</span>")
-    pr("Background Tasks .... <span style='color:var(--g)'>REDUCED</span>")
-    pr("<span style='color:var(--g);font-weight:700'>BOOST ACTIVADO</span>")
-  }
-  function cTurbo(){
-    box("TURBO MODE")
-    pr("<span style='color:var(--g);font-size:14px;font-weight:700'>TURBO MODE ENABLED</span>")
-    pr("Performance +25%")
-    pr("Fan Speed "+(80+Math.random()*15).toFixed(0)+"%")
-  }
-  function cUltra(){
-    box("ULTRA PERFORMANCE")
-    pr("FPS Stability ...... <span style='color:var(--g)'>MAXIMUM</span>")
-    pr("System Latency ..... <span style='color:var(--g)'>LOW</span>")
-    pr("Resources .......... <span style='color:var(--g)'>OPTIMIZED</span>")
-  }
-  function cSensitivity(){
-    var dpi=400+Math.floor(Math.random()*3200),sens=(0.5+Math.random()*3).toFixed(2),edpi=Math.floor(dpi*parseFloat(sens))
-    box("SENSITIVITY ANALYZER")
-    pr("DPI ........... <span style='color:var(--g)'>"+dpi+"</span>")
-    pr("Sensitivity ... <span style='color:var(--g)'>"+sens+"</span>")
-    pr("eDPI .......... <span style='color:var(--g)'>"+edpi+"</span>")
-    var rec=edpi<800?"Baja precision":edpi<1600?"Media - Balance ideal":edpi<3200?"Alta rapidez":"Muy alta"
-    pr("Recomendacion . <span style='color:var(--p)'>"+rec+"</span>")
-  }
-  function cCrosshair(){
-    var cols=["green","red","yellow","purple","cyan"],c=cols[Math.floor(Math.random()*cols.length)]
-    box("CROSSHAIR CONFIG")
-    pr("Color ....... <span style='color:var(--g)'>"+c+"</span>")
-    pr("Size ........ <span style='color:var(--g)'>"+(2+Math.floor(Math.random()*4))+"</span>")
-    pr("Thickness ... <span style='color:var(--g)'>"+(1+Math.floor(Math.random()*2))+"</span>")
-    pr("<span style='color:var(--g)'>Crosshair configurado.</span>")
-  }
-  function cTracking(){
-    var s=60+Math.floor(Math.random()*40)
-    box("TRACKING ANALYSIS")
-    pr("Precision ... <span style='color:var(--g)'>"+s+"%</span>")
-    pr("Smoothness .. <span style='color:"+(s>75?"var(--g)":"#ffdd44")+"'>"+(s>75?"SMOOTH":"REGULAR")+"</span>")
-  }
-  function cReaction(){
-    pr("PRUEBA DE REACCION","y")
-    pr("Espera... presiona ESPACIO cuando veas VERDE")
-    var started=false,st=0,fired=false
-    var to=setTimeout(function(){started=true;st=Date.now();pr("<span style='color:var(--g);font-size:16px'>AHORA!</span>")},1500+Math.random()*2500)
-    function hk(e){
-      if(e.key!==" ")return;e.preventDefault()
-      if(!started){pr("Muy rapido! Espera la senal.","r");clearTimeout(to);document.removeEventListener("keydown",hk);return}
-      if(fired)return;fired=true
-      var ms=Date.now()-st
-      var txt=ms<150?"IMPRESIONANTE":ms<250?"BUENO":ms<400?"NORMAL":"NECESITAS PRACTICA"
-      var col=ms<250?"var(--g)":ms<400?"#ffdd44":"#ff4444"
-      pr("<span style='color:"+col+"'>"+ms+" ms - "+txt+"</span>")
-      document.removeEventListener("keydown",hk)
-    }
-    document.addEventListener("keydown",hk)
-  }
-  function cTraining(){
-    var dr=["Seguimiento","Flick shots","Tracking suave","Click timing","Reaccion rapida"]
-    box("TRAINING CENTER")
-    pr("Ejercicio: <span style='color:var(--g)'>"+dr[Math.floor(Math.random()*dr.length)]+"</span>")
-    pr("Duracion: <span style='color:var(--g)'>"+(3+Math.floor(Math.random()*5))+" min</span>")
-    pr("<span style='color:var(--p)'>Entrenamiento iniciado.</span>")
-  }
-  function cMovement(){
-    box("MOVEMENT ANALYSIS")
-    var st={Velocidad:60+Math.random()*35,Aceleracion:50+Math.random()*40,Precision:40+Math.random()*50}
-    for(var k in st)pr(padRight(k,14)+" "+(Math.floor(st[k])/4|0)+"%")
-  }
-  function cAimtest(){
-    var s=55+Math.floor(Math.random()*45)
-    box("AIM PRECISION TEST")
-    pr("Precision: <span style='color:var(--g)'>"+s+"%</span>")
-    pr("Rating: <span style='color:"+(s>80?"var(--g)":s>60?"#ffdd44":"#ff4444")+"'>"+(s>80?"PRO":s>60?"GOOD":"NOOB")+"</span>")
-  }
-  function cGodmode(){
-    var md=["OPTIMIZER","BOOST","ULTRA","NETWORK","SYSTEM","SECURITY"]
-    pr("<span style='color:var(--p);font-weight:700'>GODMODE SEQUENCE</span>")
-    var i=0
-    var it=setInterval(function(){
-      if(i>=md.length){clearInterval(it);pr("");pr("<span style='color:var(--g);font-weight:700'>ALL MODULES ACTIVATED</span>");return}
-      pr("<span style='color:var(--p)'>["+repeatStr("\u2588",20)+"] 100%</span> "+md[i]+" <span style='color:var(--g)'>ONLINE</span>")
-      i++
-    },300)
-  }
-  function cNeofetch(){
-    pr("                  <span style='color:var(--p);font-weight:700'>----------</span>")
-    pr("                 <span style='color:var(--p);font-weight:700'>/</span> root@tilinx")
-    pr("                <span style='color:var(--p);font-weight:700'>|</span> OS: TilinX OS v10.0.0")
-    pr("                <span style='color:var(--p);font-weight:700'>|</span> Kernel: 6.8.0-tilinx-amd64")
-    pr("                <span style='color:var(--p);font-weight:700'>|</span> CPU: AMD Ryzen 9 - 16 cores")
-    pr("                <span style='color:var(--p);font-weight:700'>|</span> RAM: 32 GB DDR5")
-    pr("                <span style='color:var(--p);font-weight:700'>|</span> GPU: NVIDIA RTX 4090")
-    pr("                <span style='color:var(--p);font-weight:700'>|</span> Disk: 512 GB NVMe")
-    pr("                  <span style='color:var(--p);font-weight:700'>----------</span>")
-  }
-  function cWhoami(){pr("root | UID: 0 | Home: /root | Shell: /bin/tilinx-sh")}
-  function cHistory(){if(!h.length){pr("Sin historial.","d");return};for(var i=0;i<h.length;i++)pr("  "+(i+1)+"  "+h[i])}
-
-  // ---- New Commands ----
-  function cBanner(){
-    pr("<span style='color:var(--p)'>    .d8888b.  8888888888 88888888888 </span>")
-    pr("<span style='color:var(--p)'>   d88P  Y88b 888            888    </span>")
-    pr("<span style='color:var(--p)'>   Y88b.      888            888    </span>")
-    pr("<span style='color:var(--p)'>    'Y888b.   88888888       888    </span>")
-    pr("<span style='color:var(--p)'>       'Y88b. 888            888    </span>")
-    pr("<span style='color:var(--p)'>         '888 888            888    </span>")
-    pr("<span style='color:var(--p)'>   Y88b  d88P 888            888    </span>")
-    pr("<span style='color:var(--p)'>    'Y8888P'  8888888888     888    </span>")
-    pr("<span style='color:var(--g)'>   TilinX Terminal v10 - Interactive Shell</span>")
-  }
-  function cCalc(expr){
-    if(!expr){pr("Uso: calc &lt;expr&gt; (ej. 2+2*3)","y");return}
-    var sanitized=expr.replace(/[^0-9+\-*/.()% ]/g,"")
-    if(!sanitized){pr("Expresion invalida","r");return}
-    try{var result=eval(sanitized);pr(expr+" = <span style='color:var(--g);font-weight:700'>"+result+"</span>")}catch(e){pr("Error de calculo","r")}
-  }
-  function cEcho(text){pr(text||"")}
-  function cSysinfo(){
-    box("REAL SYSTEM INFO")
-    pr("Fetching data from API...","d")
-    var xhr=new XMLHttpRequest()
-    xhr.open("GET","/api/terminal-stats",true)
-    xhr.onload=function(){
-      if(xhr.status===200){
-        try{
-          var d=JSON.parse(xhr.responseText)
-          pr("OS ............. <span style='color:var(--g)'>"+(d.os||"N/A")+"</span>")
-          pr("Hostname ....... <span style='color:var(--g)'>"+(d.hostname||"N/A")+"</span>")
-          pr("CPU ............ <span style='color:var(--g)'>"+(d.cpu_model||"N/A")+"</span>")
-          pr("CPU Cores ...... <span style='color:var(--g)'>"+(d.cpu_cores||"N/A")+"</span>")
-          pr("CPU Usage ...... <span style='color:var(--g)'>"+(d.cpu_percent||"N/A")+"%</span>")
-          pr("RAM Total ...... <span style='color:var(--g)'>"+(d.ram_total||"N/A")+"</span>")
-          pr("RAM Used ....... <span style='color:var(--g)'>"+(d.ram_used||"N/A")+"</span>")
-          pr("RAM Percent .... <span style='color:var(--g)'>"+(d.ram_percent||"N/A")+"%</span>")
-          pr("Uptime ......... <span style='color:var(--g)'>"+(d.uptime||"N/A")+"</span>")
-          pr("Users .......... <span style='color:var(--g)'>"+(d.users||"N/A")+"</span>")
-          pr("Processes ...... <span style='color:var(--g)'>"+(d.processes||"N/A")+"</span>")
-        }catch(e){pr("Error parsing API data","r")}
-      }else{pr("API error: "+xhr.status,"r")}
-    }
-    xhr.onerror=function(){pr("Failed to reach API - using offline mode","y");cSystem()}
-    xhr.send()
-  }
-  function cHack(){
-    pr("<span style='color:var(--g)'>INITIALIZING HACK SEQUENCE...</span>","bb")
-    var targets=["root@tilinx.local","192.168.1."+Math.floor(Math.random()*254),"gateway.tilinx.net","firewall.tilinx.com"]
-    var msgs=["Bypassing firewall...","Cracking encryption...","Injecting payload...","Escalating privileges...","Extracting data...","Covering tracks...","Establishing backdoor..."]
-    var step=0,pct=0
-    var it=setInterval(function(){
-      if(step>=3&&pct>=100){
-        clearInterval(it)
-        pr("")
-        pr("<span style='color:var(--g);font-weight:700'>ACCESS GRANTED - SYSTEM COMPROMISED</span>")
-        pr("<span style='color:var(--p)'>Target: "+targets[Math.floor(Math.random()*targets.length)]+"</span>")
-        return
-      }
-      if(pct>=100){step++;pct=0;if(step<3){var bar="";for(var bi=0;bi<20;bi++)bar+="\u2588";pr("<span style='color:var(--p)'>["+bar+"] 100% - "+targets[step-1]+" COMPROMISED</span>")}return}
-      pct+=Math.floor(Math.random()*15+5);if(pct>100)pct=100
-      var bar="";for(var bi=0;bi<17;bi++)bar+=bi<Math.floor(pct/6)?"\u2588":"\u2591"
-      pr("  ["+bar+"] "+pct+"% - "+msgs[Math.floor(Math.random()*msgs.length)]+" ["+targets[Math.min(step,targets.length-1)]+"]","d")
-    },200)
-  }
-  function cEnv(){
-    box("ENVIRONMENT VARIABLES")
-    pr("SHELL=<span style='color:var(--g)'>/bin/tilinx-sh</span>")
-    pr("USER=<span style='color:var(--g)'>root</span>")
-    pr("PATH=<span style='color:var(--g)'>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</span>")
-    pr("HOME=<span style='color:var(--g)'>/root</span>")
-    pr("TERM=<span style='color:var(--g)'>xterm-256color</span>")
-    pr("LANG=<span style='color:var(--g)'>es_ES.UTF-8</span>")
-    pr("EDITOR=<span style='color:var(--g)'>vim</span>")
-    pr("DISPLAY=<span style='color:var(--g)'>:0</span>")
-    pr("TILINX_VERSION=<span style='color:var(--g)'>10.0.0</span>")
-    pr("TILINX_MODE=<span style='color:var(--g)'>ULTIMATE</span>")
-  }
-
-  // ---- Command Router ----
+  var fpsFrames=0,fpsLast=Date.now(),fpsEl=document.getElementById("tsec");
+  function fpsLoop(){fpsFrames++;var now=Date.now();if(now-fpsLast>=1000){if(fpsEl)fpsEl.textContent=fpsFrames+" FPS";fpsFrames=0;fpsLast=now}requestAnimationFrame(fpsLoop)}
+  setTimeout(function(){requestAnimationFrame(fpsLoop)},100);
+  hA();hU();setInterval(hU,2000);
   function exec(cmd){
-    if(!cmd.trim())return
-    h.push(cmd.trim());hi=h.length
-    var p=cmd.trim().split(/\s+/),c=p[0].toLowerCase(),a=p.slice(1).join(" ")
-    try{
-      switch(c){
-        case "help":hA(a);break
-        case "clear":case "cls":O.innerHTML="";break
-        case "history":cHistory();break
-        case "whoami":cWhoami();break
-        case "date":pr(new Date().toLocaleString());break
-        case "neofetch":cNeofetch();break
-        case "system":cSystem();break
-        case "cpu":cCpu();break
-        case "ram":cRam();break
-        case "gpu":cGpu();break
-        case "disk":cDisk();break
-        case "temperature":case "temp":cTemp();break
-        case "network":cNetwork();break
-        case "internet":cInternet();break
-        case "ping":cPing(a);break
-        case "services":cServices();break
-        case "monitor":cMonitor();break
-        case "status":cStatus();break
-        case "logs":cLogs();break
-        case "report":cReport();break
-        case "security":cSecurity();break
-        case "fps":cFps();break
-        case "optimizer":cOptimizer();break
-        case "boost":cBoost();break
-        case "turbo":cTurbo();break
-        case "ultra":cUltra();break
-        case "sensitivity":cSensitivity();break
-        case "crosshair":cCrosshair();break
-        case "tracking":cTracking();break
-        case "reaction":cReaction();break
-        case "training":cTraining();break
-        case "movement":cMovement();break
-        case "aimtest":cAimtest();break
-        case "godmode":cGodmode();break
-        case "snow":tS();pr(snow?"Nieve activada":"Nieve desactivada",snow?"p":"d");break
-        case "matrix":pr("Matrix rain activado.","p");break
-        case "banner":cBanner();break
-        case "calc":cCalc(a);break
-        case "echo":cEcho(a);break
-        case "sysinfo":cSysinfo();break
-        case "hack":cHack();break
-        case "env":cEnv();break
-        case "color":(function(){
-          var cl={green:["#00ff41","#b44aff"],purple:["#b44aff","#e879f9"],blue:["#4488ff","#b44aff"],red:["#ff4444","#e879f9"],pink:["#e879f9","#b44aff"]}
-          if(cl[a]){document.documentElement.style.setProperty("--g",cl[a][0]);document.documentElement.style.setProperty("--gd",cl[a][0]+"66");document.documentElement.style.setProperty("--p",cl[a][1]);pr("Color cambiado a "+a,"g")}
-          else pr("Colores: green, purple, blue, red, pink","y")
-        })();break
-        case "uptime":pr("Uptime: "+fu(Math.floor(Math.random()*86400*7+86400)));break
-        case "exit":pr("Sesion terminada.","d");break
-        case "restart":pr("Reiniciando...","y");setTimeout(function(){O.innerHTML="";pr("Sistema reiniciado.","g")},800);break
-        case "shutdown":pr("Apagando...","r");setTimeout(function(){O.innerHTML="";pr("Sistema apagado.","d")},1000);break
-        default:pr("Comando desconocido: \""+c+"\". Escribe help.","r")
-      }
-    }catch(e){pr("Error: "+e.message,"r")}
+    if(!cmd.trim())return;
+    T.h.push(cmd.trim());T.hi=T.h.length;
+    var p=cmd.trim().split(/\s+/),c=p[0].toLowerCase(),a=p.slice(1).join(" ");
+    try{switch(c){
+      case "help":hA(a);break;case "clear":case "cls":O.innerHTML="";break;case "history":(function(){if(!T.h.length){pr("Sin historial.","d");return};for(var i=0;i<T.h.length;i++)pr("  "+(i+1)+"  "+T.h[i])})();break;
+      case "whoami":pr("root | UID: 0 | Home: /root | Shell: /bin/tilinx-sh");break;
+      case "date":pr(new Date().toLocaleString());break;
+      case "neofetch":pr("                  <span style='color:var(--p);font-weight:700'>----------</span>");pr("                 <span style='color:var(--p);font-weight:700'>/</span> root@tilinx");pr("                <span style='color:var(--p);font-weight:700'>|</span> OS: TilinX OS v10.0.0");pr("                <span style='color:var(--p);font-weight:700'>|</span> Kernel: 6.8.0-tilinx-amd64");pr("                <span style='color:var(--p);font-weight:700'>|</span> CPU: AMD Ryzen 9 - 16 cores");pr("                <span style='color:var(--p);font-weight:700'>|</span> RAM: 32 GB DDR5");pr("                <span style='color:var(--p);font-weight:700'>|</span> GPU: NVIDIA RTX 4090");pr("                <span style='color:var(--p);font-weight:700'>|</span> Disk: 512 GB NVMe");pr("                  <span style='color:var(--p);font-weight:700'>----------</span>");break;
+      case "system":box("SYSTEM INFORMATION");pr("OS ............. <span style='color:var(--g)'>TilinX OS v10.0.0</span>");pr("Kernel ......... <span style='color:var(--g)'>6.8.0-tilinx-amd64</span>");pr("Host ........... <span style='color:var(--g)'>TilinX-PRO-7</span>");pr("Uptime ......... <span style='color:var(--g)'>"+fu(Math.floor(Math.random()*86400*14+3600))+"</span>");pr("Shell .......... <span style='color:var(--g)'>TilinX SH v10</span>");pr("Users .......... <span style='color:var(--g)'>root (admin)</span>");break;
+      case "cpu":(function(){var u=20+Math.floor(Math.random()*50),f=(3.2+Math.random()*2.8).toFixed(1);box("CPU INFORMATION");pr("Model ......... <span style='color:var(--g)'>AMD Ryzen 9 "+Math.floor(5000+Math.random()*2000)+"X</span>");pr("Cores ......... <span style='color:var(--g)'>"+Math.floor(Math.random()*4+8)+"C / "+Math.floor((Math.random()*4+8)*2)+"T</span>");pr("Frequency ..... <span style='color:var(--g)'>"+f+" GHz</span>");pr("Usage ......... <span style='color:var(--g)'>"+u+"%</span>");pr("Temperature ... <span style='color:"+(u>60?"#ff4444":"var(--g)")+"'>"+(45+u*0.3).toFixed(1)+"°C</span>")})();break;
+      case "ram":(function(){var t=16+Math.floor(Math.random()*16),u=Math.floor(t*(0.3+Math.random()*0.4)),p=Math.floor(u/t*100);box("MEMORY INFORMATION");pr("Total ........ <span style='color:var(--g)'>"+t+" GB</span>");pr("Used ......... <span style='color:"+(p>70?"#ff4444":"var(--g)")+"'>"+u+" GB ("+p+"%)</span>");pr("Free ......... <span style='color:var(--g)'>"+(t-u)+" GB</span>");pr("Type ......... <span style='color:var(--g)'>DDR5-6000</span>")})();break;
+      case "gpu":(function(){var gs=[{n:"NVIDIA GeForce RTX 4090",v:"24 GB GDDR6X"},{n:"NVIDIA GeForce RTX 5090",v:"32 GB GDDR7"},{n:"AMD Radeon RX 7900 XTX",v:"24 GB GDDR6"}],g=gs[Math.floor(Math.random()*gs.length)];box("GPU INFORMATION");pr("Model ........ <span style='color:var(--g)'>"+g.n+"</span>");pr("VRAM ......... <span style='color:var(--g)'>"+g.v+"</span>");pr("Temp ......... <span style='color:var(--g)'>"+(55+Math.floor(Math.random()*25))+"°C</span>")})();break;
+      case "disk":(function(){box("DISK INFORMATION");for(var i=0;i<4;i++){var m=["/","/home","/var","/tmp"][i],t=Math.floor(100+Math.random()*400),u=Math.floor(t*(0.2+Math.random()*0.5)),p=Math.floor(u/t*100);pr(m+"  "+t+"G  <span style='color:"+(p>75?"#ff4444":"var(--g)")+"'>"+p+"%</span>")}})();break;
+      case "temperature":case "temp":box("TEMPERATURES");pr("CPU ........ <span style='color:var(--g)'>"+(45+Math.random()*30).toFixed(1)+"°C</span>");pr("GPU ........ <span style='color:var(--g)'>"+(50+Math.random()*30).toFixed(1)+"°C</span>");pr("MBoard ..... <span style='color:var(--g)'>"+(35+Math.random()*15).toFixed(1)+"°C</span>");break;
+      case "network":box("NETWORK INTERFACES");for(var i=0;i<4;i++)pr("eth"+i+"  "+randIP()+"  <span style='color:var(--g)'>UP</span>");break;
+      case "internet":box("INTERNET STATUS");pr("Status ..... <span style='color:var(--g)'>CONNECTED</span>");pr("IP ......... <span style='color:var(--g)'>"+randIP()+"</span>");pr("Latency .... <span style='color:var(--g)'>"+(5+Math.random()*40).toFixed(0)+" ms</span>");break;
+      case "ping":if(!a){pr("Uso: ping &lt;host&gt;","y")}else{(function(host){pr("Ping a "+host+"...");var n=0;var it=setInterval(function(){pr((n+1)+"  "+host+"  time="+(5+Math.random()*60).toFixed(1)+" ms","d");n++;if(n>=4){clearInterval(it);pr("--- "+host+" ping statistics ---");pr("4 transmitted, 4 received, 0% loss")}},600)})(a)};break;
+      case "services":box("SYSTEM SERVICES");(function(){var sv=["tilinx-proxy","tilinx-api","tilinx-bot","nginx","postgresql","redis","docker","ssh","ufw","fail2ban"];for(var i=0;i<sv.length;i++)pr("  <span style='color:var(--g)'>\u25CF</span> "+padRight(sv[i],18)+" <span style='color:var(--g)'>active</span>");pr("Total: "+sv.length+" servicios activos","d")})();break;
+      case "monitor":(function(){pr("MONITOR EN VIVO (actualizando cada 2s) — Presiona cualquier tecla para salir.","y");var run=true;var it=setInterval(function(){if(!run){clearInterval(it);return};var cpu=20+Math.floor(Math.random()*50),ram=30+Math.floor(Math.random()*40);pr("["+new Date().toLocaleTimeString()+"] CPU: "+cpu+"%  RAM: "+ram+"%  DISK: "+(20+Math.floor(Math.random()*30))+"%","d")},2000);document.addEventListener("keydown",function hk(){run=false;clearInterval(it);pr("Monitor detenido.","d");document.removeEventListener("keydown",hk)})})();break;
+      case "status":box("SYSTEM STATUS");pr("CPU ......... <span style='color:var(--g)'>"+(20+Math.floor(Math.random()*30))+"% - NORMAL</span>");pr("RAM ......... <span style='color:var(--g)'>"+(30+Math.floor(Math.random()*25))+"% - NORMAL</span>");pr("Network ..... <span style='color:var(--g)'>CONNECTED</span>");pr("Security .... <span style='color:var(--g)'>ALL OK</span>");pr("<span style='color:var(--g)'>OVERALL: OPERATIONAL</span>","bb");break;
+      case "logs":box("SYSTEM LOGS");(function(){var lg=["SYSTEM BOOT","SERVICE START: tilinx-proxy","SERVICE START: tilinx-api","NETWORK INIT: eth0","FIREWALL RULES LOADED","MEMORY TEST: PASSED","CPU INIT: 16 CORES","KERNEL LOAD: 6.8.0"];for(var i=0;i<lg.length;i++)pr("  ["+new Date().toLocaleTimeString()+"] "+lg[i],"d")})();break;
+      case "report":box("SYSTEM REPORT");pr("Fecha: "+new Date().toLocaleString());pr("Sistema: TilinX OS v10.0.0");pr("Uptime: "+fu(Math.floor(Math.random()*86400*14+3600)));pr("CPU: "+(20+Math.floor(Math.random()*25))+"% | RAM: "+(30+Math.floor(Math.random()*20))+"%");pr("<span style='color:var(--g)'>Reporte generado.</span>");break;
+      case "security":box("SECURITY SCAN");(function(){var ch=[["Firewall","ACTIVO"],["Fail2Ban","ACTIVO"],["Rootkits","NINGUNO"],["Malware","LIMPIO"],["SSL/TLS","VALIDO"],["DDoS Protection","ACTIVO"],["Key System","ENCRIPTADO"]];for(var i=0;i<ch.length;i++)pr("  "+padRight(ch[i][0],18)+" <span style='color:var(--g)'>"+ch[i][1]+"</span>");pr("");pr("<span style='color:var(--g);font-weight:700'>SEGURO — 7/7 CHECKS OK</span>")})();break;
+      case "fps":(function(){var fps=60+Math.floor(Math.random()*85),min=Math.max(40,fps-30-Math.floor(Math.random()*20)),max=fps+Math.floor(Math.random()*30);box("FPS ANALYZER");pr("Current FPS .. <span style='color:var(--g);font-size:16px;font-weight:700'>"+fps+"</span>");pr("Minimum FPS .. <span style='color:#ff4444'>"+min+"</span>");pr("Maximum FPS .. <span style='color:var(--g)'>"+max+"</span>");pr("Performance .. <span style='color:"+(fps>=90?"var(--g)":"#ffdd44")+"'>"+(fps>=90?"GOOD":"AVERAGE")+"</span>")})();break;
+      case "optimizer":(function(){pr("OPTIMIZANDO...","y");var p=0,st=["Analizando procesos...","Optimizando memoria...","Ajustando CPU...","Limpiando cache...","Optimizando disco...","Afinando red..."];var it=setInterval(function(){p+=Math.floor(Math.random()*12+5);if(p>=100){p=100;clearInterval(it)};var bar="";for(var i=0;i<17;i++)bar+=i<Math.floor(p/6)?"\u2588":"\u2591";pr("<span style='color:var(--g)'>["+bar+"]</span> "+p+"% - "+st[Math.min(Math.floor(st.length*(p/100)),st.length-1)],"d")},250);setTimeout(function(){pr("");pr("<span style='color:var(--g);font-weight:700'>OPTIMIZACION COMPLETA</span>")},3000)})();break;
+      case "boost":box("PERFORMANCE MODE");pr("CPU Priority ........ <span style='color:var(--g)'>HIGH</span>");pr("Memory Opt. ......... <span style='color:var(--g)'>ENABLED</span>");pr("Background Tasks .... <span style='color:var(--g)'>REDUCED</span>");pr("<span style='color:var(--g);font-weight:700'>BOOST ACTIVADO</span>");break;
+      case "turbo":box("TURBO MODE");pr("<span style='color:var(--g);font-size:14px;font-weight:700'>TURBO MODE ENABLED</span>");pr("Performance +25%");pr("Fan Speed "+(80+Math.random()*15).toFixed(0)+"%");break;
+      case "ultra":box("ULTRA PERFORMANCE");pr("FPS Stability ...... <span style='color:var(--g)'>MAXIMUM</span>");pr("System Latency ..... <span style='color:var(--g)'>LOW</span>");pr("Resources .......... <span style='color:var(--g)'>OPTIMIZED</span>");break;
+      case "sensitivity":(function(){var dpi=400+Math.floor(Math.random()*3200),sens=(0.5+Math.random()*3).toFixed(2),edpi=Math.floor(dpi*parseFloat(sens));box("SENSITIVITY ANALYZER");pr("DPI ........... <span style='color:var(--g)'>"+dpi+"</span>");pr("Sensitivity ... <span style='color:var(--g)'>"+sens+"</span>");pr("eDPI .......... <span style='color:var(--g)'>"+edpi+"</span>");var rec=edpi<800?"Baja precision":edpi<1600?"Media - Balance ideal":edpi<3200?"Alta rapidez":"Muy alta";pr("Recomendacion . <span style='color:var(--p)'>"+rec+"</span>")})();break;
+      case "crosshair":(function(){var cols=["green","red","yellow","purple","cyan"],c=cols[Math.floor(Math.random()*cols.length)];box("CROSSHAIR CONFIG");pr("Color ....... <span style='color:var(--g)'>"+c+"</span>");pr("Size ........ <span style='color:var(--g)'>"+(2+Math.floor(Math.random()*4))+"</span>");pr("Thickness ... <span style='color:var(--g)'>"+(1+Math.floor(Math.random()*2))+"</span>");pr("<span style='color:var(--g)'>Crosshair configurado.</span>")})();break;
+      case "tracking":(function(){var s=60+Math.floor(Math.random()*40);box("TRACKING ANALYSIS");pr("Precision ... <span style='color:var(--g)'>"+s+"%</span>");pr("Smoothness .. <span style='color:"+(s>75?"var(--g)":"#ffdd44")+"'>"+(s>75?"SMOOTH":"REGULAR")+"</span>")})();break;
+      case "reaction":(function(){pr("PRUEBA DE REACCION","y");pr("Espera... presiona ESPACIO cuando veas VERDE");var started=false,st=0,fired=false;var to=setTimeout(function(){started=true;st=Date.now();pr("<span style='color:var(--g);font-size:16px'>AHORA!</span>")},1500+Math.random()*2500);document.addEventListener("keydown",function hk(e){if(e.key!==" ")return;e.preventDefault();if(!started){pr("Muy rapido! Espera la senal.","r");clearTimeout(to);document.removeEventListener("keydown",hk);return};if(fired)return;fired=true;var ms=Date.now()-st;var txt=ms<150?"IMPRESIONANTE":ms<250?"BUENO":ms<400?"NORMAL":"NECESITAS PRACTICA";var col=ms<250?"var(--g)":ms<400?"#ffdd44":"#ff4444";pr("<span style='color:"+col+"'>"+ms+" ms - "+txt+"</span>");document.removeEventListener("keydown",hk)})})();break;
+      case "training":(function(){var dr=["Seguimiento","Flick shots","Tracking suave","Click timing","Reaccion rapida"];box("TRAINING CENTER");pr("Ejercicio: <span style='color:var(--g)'>"+dr[Math.floor(Math.random()*dr.length)]+"</span>");pr("Duracion: <span style='color:var(--g)'>"+(3+Math.floor(Math.random()*5))+" min</span>");pr("<span style='color:var(--p)'>Entrenamiento iniciado.</span>")})();break;
+      case "movement":(function(){box("MOVEMENT ANALYSIS");var st={Velocidad:60+Math.random()*35,Aceleracion:50+Math.random()*40,Precision:40+Math.random()*50};for(var k in st)pr(padRight(k,14)+" "+(Math.floor(st[k])/4|0)+"%")})();break;
+      case "aimtest":(function(){var s=55+Math.floor(Math.random()*45);box("AIM PRECISION TEST");pr("Precision: <span style='color:var(--g)'>"+s+"%</span>");pr("Rating: <span style='color:"+(s>80?"var(--g)":s>60?"#ffdd44":"#ff4444")+"'>"+(s>80?"PRO":s>60?"GOOD":"NOOB")+"</span>")})();break;
+      case "godmode":(function(){var md=["OPTIMIZER","BOOST","ULTRA","NETWORK","SYSTEM","SECURITY"];pr("<span style='color:var(--p);font-weight:700'>GODMODE SEQUENCE</span>");var i=0;var it=setInterval(function(){if(i>=md.length){clearInterval(it);pr("");pr("<span style='color:var(--g);font-weight:700'>ALL MODULES ACTIVATED</span>");return};pr("<span style='color:var(--p)'>["+repeatStr("\u2588",20)+"] 100%</span> "+md[i]+" <span style='color:var(--g)'>ONLINE</span>");i++},300)})();break;
+      case "snow":tS();pr(T.snow?"Nieve activada":"Nieve desactivada",T.snow?"p":"d");break;
+      case "matrix":pr("Matrix rain activado.","p");break;
+      case "banner":pr("<span style='color:var(--p)'>    .d8888b.  8888888888 88888888888 </span>");pr("<span style='color:var(--p)'>   d88P  Y88b 888            888    </span>");pr("<span style='color:var(--p)'>   Y88b.      888            888    </span>");pr("<span style='color:var(--p)'>    'Y888b.   88888888       888    </span>");pr("<span style='color:var(--p)'>       'Y88b. 888            888    </span>");pr("<span style='color:var(--p)'>         '888 888            888    </span>");pr("<span style='color:var(--p)'>   Y88b  d88P 888            888    </span>");pr("<span style='color:var(--p)'>    'Y8888P'  8888888888     888    </span>");pr("<span style='color:var(--g)'>   TilinX Terminal v10 - Interactive Shell</span>");break;
+      case "calc":if(!a){pr("Uso: calc &lt;expr&gt; (ej. 2+2*3)","y")}else{var sanitized=a.replace(/[^0-9+\-*/.()% ]/g,"");if(!sanitized){pr("Expresion invalida","r")}else{try{var result=eval(sanitized);pr(a+" = <span style='color:var(--g);font-weight:700'>"+result+"</span>")}catch(e){pr("Error de calculo","r")}}};break;
+      case "echo":pr(a||"");break;
+      case "sysinfo":(function(){box("REAL SYSTEM INFO");pr("Fetching data from API...","d");var xhr=new XMLHttpRequest();xhr.open("GET","/api/terminal-stats",true);xhr.onload=function(){if(xhr.status===200){try{var d=JSON.parse(xhr.responseText);pr("OS ............. <span style='color:var(--g)'>"+(d.os||"N/A")+"</span>");pr("Hostname ....... <span style='color:var(--g)'>"+(d.hostname||"N/A")+"</span>");pr("CPU ............ <span style='color:var(--g)'>"+(d.cpu_model||"N/A")+"</span>");pr("CPU Cores ...... <span style='color:var(--g)'>"+(d.cpu_cores||"N/A")+"</span>");pr("CPU Usage ...... <span style='color:var(--g)'>"+(d.cpu_percent||"N/A")+"%</span>");pr("RAM Total ...... <span style='color:var(--g)'>"+(d.ram_total||"N/A")+"</span>");pr("RAM Used ....... <span style='color:var(--g)'>"+(d.ram_used||"N/A")+"</span>");pr("RAM Percent .... <span style='color:var(--g)'>"+(d.ram_percent||"N/A")+"%</span>");pr("Uptime ......... <span style='color:var(--g)'>"+(d.uptime||"N/A")+"</span>");pr("Users .......... <span style='color:var(--g)'>"+(d.users||"N/A")+"</span>");pr("Processes ...... <span style='color:var(--g)'>"+(d.processes||"N/A")+"</span>")}catch(e){pr("Error parsing API data","r")}}else{pr("API error: "+xhr.status,"r")}};xhr.onerror=function(){pr("Failed to reach API - using offline mode","y")};xhr.send()})();break;
+      case "hack":(function(){pr("<span style='color:var(--g)'>INITIALIZING HACK SEQUENCE...</span>","bb");var targets=["root@tilinx.local","192.168.1."+Math.floor(Math.random()*254),"gateway.tilinx.net","firewall.tilinx.com"];var msgs=["Bypassing firewall...","Cracking encryption...","Injecting payload...","Escalating privileges...","Extracting data...","Covering tracks...","Establishing backdoor..."];var step=0,pct=0;var it=setInterval(function(){if(step>=3&&pct>=100){clearInterval(it);pr("");pr("<span style='color:var(--g);font-weight:700'>ACCESS GRANTED - SYSTEM COMPROMISED</span>");pr("<span style='color:var(--p)'>Target: "+targets[Math.floor(Math.random()*targets.length)]+"</span>");return};if(pct>=100){step++;pct=0;if(step<3){var bar="";for(var bi=0;bi<20;bi++)bar+="\u2588";pr("<span style='color:var(--p)'>["+bar+"] 100% - "+targets[step-1]+" COMPROMISED</span>")}return};pct+=Math.floor(Math.random()*15+5);if(pct>100)pct=100;var bar="";for(var bi=0;bi<17;bi++)bar+=bi<Math.floor(pct/6)?"\u2588":"\u2591";pr("  ["+bar+"] "+pct+"% - "+msgs[Math.floor(Math.random()*msgs.length)]+" ["+targets[Math.min(step,targets.length-1)]+"]","d")},200)})();break;
+      case "env":box("ENVIRONMENT VARIABLES");pr("SHELL=<span style='color:var(--g)'>/bin/tilinx-sh</span>");pr("USER=<span style='color:var(--g)'>root</span>");pr("PATH=<span style='color:var(--g)'>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</span>");pr("HOME=<span style='color:var(--g)'>/root</span>");pr("TERM=<span style='color:var(--g)'>xterm-256color</span>");pr("LANG=<span style='color:var(--g)'>es_ES.UTF-8</span>");pr("EDITOR=<span style='color:var(--g)'>vim</span>");pr("DISPLAY=<span style='color:var(--g)'>:0</span>");pr("TILINX_VERSION=<span style='color:var(--g)'>10.0.0</span>");pr("TILINX_MODE=<span style='color:var(--g)'>ULTIMATE</span>");break;
+      case "color":(function(){var cl={green:["#00ff41","#b44aff"],purple:["#b44aff","#e879f9"],blue:["#4488ff","#b44aff"],red:["#ff4444","#e879f9"],pink:["#e879f9","#b44aff"]};if(cl[a]){document.documentElement.style.setProperty("--g",cl[a][0]);document.documentElement.style.setProperty("--gd",cl[a][0]+"66");document.documentElement.style.setProperty("--p",cl[a][1]);pr("Color cambiado a "+a,"g")}else pr("Colores: green, purple, blue, red, pink","y")})();break;
+      case "uptime":pr("Uptime: "+fu(Math.floor(Math.random()*86400*7+86400)));break;
+      case "exit":pr("Sesion terminada.","d");break;
+      case "restart":pr("Reiniciando...","y");setTimeout(function(){O.innerHTML="";pr("Sistema reiniciado.","g")},800);break;
+      case "shutdown":pr("Apagando...","r");setTimeout(function(){O.innerHTML="";pr("Sistema apagado.","d")},1000);break;
+      default:pr("Comando desconocido: \""+c+"\". Escribe help.","r")
+    }}catch(e){pr("Error: "+e.message,"r")}
   }
-
-  // ---- Input ----
   I.addEventListener("keydown",function(e){
-    var k=e.key||""
-    if(k==="Enter"||e.keyCode===13){
-      e.preventDefault();var v=I.value;I.value="";exec(v);return
-    }
-    if(k==="ArrowUp"||e.keyCode===38){
-      e.preventDefault();if(hi>0){hi--;I.value=h[hi]};return
-    }
-    if(k==="ArrowDown"||e.keyCode===40){
-      e.preventDefault();if(hi<h.length-1){hi++;I.value=h[hi]}else{hi=h.length;I.value=""};return
-    }
+    var k=e.key||"";
+    if(k==="Enter"||e.keyCode===13){e.preventDefault();var v=I.value;I.value="";exec(v);return}
+    if(k==="ArrowUp"||e.keyCode===38){e.preventDefault();if(T.hi>0){T.hi--;I.value=T.h[T.hi]};return}
+    if(k==="ArrowDown"||e.keyCode===40){e.preventDefault();if(T.hi<T.h.length-1){T.hi++;I.value=T.h[T.hi]}else{T.hi=T.h.length;I.value=""};return}
     if(k==="Tab"||e.keyCode===9){
-      e.preventDefault()
-      var cmds="help|clear|cls|history|whoami|date|neofetch|system|cpu|ram|gpu|disk|temp|temperature|network|internet|ping|services|monitor|status|logs|report|security|fps|optimizer|boost|turbo|ultra|sensitivity|crosshair|tracking|reaction|training|movement|aimtest|godmode|snow|matrix|color|uptime|exit|restart|shutdown|banner|calc|echo|sysinfo|hack|env".split("|")
-      var pv=I.value.toLowerCase()
-      if(pv===""){tIdx=-1;tMatches=[];return}
-      if(tOrig!==pv||tMatches.length===0){
-        tOrig=pv;tMatches=[]
-        for(var i=0;i<cmds.length;i++){if(cmds[i].indexOf(pv)===0)tMatches.push(cmds[i])}
-        tIdx=-1
-      }
-      if(tMatches.length===0)return
-      tIdx=(tIdx+1)%tMatches.length
-      I.value=tMatches[tIdx]
+      e.preventDefault();
+      var cmds="help|clear|cls|history|whoami|date|neofetch|system|cpu|ram|gpu|disk|temp|temperature|network|internet|ping|services|monitor|status|logs|report|security|fps|optimizer|boost|turbo|ultra|sensitivity|crosshair|tracking|reaction|training|movement|aimtest|godmode|snow|matrix|color|uptime|exit|restart|shutdown|banner|calc|echo|sysinfo|hack|env".split("|");
+      var pv=I.value.toLowerCase();
+      if(pv===""){T.tIdx=-1;T.tMatches=[];return}
+      if(T.tOrig!==pv||T.tMatches.length===0){T.tOrig=pv;T.tMatches=[];for(var i=0;i<cmds.length;i++){if(cmds[i].indexOf(pv)===0)T.tMatches.push(cmds[i])};T.tIdx=-1}
+      if(T.tMatches.length===0)return;
+      T.tIdx=(T.tIdx+1)%T.tMatches.length;
+      I.value=T.tMatches[T.tIdx]
     }
-  })
-
-  document.addEventListener("click",function(){I.focus()})
-})()
+  });
+  document.addEventListener("click",function(){I.focus()});
+  I.focus();
+  // Matrix rain
+  try{var mc=document.getElementById("mx");if(mc){var mx=mc.getContext("2d"),mch="アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモラリルレロ01",mW,mH,md=[],mcol=18;function mrs(){mW=mc.width=innerWidth;mH=mc.height=innerHeight;var n=Math.ceil(mW/mcol);while(md.length<n)md.push(Math.random()*-mH/mcol);md=md.slice(0,n)}function mdw(){mx.fillStyle="rgba(0,0,0,0.06)";mx.fillRect(0,0,mW,mH);for(var i=0;i<md.length;i++){mx.fillStyle="rgba(0,255,65,"+(Math.random()>0.95?0.7:0.06+Math.random()*0.14)+")";mx.font="12px JetBrains Mono,monospace";mx.fillText(mch[Math.random()*mch.length|0],i*mcol,md[i]*mcol);if(md[i]*mcol>mH&&Math.random()>0.975)md[i]=0;md[i]+=0.4+Math.random()*0.3}requestAnimationFrame(mdw)}mrs();window.addEventListener("resize",mrs);mdw()}}catch(e){}
+  // Snow
+  try{var sc=document.getElementById("snow-c");if(sc){var sx=sc.getContext("2d"),sw,sh,fl=[];function srs(){sw=sc.width=innerWidth;sh=sc.height=innerHeight}function sinit(){srs();for(var i=0;i<70;i++)fl.push({x:Math.random()*sw,y:Math.random()*sh,r:Math.random()*2.5+1,s:Math.random()*0.7+0.2,o:Math.random()*0.5+0.15,w:Math.random()*2-1})}function sdw(){sx.clearRect(0,0,sw,sh);if(T.snow)for(var i=0;i<fl.length;i++){fl[i].y+=fl[i].s;fl[i].x+=Math.sin(fl[i].y*0.01)*0.3+fl[i].w*0.1;if(fl[i].y>sh+10){fl[i].y=-10;fl[i].x=Math.random()*sw};if(fl[i].x<0)fl[i].x=sw;if(fl[i].x>sw)fl[i].x=0;sx.beginPath();sx.arc(fl[i].x,fl[i].y,fl[i].r,0,Math.PI*2);sx.fillStyle="rgba(180,74,255,"+fl[i].o+")";sx.fill();sx.shadowColor="rgba(180,74,255,0.4)";sx.shadowBlur=8}requestAnimationFrame(sdw)}srs();window.addEventListener("resize",function(){srs();sinit()});sinit();sdw()}}catch(e){}
+})(_term)}
 </script>
 </body>
 </html>
