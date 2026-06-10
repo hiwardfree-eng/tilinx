@@ -14,6 +14,6 @@ services:
       - key: TilinX_WEB_PORT
         value: 8080
       - key: TilinX_BOT_TOKEN
-        value: "8602901015:AAHBUS9V21F7IB02HK7Dl50pJLJpcIxpWfw"
+        value: "8602901015:AAF6RWuaurtKU6jPK-rWD856YumQz8cBr40"
       - key: PYTHON_VERSION
         value: 3.11.0
