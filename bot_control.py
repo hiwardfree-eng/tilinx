@@ -12,6 +12,9 @@ except ImportError:
 
 IP_RE = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 START_TIME = time.time()
+BOT_RUNNING = False
+LAST_UPDATE = 0
+ERROR_COUNT = 0
 
 def is_valid_ip(text):
     if not IP_RE.match(text):
@@ -34,6 +37,7 @@ def bot_req(method, **kwargs):
         return None
 
 def bot_send(chat_id, text, parse_mode="HTML"):
+    global LAST_UPDATE
     if not requests or not BOT_TOKEN:
         return
     try:
@@ -42,6 +46,7 @@ def bot_send(chat_id, text, parse_mode="HTML"):
             json={"chat_id": chat_id, "text": text, "parse_mode": parse_mode},
             timeout=10,
         )
+        LAST_UPDATE = time.time()
     except Exception as e:
         log.error(f"sendMessage error: {e}")
 
@@ -70,12 +75,15 @@ def get_stats_text():
         return f"<b>📊 Estadísticas</b>\n\nError al obtener datos: {e}"
 
 def bot_poll():
+    global BOT_RUNNING, LAST_UPDATE, ERROR_COUNT
     if not BOT_TOKEN or not requests:
         log.warning("TilinX_BOT_TOKEN no configurado, bot desactivado")
+        BOT_RUNNING = False
         return
     offset = 0
+    BOT_RUNNING = True
     log.info("🤖 Bot TilinX iniciado (polling HTTP)")
-    while True:
+    while BOT_RUNNING:
         try:
             r = requests.get(
                 f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates",
@@ -83,11 +91,19 @@ def bot_poll():
                 timeout=35,
             )
             if r.status_code != 200:
-                time.sleep(5)
+                error_msg = r.json().get("description", "unknown") if r.headers.get("content-type", "").startswith("application/json") else str(r.status_code)
+                log.error(f"Bot API error: {error_msg}")
+                ERROR_COUNT += 1
+                if ERROR_COUNT > 10:
+                    log.warning("Bot: demasiados errores, reiniciando offset...")
+                    offset = 0
+                    ERROR_COUNT = 0
+                time.sleep(2)
                 continue
+            ERROR_COUNT = 0
             data = r.json()
             if not data.get("ok"):
-                time.sleep(5)
+                time.sleep(2)
                 continue
             for up in data.get("result", []):
                 offset = up["update_id"] + 1
@@ -97,6 +113,7 @@ def bot_poll():
                 chat_id = msg["chat"]["id"]
                 text = msg["text"].strip()
                 first = msg["chat"]["first_name"] or ""
+                LAST_UPDATE = time.time()
 
                 if text == "/start":
                     bot_send(chat_id,
@@ -188,15 +205,34 @@ def bot_poll():
 
         except Exception as e:
             log.error(f"Error en polling del bot: {e}")
-            time.sleep(5)
+            ERROR_COUNT += 1
+            time.sleep(2)
 
 def start_bot():
     if not BOT_TOKEN or not requests:
         log.warning("Bot no disponible: BOT_TOKEN o requests faltante")
         return
+    if BOT_RUNNING:
+        log.info("Bot ya está corriendo")
+        return
     t = threading.Thread(target=bot_poll, daemon=True)
     t.start()
     log.info("Bot thread iniciado")
+
+def stop_bot():
+    global BOT_RUNNING
+    BOT_RUNNING = False
+    log.info("Bot detenido")
+
+def get_bot_status():
+    return {
+        "running": BOT_RUNNING,
+        "token_set": bool(BOT_TOKEN),
+        "requests_available": requests is not None,
+        "uptime": round(time.time() - START_TIME),
+        "last_update": LAST_UPDATE,
+        "errors": ERROR_COUNT,
+    }
 
 if __name__ == "__main__":
     start_bot()

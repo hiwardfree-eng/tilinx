@@ -1,67 +1,145 @@
 // ─── TilinX Web - Main ────────────────────────────────
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", function() {
+  // ── Snow Canvas (PURPLE SNOW) ──────────────────────
+  var snowCanvas = document.getElementById("snow-canvas");
+  if (snowCanvas) {
+    var sx = snowCanvas.getContext("2d");
+    var sw, sh, flakes = [], snowAngle = 0;
 
-  // ── Canvas BG (from the original design) ────────────
-  const canvas = document.getElementById("bg-canvas");
+    function sresize() {
+      sw = snowCanvas.width = window.innerWidth;
+      sh = snowCanvas.height = window.innerHeight;
+    }
+    sresize();
+    window.addEventListener("resize", sresize);
+
+    for (var i = 0; i < 180; i++) {
+      flakes.push({
+        x: Math.random() * (sw || 1000),
+        y: Math.random() * (sh || 1000),
+        r: Math.random() * 3 + 1,
+        speed: Math.random() * 1.2 + 0.4,
+        wind: Math.random() * 0.4 - 0.2,
+        opacity: Math.random() * 0.6 + 0.2,
+      });
+    }
+
+    function drawSnow() {
+      sx.clearRect(0, 0, sw, sh);
+      snowAngle += 0.005;
+      for (var i = 0; i < flakes.length; i++) {
+        var f = flakes[i];
+        f.y += f.speed;
+        f.x += Math.sin(snowAngle + i) * 0.3 + f.wind;
+        if (f.y > sh) { f.y = -f.r; f.x = Math.random() * sw; }
+        if (f.x > sw + 5) f.x = -5;
+        if (f.x < -5) f.x = sw + 5;
+        sx.beginPath();
+        sx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        var purple = "rgba(180,80,255," + f.opacity + ")";
+        sx.fillStyle = purple;
+        sx.fill();
+        // glow
+        sx.beginPath();
+        sx.arc(f.x, f.y, f.r * 3, 0, Math.PI * 2);
+        sx.fillStyle = "rgba(180,80,255," + (f.opacity * 0.15) + ")";
+        sx.fill();
+      }
+      requestAnimationFrame(drawSnow);
+    }
+    drawSnow();
+  }
+
+  // ── Canvas BG (Enhanced Matrix + Particles) ────────
+  var canvas = document.getElementById("bg-canvas");
   if (canvas) {
-    const ctx = canvas.getContext("2d");
-    let w, h, particles = [];
+    var ctx = canvas.getContext("2d");
+    var w, h, particles = [];
+    var matrixCols = [];
+    var matrixChars = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモラリルレロ01";
 
     function resize() {
       w = canvas.width = window.innerWidth;
       h = canvas.height = window.innerHeight;
+      // Rebuild matrix columns
+      var colCount = Math.floor(w / 24);
+      while (matrixCols.length < colCount) matrixCols.push(Math.random() * -h);
+      matrixCols = matrixCols.slice(0, colCount);
     }
     resize();
     window.addEventListener("resize", resize);
 
-    for (let i = 0; i < 60; i++) {
+    // More particles (120 instead of 60)
+    for (var i = 0; i < 120; i++) {
       particles.push({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        r: Math.random() * 2 + 0.5,
+        x: Math.random() * (w || 1000),
+        y: Math.random() * (h || 1000),
+        vx: (Math.random() - 0.5) * 0.8,
+        vy: (Math.random() - 0.5) * 0.8,
+        r: Math.random() * 2.5 + 0.5,
+        hue: Math.random() * 60 + 260, // purple range: 260-320
       });
     }
 
-    function draw() {
+    function drawBg() {
       ctx.clearRect(0, 0, w, h);
-      particles.forEach(p => {
+
+      // Matrix rain columns
+      ctx.font = "14px monospace";
+      for (var c = 0; c < matrixCols.length; c++) {
+        var char = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+        ctx.fillStyle = "rgba(180,80,255,0.12)";
+        ctx.fillText(char, c * 24, matrixCols[c]);
+        ctx.fillStyle = "rgba(0,255,65,0.06)";
+        ctx.fillText(char, c * 24 + 2, matrixCols[c] + 2);
+        matrixCols[c] += 8 + Math.random() * 6;
+        if (matrixCols[c] > h && Math.random() > 0.98) matrixCols[c] = Math.random() * -100;
+      }
+
+      // Floating particles (purple)
+      for (var i = 0; i < particles.length; i++) {
+        var p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
         if (p.x < 0 || p.x > w) p.vx *= -1;
         if (p.y < 0 || p.y > h) p.vy *= -1;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(130,0,255,0.4)";
+        ctx.fillStyle = "rgba(180,80,255,0.5)";
         ctx.fill();
-      });
-      // lines
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 120) {
+        // inner glow
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 0.5, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(200,150,255,0.7)";
+        ctx.fill();
+      }
+
+      // Lines between particles (closer = stronger)
+      for (var i = 0; i < particles.length; i++) {
+        for (var j = i + 1; j < particles.length; j++) {
+          var dx = particles[i].x - particles[j].x;
+          var dy = particles[i].y - particles[j].y;
+          var dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 150) {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(130,0,255,${0.15 * (1 - dist / 120)})`;
+            var alpha = 0.12 * (1 - dist / 150);
+            ctx.strokeStyle = "rgba(180,80,255," + alpha + ")";
+            ctx.lineWidth = 0.8;
             ctx.stroke();
           }
         }
       }
-      requestAnimationFrame(draw);
+      requestAnimationFrame(drawBg);
     }
-    draw();
+    drawBg();
   }
 
   // ── Anti-devtools ──────────────────────────────────
-  // Disable right click
-  document.addEventListener("contextmenu", e => e.preventDefault());
+  document.addEventListener("contextmenu", function(e) { e.preventDefault(); });
 
-  // Detect devtools (basic)
   var devtoolsOpen = false;
   var devtoolsCount = 0;
   setInterval(function() {
@@ -79,30 +157,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }, 1000);
 
-  // Keyboard shortcuts
-  document.addEventListener("keydown", e => {
-    if (e.key === "F12" || (e.ctrlKey && e.shiftKey && ["I","C","J"].includes(e.key)) ||
-        (e.ctrlKey && e.key === "u")) {
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "F12" || (e.ctrlKey && e.shiftKey && ["I","C","J"].indexOf(e.key) !== -1) || (e.ctrlKey && e.key === "u")) {
       e.preventDefault();
     }
   });
 
   // ── Mobile Menu ────────────────────────────────────
-  const menuBtn = document.getElementById("menu-btn");
-  const navLinks = document.getElementById("nav-links");
+  var menuBtn = document.getElementById("menu-btn");
+  var navLinks = document.getElementById("nav-links");
   if (menuBtn && navLinks) {
-    menuBtn.addEventListener("click", () => navLinks.classList.toggle("open"));
+    menuBtn.addEventListener("click", function() { navLinks.classList.toggle("open"); });
   }
 
   // ── Active nav link ────────────────────────────────
   var path = window.location.pathname;
-  document.querySelectorAll(".nav-links a").forEach(function(a) {
+  var links = document.querySelectorAll(".nav-links a");
+  for (var li = 0; li < links.length; li++) {
+    var a = links[li];
     var href = a.getAttribute("href");
     if (href === path || (href !== "/" && path.indexOf(href) === 0)) a.classList.add("active");
-  });
+  }
 
   // ── Load Status ────────────────────────────────────
-  const statusEl = document.getElementById("live-status");
+  var statusEl = document.getElementById("live-status");
   if (statusEl) loadStatus();
 
   // ── Health Indicator ──────────────────────────────
@@ -117,39 +195,39 @@ document.addEventListener("DOMContentLoaded", () => {
   setInterval(loadHealth, 30000);
 
   // ── Login ──────────────────────────────────────────
-  const loginForm = document.getElementById("login-form");
+  var loginForm = document.getElementById("login-form");
   if (loginForm) {
-    loginForm.addEventListener("submit", async (e) => {
+    loginForm.addEventListener("submit", function(e) {
       e.preventDefault();
-      const pwd = document.getElementById("password").value;
-      const r = await fetch("/api/login", {
+      var pwd = document.getElementById("password").value;
+      fetch("/api/login", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({password: pwd}),
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        if (d.success) window.location.href = "/admin";
+        else document.getElementById("login-error").style.display = "block";
       });
-      const d = await r.json();
-      if (d.success) window.location.href = "/admin";
-      else document.getElementById("login-error").style.display = "block";
     });
   }
 
   // ── Contact Form ───────────────────────────────────
-  const contactForm = document.getElementById("contact-form");
+  var contactForm = document.getElementById("contact-form");
   if (contactForm) {
-    contactForm.addEventListener("submit", async (e) => {
+    contactForm.addEventListener("submit", function(e) {
       e.preventDefault();
-      const data = {
+      var data = {
         name: document.getElementById("cname").value,
         email: document.getElementById("cemail").value,
         message: document.getElementById("cmessage").value,
       };
-      const r = await fetch("/api/contact", {
+      fetch("/api/contact", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify(data),
+      }).then(function(r) { return r.json(); }).then(function(d) {
+        contactForm.innerHTML = "<div style=\"text-align:center;padding:30px;color:var(--accent);font-family:monospace;font-size:16px;\">✅ " + d.message + "</div>";
       });
-      const d = await r.json();
-      contactForm.innerHTML = `<div style="text-align:center;padding:30px;color:var(--accent);font-family:monospace;font-size:16px;">✅ ${d.message}</div>`;
     });
   }
 });

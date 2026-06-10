@@ -1,4 +1,4 @@
-import os, sys, time, json
+import os, sys, time, json, threading
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Flask, render_template, jsonify, request, redirect, session, url_for, send_from_directory
@@ -24,6 +24,23 @@ DASH_PASSWORD = os.environ.get("TilinX_DASH_PASSWORD", "hw132319")
 
 with app.app_context():
     init_db(app)
+
+bot_thread_started = False
+
+def ensure_bot():
+    global bot_thread_started
+    if bot_thread_started:
+        return
+    bot_thread_started = True
+    try:
+        from bot_control import start_bot
+        t = threading.Thread(target=start_bot, daemon=True)
+        t.start()
+        log.info("Bot iniciado desde app.py")
+    except Exception as e:
+        log.error(f"Error iniciando bot: {e}")
+
+ensure_bot()
 
 # ─── Auth ─────────────────────────────────────────────────
 def require_auth():
@@ -130,6 +147,16 @@ def api_terminal_stats():
         "users": len(psutil.users()),
         "processes": len(psutil.pids()),
     })
+
+@app.route("/api/bot-status")
+def api_bot_status():
+    try:
+        from bot_control import get_bot_status
+        s = get_bot_status()
+        s["token_preview"] = "****" + (s["token_set"] and "***" or "")
+        return jsonify(s)
+    except Exception as e:
+        return jsonify({"running": False, "error": str(e)})
 
 @app.route("/api/contact", methods=["POST"])
 def api_contact():
