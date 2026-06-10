@@ -2,3 +2,4 @@ flask
 flask-sqlalchemy
 psutil
 gunicorn
+python-telegram-bot

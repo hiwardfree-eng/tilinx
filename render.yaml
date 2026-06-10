@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r website/requirements.txt
-    startCommand: gunicorn website.wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: python bot_control.py & exec gunicorn website.wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     envVars:
       - key: TilinX_DASH_PASSWORD
         value: hw132319
@@ -13,5 +13,7 @@ services:
         generateValue: true
       - key: TilinX_WEB_PORT
         value: 8080
+      - key: TilinX_BOT_TOKEN
+        value: "8602901015:AAHBUS9V21F7IB02HK7Dl50pJLJpcIxpWfw"
       - key: PYTHON_VERSION
         value: 3.11.0
