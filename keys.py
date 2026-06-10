@@ -72,6 +72,34 @@ def list_keys() -> list:
         for k, v in sorted(keys.items(), key=lambda x: x[1].get("created_at", 0), reverse=True)
     ]
 
+def modify_key_duration(code: str, seconds: int) -> bool:
+    keys = _load()
+    code = code.upper()
+    if not code.startswith(PREFIX):
+        code = PREFIX + code
+    if code not in keys:
+        return False
+    keys[code]["duration"] = keys[code].get("duration", 0) + seconds
+    if keys[code]["duration"] < 0:
+        keys[code]["duration"] = 0
+    _save(keys)
+    log.info(f"Key duration modified: {code} ({seconds:+d}s, now {keys[code]['duration']}s)")
+    return True
+
+def refresh_key(code: str) -> bool:
+    keys = _load()
+    code = code.upper()
+    if not code.startswith(PREFIX):
+        code = PREFIX + code
+    if code not in keys:
+        return False
+    keys[code]["used"] = False
+    keys[code]["used_by_ip"] = None
+    keys[code]["used_at"] = None
+    _save(keys)
+    log.info(f"Key refreshed: {code}")
+    return True
+
 def delete_key(code: str) -> bool:
     keys = _load()
     code = code.upper()

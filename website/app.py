@@ -224,6 +224,30 @@ def api_create_key():
     log_event("key_created", f"Key {code} ({days}d) label={label}")
     return jsonify(success=True, code=code)
 
+@app.route("/api/keys/<code>/extend", methods=["POST"])
+def api_extend_key(code):
+    if not session.get("logged_in"):
+        return jsonify(success=False), 401
+    data = request.get_json() or {}
+    seconds = int(data.get("seconds", 3600))
+    from keys import modify_key_duration
+    ok = modify_key_duration(code, seconds)
+    if ok:
+        log_event("key_extended", f"Key {code} extended by {seconds}s")
+        return jsonify(success=True)
+    return jsonify(success=False), 404
+
+@app.route("/api/keys/<code>/refresh", methods=["POST"])
+def api_refresh_key(code):
+    if not session.get("logged_in"):
+        return jsonify(success=False), 401
+    from keys import refresh_key
+    ok = refresh_key(code)
+    if ok:
+        log_event("key_refreshed", f"Key {code} refreshed for reuse")
+        return jsonify(success=True)
+    return jsonify(success=False), 404
+
 @app.route("/api/keys/<code>", methods=["DELETE"])
 def api_delete_key(code):
     if not session.get("logged_in"):

@@ -284,7 +284,7 @@ select option{background:#0c0720}
       <div class="tbl-wrap">
         <table>
           <thead><tr>
-            <th>Label</th><th>Key</th><th>Estado</th><th>Expira</th><th>Usos</th><th></th>
+            <th>Label</th><th>Key</th><th>Estado</th><th>Expira</th><th>Usos</th><th style="width:110px"></th>
           </tr></thead>
           <tbody id="keys-tbody"></tbody>
         </table>
@@ -490,7 +490,11 @@ function renderKeys(){
       <td><span class="badge ${k.status==='active'?'active':'expired'}">${k.status==='active'?'Activa':'Expirada'}</span></td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#9888c8">${k.expires==='never'?'<span style="color:var(--muted)">∞ Sin límite</span>':k.expires}</td>
       <td class="td-uses">${k.uses}</td>
-      <td><button class="icon-btn del" title="Eliminar" onclick="deleteKey('${x(k.key)}')">✕</button></td>
+      <td style="white-space:nowrap">
+        <button class="icon-btn" title="Extender duración" onclick="extendKey('${x(k.key)}')">⏱</button>
+        ${k.uses>0?'<button class="icon-btn" title="Refrescar para reuso" onclick="refreshKey(\''+x(k.key)+'\')">↻</button>':''}
+        <button class="icon-btn del" title="Eliminar" onclick="deleteKey('${x(k.key)}')">✕</button>
+      </td>
     </tr>
   `).join('')
 }
@@ -529,6 +533,27 @@ async function deleteKey(code){
     const r=await fetch('/api/keys/'+encodeURIComponent(code),{method:'DELETE'})
     if(r.ok){await loadKeys();await loadActivity();toast('Key eliminada','error')}
     else toast('Error al eliminar','error')
+  }catch{toast('Error de conexión','error')}
+}
+
+async function extendKey(code){
+  const hours=prompt('Horas a agregar (negativo para restar, ej: -1):','1')
+  if(hours===null)return
+  const secs=parseInt(hours)*3600
+  if(isNaN(secs)||secs===0)return toast('Valor inválido','error')
+  try{
+    const r=await fetch('/api/keys/'+encodeURIComponent(code)+'/extend',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seconds:secs})})
+    if(r.ok){await loadKeys();await loadActivity();toast('Key extendida '+hours+'h','success')}
+    else toast('Error al extender','error')
+  }catch{toast('Error de conexión','error')}
+}
+
+async function refreshKey(code){
+  if(!confirm('¿Refrescar key '+code+'? Se podrá reutilizar con otra IP.'))return
+  try{
+    const r=await fetch('/api/keys/'+encodeURIComponent(code)+'/refresh',{method:'POST'})
+    if(r.ok){await loadKeys();await loadActivity();toast('Key refrescada','success')}
+    else toast('Error al refrescar','error')
   }catch{toast('Error de conexión','error')}
 }
 
