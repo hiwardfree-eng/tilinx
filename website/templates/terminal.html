@@ -595,13 +595,17 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 
   // ---- Input ----
   I.addEventListener("keydown",function(e){
-    if(e.key==="Enter"){
-      e.preventDefault();var v=I.value;I.value="";exec(v)
-    }else if(e.key==="ArrowUp"){
-      e.preventDefault();if(hi>0){hi--;I.value=h[hi]}
-    }else if(e.key==="ArrowDown"){
-      e.preventDefault();if(hi<h.length-1){hi++;I.value=h[hi]}else{hi=h.length;I.value=""}
-    }else if(e.key==="Tab"){
+    var k=e.key||""
+    if(k==="Enter"||e.keyCode===13){
+      e.preventDefault();var v=I.value;I.value="";exec(v);return
+    }
+    if(k==="ArrowUp"||e.keyCode===38){
+      e.preventDefault();if(hi>0){hi--;I.value=h[hi]};return
+    }
+    if(k==="ArrowDown"||e.keyCode===40){
+      e.preventDefault();if(hi<h.length-1){hi++;I.value=h[hi]}else{hi=h.length;I.value=""};return
+    }
+    if(k==="Tab"||e.keyCode===9){
       e.preventDefault()
       var cmds="help|clear|cls|history|whoami|date|neofetch|system|cpu|ram|gpu|disk|temp|temperature|network|internet|ping|services|monitor|status|logs|report|security|fps|optimizer|boost|turbo|ultra|sensitivity|crosshair|tracking|reaction|training|movement|aimtest|godmode|snow|matrix|color|uptime|exit|restart|shutdown|banner|calc|echo|sysinfo|hack|env".split("|")
       var pv=I.value.toLowerCase()
