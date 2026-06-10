@@ -105,20 +105,11 @@ def log_event(event, detail="", level="info"):
 
 @app.before_request
 def before_request():
-    # CSRF: validate origin for state-changing requests
+    # CSRF: warn-only for now (don't block legitimate clients)
     if CSRF_ENABLED and request.method in ("POST", "DELETE", "PUT", "PATCH") and not request.path.startswith("/api/login"):
         origin = request.headers.get("Origin", "")
-        referer = request.headers.get("Referer", "")
-        valid = False
-        if origin and (CORS_ORIGIN in origin or "tilinx.onrender.com" in origin):
-            valid = True
-        if referer and ("tilinx.onrender.com" in referer or "localhost" in referer or "127.0.0.1" in referer):
-            valid = True
-        if not origin and not referer:
-            valid = True
-        if not valid:
-            log.warning(f"CSRF blocked: {request.method} {request.path} from origin={origin}")
-            return jsonify(error="CSRF validation failed"), 403
+        if origin and "tilinx.onrender.com" not in origin and "localhost" not in origin:
+            log.warning(f"CSRF (warn): {request.method} {request.path} from origin={origin}")
 
     # Anti-scraper
     if _is_scraper():

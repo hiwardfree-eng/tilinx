@@ -52,7 +52,8 @@ def load() -> dict:
             raw = f.read().strip()
         if not raw:
             return {}
-        if ENCRYPT_DB:
+        # Auto-detect encrypted vs plain JSON
+        if ENCRYPT_DB or (raw and not raw.startswith("{")):
             raw = _decrypt_payload(raw)
         data = json.loads(raw)
         stored_hash = data.pop("_integrity", "")
