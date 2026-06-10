@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TilinX</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#060410;color:#ede9fe;font-family:'Inter',system-ui,sans-serif}
+canvas#matrix{position:fixed;inset:0;z-index:0;pointer-events:none}
+canvas#rays{position:fixed;inset:0;z-index:1;pointer-events:none}
+.splash{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(6,4,16,0.3);backdrop-filter:blur(2px)}
+.logo{font-family:'Cinzel Decorative',serif;font-size:4.5rem;font-weight:900;background:linear-gradient(135deg,#e9d5ff,#c084fc,#8b5cf6,#e879f9);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 4s ease infinite;letter-spacing:.06em;text-shadow:0 0 60px rgba(139,92,246,0.4);margin-bottom:8px;opacity:0;transform:scale(0.6);animation:fadeInScale 1.2s ease forwards}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes fadeInScale{0%{opacity:0;transform:scale(0.6)}100%{opacity:1;transform:scale(1)}}
+.tagline{font-size:.85rem;letter-spacing:.35em;text-transform:uppercase;color:rgba(196,181,253,0.5);font-weight:600;margin-bottom:50px;opacity:0;animation:fadeIn 1s ease forwards;animation-delay:0.4s}
+@keyframes fadeIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
+.load-wrap{width:400px;max-width:80vw;position:relative;opacity:0;animation:fadeIn 0.8s ease forwards;animation-delay:0.7s}
+.load-track{width:100%;height:4px;background:rgba(139,92,246,0.12);border-radius:99px;overflow:hidden;position:relative}
+.load-fill{height:100%;width:0%;border-radius:99px;background:linear-gradient(90deg,#7c3aed,#c084fc,#e879f9,#8b5cf6);background-size:300% 100%;animation:gradShift 2s linear infinite;transition:width 0.15s linear;position:relative}
+.load-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4),transparent);animation:shimmer 1.2s ease-in-out infinite}
+@keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.load-label{display:flex;justify-content:space-between;margin-top:12px;font-size:.68rem;font-family:'JetBrains Mono',monospace;color:rgba(196,181,253,0.35);letter-spacing:.04em}
+.load-pct{color:rgba(192,132,252,0.6)}
+.load-msg{font-size:.7rem;color:rgba(196,181,253,0.3);letter-spacing:.12em}
+.electric{position:absolute;top:-30px;left:0;width:100%;height:30px;pointer-events:none;opacity:0}
+.electric.active{opacity:1}
+.electric svg{width:100%;height:100%}
+.status-dots{display:flex;gap:8px;margin-top:28px;opacity:0;animation:fadeIn 0.6s ease forwards;animation-delay:1s}
+.dot{width:6px;height:6px;border-radius:50%;background:rgba(139,92,246,0.2);animation:dotPulse 1.5s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:0.3s}
+.dot:nth-child(3){animation-delay:0.6s}
+@keyframes dotPulse{0%,100%{background:rgba(139,92,246,0.2);transform:scale(1)}50%{background:rgba(192,132,252,0.7);transform:scale(1.4)}}
+.bottom-text{position:fixed;bottom:28px;left:0;width:100%;text-align:center;font-size:.6rem;color:rgba(139,92,246,0.15);font-family:'JetBrains Mono',monospace;letter-spacing:.2em;opacity:0;animation:fadeIn 1.2s ease forwards;animation-delay:2s}
+@media(max-width:600px){
+  .logo{font-size:2.8rem}
+  .tagline{font-size:.7rem;letter-spacing:.25em;margin-bottom:32px}
+  .load-wrap{width:85vw}
+}
+</style>
+</head>
+<body>
+<canvas id="matrix"></canvas>
+<canvas id="rays"></canvas>
+<div class="splash">
+  <div class="logo">tilinX</div>
+  <div class="tagline" id="tagline">Inicializando sistema</div>
+  <div class="load-wrap">
+    <div class="electric" id="electric">
+      <svg viewBox="0 0 400 30" preserveAspectRatio="none">
+        <polyline points="0,15 50,15 70,0 90,30 110,5 130,25 150,10 170,20 190,8 210,22 230,12 250,18 270,6 290,24 310,10 330,20 350,5 370,25 400,15" fill="none" stroke="rgba(192,132,252,0.6)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <animate attributeName="stroke-dashoffset" from="800" to="0" dur="0.6s" repeatCount="indefinite"/>
+          <animate attributeName="stroke-dasharray" values="400,400" dur="0.6s" repeatCount="indefinite"/>
+        </polyline>
+        <polyline points="0,15 40,15 60,2 80,28 100,8 120,22 140,12 160,18 180,5 200,25 220,10 240,20 260,7 280,23 300,12 320,18 340,3 360,27 400,15" fill="none" stroke="rgba(139,92,246,0.3)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" transform="translate(0,4)">
+          <animate attributeName="stroke-dashoffset" from="800" to="0" dur="0.8s" repeatCount="indefinite"/>
+        </polyline>
+      </svg>
+    </div>
+    <div class="load-track"><div class="load-fill" id="load-fill"></div></div>
+    <div class="load-label">
+      <span class="load-msg" id="load-msg">Conectando...</span>
+      <span class="load-pct" id="load-pct">0%</span>
+    </div>
+  </div>
+  <div class="status-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+</div>
+<div class="bottom-text">TILINX PROXY SYSTEM v10</div>
+<script>
+(function(){
+  var mc=document.getElementById("matrix"),mx=mc.getContext("2d");
+  var rc=document.getElementById("rays"),rx=rc.getContext("2d");
+  var lf=document.getElementById("load-fill"),lp=document.getElementById("load-pct"),lm=document.getElementById("load-msg");
+  var el=document.getElementById("electric");
+  var W,H,drops=[],pct=0;
+  var msgs=["Conectando...","Estabilizando enlace...","Cifrando conexion...","Cargando modulo proxy...","Sincronizando servidores...","Verificando seguridad...","Optimizando rendimiento...","Sistema listo"];
+  var rs=[];
+  function resize(){
+    W=mc.width=rc.width=innerWidth;
+    H=mc.height=rc.height=innerHeight;
+    var n=Math.ceil(W/20);
+    while(drops.length<n)drops.push(Math.random()*-H/20);
+    drops=drops.slice(0,n);
+  }
+  // Matrix purple rain
+  function drawMatrix(){
+    mx.fillStyle="rgba(6,4,16,0.045)";
+    mx.fillRect(0,0,W,H);
+    for(var i=0;i<drops.length;i++){
+      var ch=String.fromCharCode(0x30A0+Math.random()*96|0);
+      var bright=Math.random()>0.93;
+      if(bright){mx.fillStyle="rgba(230,210,255,"+(0.5+Math.random()*0.3)+")";mx.font="bold 14px JetBrains Mono,monospace"}
+      else{mx.fillStyle="rgba(139,92,246,"+(0.04+Math.random()*0.12)+")";mx.font="14px JetBrains Mono,monospace"}
+      mx.fillText(ch,i*20,drops[i]*20);
+      if(drops[i]*20>H&&Math.random()>0.975)drops[i]=0;
+      drops[i]+=0.25+Math.random()*0.3;
+    }
+  }
+  // Rays
+  function drawRays(){
+    rx.clearRect(0,0,W,H);
+    for(var i=0;i<rs.length;i++){
+      var r=rs[i];
+      r.x+=r.vx;r.y+=r.vy;
+      r.life--;
+      if(r.life<=0||r.y>H||r.x<0||r.x>W){rs.splice(i,1);i--;continue}
+      var grad=rx.createLinearGradient(r.x,r.y,r.x-r.vx*30,r.y-r.vy*30);
+      grad.addColorStop(0,"rgba(192,132,252,"+(r.o*(r.life/r.maxLife)*0.8)+")");
+      grad.addColorStop(1,"rgba(139,92,246,0)");
+      rx.strokeStyle=grad;
+      rx.lineWidth=r.w;
+      rx.shadowColor="rgba(192,132,252,"+(r.o*0.3)+")";
+      rx.shadowBlur=12;
+      rx.beginPath();
+      rx.moveTo(r.x,r.y);
+      rx.lineTo(r.x-r.vx*25,r.y-r.vy*25);
+      rx.stroke();
+      rx.shadowBlur=0;
+    }
+    if(Math.random()>0.92){
+      rs.push({
+        x:Math.random()*W,y:0,
+        vx:(Math.random()-0.5)*3,vy:4+Math.random()*6,
+        w:1+Math.random()*2.5,
+        o:0.3+Math.random()*0.5,
+        life:20+Math.random()*40,
+        maxLife:20+Math.random()*40
+      });
+    }
+  }
+  function anim(){
+    drawMatrix();
+    drawRays();
+    requestAnimationFrame(anim);
+  }
+  resize();
+  window.addEventListener("resize",resize);
+  anim();
+  // Loading bar
+  var it=setInterval(function(){
+    pct+=Math.random()*5+2;
+    if(pct>=100){pct=100;clearInterval(it)}
+    lf.style.width=pct+"%";
+    lp.textContent=Math.floor(pct)+"%";
+    lm.textContent=msgs[Math.min(Math.floor(msgs.length*(pct/100)),msgs.length-1)];
+    if(pct>30&&pct<70)el.classList.add("active");
+    else el.classList.remove("active");
+    if(pct>=100){
+      lm.textContent="Bienvenido";
+      setTimeout(function(){
+        document.querySelector(".splash").style.opacity="0";
+        document.querySelector(".splash").style.transition="opacity 0.8s ease";
+        setTimeout(function(){window.location.href="/home"},800);
+      },600);
+    }
+  },160);
+})();
+</script>
+</body>
+</html>

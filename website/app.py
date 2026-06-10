@@ -209,6 +209,10 @@ def handle_options():
 # ─── Public Routes ─────────────────────────────────────────
 @app.route("/")
 def index():
+    return render_template("splash.html")
+
+@app.route("/home")
+def home():
     return render_template("index.html")
 
 @app.route("/downloads")
