@@ -148,6 +148,20 @@ def api_terminal_stats():
         "processes": len(psutil.pids()),
     })
 
+@app.route("/tg-verify/<int:chat_id>/<token>")
+def tg_verify(chat_id, token):
+    try:
+        from bot_control import consume_verify_token
+        forwarded = request.headers.get("X-Forwarded-For", "")
+        ip = forwarded.split(",")[0].strip() if forwarded else request.remote_addr or "unknown"
+        result = consume_verify_token(token, ip)
+        if result:
+            html = f"""<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>TilinX - IP Verificada</title><style>body{{background:#000;color:#0f0;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:20px}} .box{{border:2px solid rgba(130,0,255,0.6);border-radius:16px;padding:40px;max-width:400px;background:rgba(0,0,0,0.8)}} h1{{color:#b44aff}} .ip{{font-size:24px;color:#00ff41;font-weight:700}} .ok{{color:#00ff41;font-size:48px}}</style></head><body><div class="box"><div class="ok">✅</div><h1>IP Verificada</h1><p style="color:rgba(180,80,255,0.7)">Tu IP:</p><p class="ip">{result["ip"]}</p><p style="color:rgba(180,80,255,0.5);margin-top:16px">Key <b>{result["code"]}</b> activada.<br>Ya podés cerrar esta página.</p></div></body></html>"""
+            return html, 200, {"Content-Type": "text/html; charset=utf-8"}
+        return "<html><body style='background:#000;color:#ff4444;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh'><div style='text-align:center'><h1>⏰ Token inválido o expirado</h1><p style='color:rgba(180,80,255,0.6)'>Solicitá uno nuevo con /redeem en el bot.</p></div></body></html>", 200, {"Content-Type": "text/html; charset=utf-8"}
+    except Exception as e:
+        return f"<html><body style='background:#000;color:#ff4444;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh'>Error: {e}</body></html>", 500, {"Content-Type": "text/html; charset=utf-8"}
+
 @app.route("/api/bot-status")
 def api_bot_status():
     try:

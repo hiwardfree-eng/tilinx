@@ -1,6 +1,6 @@
-import sys, os, re, time, json, threading
+import sys, os, re, time, json, threading, secrets
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from config import BOT_TOKEN
+from config import BOT_TOKEN, CHAT_IPS_PATH
 from logger import log
 from keys import redeem_key, list_keys
 from database import load as load_db
@@ -11,6 +11,69 @@ except ImportError:
     requests = None
 
 IP_RE = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+CHAT_IP_LOCK = threading.Lock()
+
+def get_chat_ip(chat_id):
+    if not os.path.exists(CHAT_IPS_PATH):
+        return None
+    try:
+        with open(CHAT_IPS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get(str(chat_id))
+    except:
+        return None
+
+def set_chat_ip(chat_id, ip):
+    with CHAT_IP_LOCK:
+        data = {}
+        if os.path.exists(CHAT_IPS_PATH):
+            try:
+                with open(CHAT_IPS_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            except:
+                data = {}
+        data[str(chat_id)] = ip
+        with open(CHAT_IPS_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+
+def generate_verify_token(chat_id, code):
+    token = secrets.token_hex(8)
+    verify_path = CHAT_IPS_PATH.replace(".json", "_pending.json")
+    data = {}
+    if os.path.exists(verify_path):
+        try:
+            with open(verify_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+    data[token] = {"chat_id": chat_id, "code": code, "time": time.time()}
+    with open(verify_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    return token
+
+def consume_verify_token(token, ip):
+    verify_path = CHAT_IPS_PATH.replace(".json", "_pending.json")
+    if not os.path.exists(verify_path):
+        return None
+    try:
+        with open(verify_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return None
+    entry = data.pop(token, None)
+    if not entry:
+        return None
+    if time.time() - entry["time"] > 300:
+        with open(verify_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        return None
+    with open(verify_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2)
+    chat_id = entry["chat_id"]
+    code = entry["code"]
+    set_chat_ip(chat_id, ip)
+    result = redeem_key(code, ip)
+    return {"chat_id": chat_id, "code": code, "ip": ip, "result": result}
 START_TIME = time.time()
 BOT_RUNNING = False
 LAST_UPDATE = 0
@@ -170,32 +233,64 @@ def bot_poll():
 
                 elif text.startswith("/redeem"):
                     parts = text.split()
-                    if len(parts) < 3:
+                    code = parts[1] if len(parts) > 1 else ""
+                    if not code:
                         bot_send(chat_id,
                             "⚠️ <b>Uso incorrecto</b>\n\n"
-                            "<code>/redeem KEY IP</code>\n\n"
+                            "<code>/redeem KEY</code> (IP automática)\n"
+                            "<code>/redeem KEY IP</code> (IP manual)\n\n"
                             "Ejemplo:\n"
-                            "<code>/redeem TILINX-ABC123 192.168.1.100</code>"
+                            "<code>/redeem TILINX-ABC123</code>"
                         )
                         continue
-                    code = parts[1]
-                    ip = parts[2]
-                    if not is_valid_ip(ip):
-                        bot_send(chat_id, "⚠️ Dirección IP inválida.\nEjemplo: 192.168.1.100")
-                        continue
-                    result = redeem_key(code, ip)
-                    msgs = {
-                        "OK": (
-                            f"✅ <b>IP Activada!</b>\n\n"
-                            f"🌐 IP: <code>{ip}</code>\n"
-                            f"🔑 Key: <code>{code}</code>\n\n"
-                            f"Tu proxy está listo. Disfruta."
-                        ),
-                        "INVALID": "❌ Key inválida. Verifica el código e intenta de nuevo.",
-                        "ALREADY_USED": "⏳ Esta key ya fue usada anteriormente.",
-                    }
-                    bot_send(chat_id, msgs.get(result, "❌ Error al procesar la key."))
-                    log.info(f"Redeem: {code} -> {ip} = {result}")
+                    if len(parts) >= 3:
+                        ip = parts[2]
+                        if not is_valid_ip(ip):
+                            bot_send(chat_id, "⚠️ Dirección IP inválida.\nEjemplo: 192.168.1.100")
+                            continue
+                        set_chat_ip(chat_id, ip)
+                        result = redeem_key(code, ip)
+                        msgs = {
+                            "OK": (
+                                f"✅ <b>IP Activada!</b>\n\n"
+                                f"🌐 IP: <code>{ip}</code> (guardada)\n"
+                                f"🔑 Key: <code>{code}</code>\n\n"
+                                f"Tu proxy está listo. Disfruta."
+                            ),
+                            "INVALID": "❌ Key inválida. Verifica el código e intenta de nuevo.",
+                            "ALREADY_USED": "⏳ Esta key ya fue usada anteriormente.",
+                        }
+                        bot_send(chat_id, msgs.get(result, "❌ Error al procesar la key."))
+                        log.info(f"Redeem: {code} -> {ip} = {result}")
+                    else:
+                        stored_ip = get_chat_ip(chat_id)
+                        if stored_ip:
+                            result = redeem_key(code, stored_ip)
+                            if result == "OK":
+                                bot_send(chat_id,
+                                    f"✅ <b>IP Automática!</b>\n\n"
+                                    f"🌐 IP detectada: <code>{stored_ip}</code>\n"
+                                    f"🔑 Key: <code>{code}</code>\n\n"
+                                    f"Tu proxy está listo. Disfruta."
+                                )
+                                log.info(f"Redeem (auto): {code} -> {stored_ip} = OK (chat {chat_id})")
+                            else:
+                                msgs = {
+                                    "INVALID": "❌ Key inválida. Verifica el código e intenta de nuevo.",
+                                    "ALREADY_USED": "⏳ Esta key ya fue usada anteriormente.",
+                                }
+                                bot_send(chat_id, msgs.get(result, "❌ Error al procesar la key."))
+                        else:
+                            token = generate_verify_token(chat_id, code)
+                            verify_url = f"https://tilinx.onrender.com/tg-verify/{chat_id}/{token}"
+                            bot_send(chat_id,
+                                f"🔗 <b>Verificá tu IP</b>\n\n"
+                                f"Hacé clic en el enlace para detectar tu IP automáticamente:\n"
+                                f"{verify_url}\n\n"
+                                f"⏱ Válido por 5 minutos\n\n"
+                                f"O usá:\n"
+                                f"<code>/redeem {parts[1]} TU_IP</code>"
+                            )
 
                 elif text.startswith("/"):
                     bot_send(chat_id,

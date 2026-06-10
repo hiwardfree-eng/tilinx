@@ -8,6 +8,7 @@ ADMIN_ID = int(os.environ.get("TilinX_ADMIN_ID", "0"))
 BASE_DIR = os.environ.get("TilinX_BASE_DIR", os.path.dirname(os.path.abspath(__file__)))
 DB_PATH = os.environ.get("TilinX_DB_PATH", os.path.join(BASE_DIR, "ips.json"))
 KEYS_PATH = os.environ.get("TilinX_KEYS_PATH", os.path.join(BASE_DIR, "keys.json"))
+CHAT_IPS_PATH = os.path.join(BASE_DIR, "chat_ips.json")
 DATA_DIR = os.environ.get("TilinX_DATA_DIR", os.path.join(BASE_DIR, "data", "TilinX"))
 LOG_DIR = os.environ.get("TilinX_LOG_DIR", os.path.join(BASE_DIR, "logs"))
 
