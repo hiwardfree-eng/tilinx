@@ -23,10 +23,11 @@ def _save(data: dict):
         except Exception as e:
             log.error(f"Error saving keys: {e}")
 
-def generate_key(duration: int) -> str:
+def generate_key(duration: int, label: str = "") -> str:
     keys = _load()
     code = PREFIX + secrets.token_hex(6).upper()
     keys[code] = {
+        "label": label,
         "duration": duration,
         "created_at": time.time(),
         "used": False,
@@ -34,7 +35,7 @@ def generate_key(duration: int) -> str:
         "used_at": None,
     }
     _save(keys)
-    log.info(f"Key generated: {code} ({duration}s)")
+    log.info(f"Key generated: {code} ({duration}s) label={label}")
     return code
 
 def redeem_key(code: str, ip: str) -> str:

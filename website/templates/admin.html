@@ -1,56 +1,465 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TilinX - Admin</title>
-<meta name="robots" content="noindex,nofollow">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/assets/css/style.css">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TilinX — Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
-.admin-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; margin-bottom:24px; }
-.nav-admin { display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; align-items:center; }
-.nav-admin a { color:rgba(180,80,255,0.7); text-decoration:none; padding:8px 16px; border-radius:8px; border:2px solid rgba(130,0,255,0.4); font-size:12px; font-family:monospace; letter-spacing:1px; transition:all .3s; }
-.nav-admin a:hover { border-color:var(--accent); color:var(--accent); }
-#logout-btn { margin-left:auto; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#8b5cf6;--purple-lt:#c084fc;--purple-glow:rgba(139,92,246,0.35);
+  --pink:#e879f9;--blue:#60a5fa;--green:#34d399;--red:#f87171;--amber:#fbbf24;
+  --bg:#060410;--surface:rgba(16,10,35,0.95);--surface2:rgba(22,14,46,0.9);
+  --border:rgba(139,92,246,0.22);--border-lt:rgba(139,92,246,0.1);
+  --text:#ede9fe;--muted:rgba(196,181,253,0.5);
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif}
+#matrix{position:fixed;inset:0;z-index:0;pointer-events:none}
+.page{position:fixed;inset:0;z-index:10;display:none}
+.page.active{display:flex}
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(139,92,246,0.3);border-radius:99px}
+#pg-panel{flex-direction:row}
+.sidebar{width:230px;flex-shrink:0;background:rgba(8,4,20,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0 10px;backdrop-filter:blur(20px)}
+.sb-brand{display:flex;align-items:center;gap:11px;padding:22px 12px 18px}
+.sb-brand .bolt{width:36px;height:36px;background:linear-gradient(135deg,#7c3aed,#c084fc);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 0 16px rgba(139,92,246,0.45)}
+.sb-brand .name{font-family:'Cinzel Decorative',serif;font-size:1.05rem;font-weight:900;background:linear-gradient(135deg,#e9d5ff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.05em}
+.sb-brand .sub{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);-webkit-text-fill-color:rgba(196,181,253,0.5);margin-top:1px}
+.sb-divider{height:1px;background:var(--border-lt);margin:6px 0 10px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:11px;cursor:pointer;font-size:.87rem;font-weight:500;color:rgba(196,181,253,0.55);transition:background .13s,color .13s;user-select:none;margin-bottom:3px}
+.nav-item:hover{background:rgba(139,92,246,0.12);color:#ddd4ff}
+.nav-item.active{background:linear-gradient(135deg,rgba(139,92,246,0.28),rgba(192,132,252,0.1));color:#e9d5ff;font-weight:700;box-shadow:inset 2px 0 0 var(--purple)}
+.nav-icon{width:17px;height:17px;flex-shrink:0;opacity:.85}
+.nav-badge{margin-left:auto;background:var(--purple);color:#fff;font-size:.65rem;border-radius:99px;padding:2px 8px;font-weight:700}
+.sb-spacer{flex:1}
+.sb-user{border-top:1px solid var(--border-lt);padding:14px 12px;display:flex;align-items:center;gap:10px}
+.sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#c084fc);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:#fff;flex-shrink:0}
+.sb-uname{font-size:.84rem;font-weight:700;color:#d8d0f0}
+.sb-role{font-size:.68rem;color:var(--muted)}
+.btn-logout{margin-left:auto;background:none;border:none;color:rgba(240,160,160,0.4);cursor:pointer;padding:4px;border-radius:6px;transition:color .13s}
+.btn-logout:hover{color:#f87171}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;background:radial-gradient(ellipse 70% 50% at 60% 20%,rgba(139,92,246,0.05) 0%,transparent 60%)}
+.topbar{padding:11px 30px;border-bottom:1px solid var(--border-lt);font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(196,181,253,0.35);font-weight:700;flex-shrink:0;background:rgba(6,4,16,0.6)}
+.view{display:none;flex:1;flex-direction:column;overflow-y:auto;padding:0 0 32px}
+.view.show{display:flex}
+.view-header{padding:28px 30px 0;flex-shrink:0}
+.view-title{font-family:'Cinzel Decorative',serif;font-size:1.9rem;font-weight:900;letter-spacing:.02em;background:linear-gradient(135deg,#f3e8ff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.view-sub{font-size:.82rem;color:var(--muted);margin-top:5px}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;padding:22px 30px 0}
+.stat-card{background:rgba(14,8,32,0.8);border:1px solid var(--border);border-radius:16px;padding:20px 22px;position:relative;overflow:hidden;backdrop-filter:blur(10px);transition:border-color .2s,transform .15s}
+.stat-card:hover{border-color:rgba(139,92,246,0.45);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(139,92,246,0.04),transparent 60%);pointer-events:none}
+.stat-card.accent{border-color:rgba(139,92,246,0.4)}
+.stat-card.accent::before{background:linear-gradient(135deg,rgba(139,92,246,0.12),transparent 60%)}
+.stat-label{font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.stat-label.purple{color:var(--purple-lt)}
+.stat-value{font-size:2.4rem;font-weight:800;color:#f3e8ff;line-height:1;font-variant-numeric:tabular-nums}
+.stat-value.purple{color:var(--purple-lt)}
+.stat-icon{font-size:1.2rem;opacity:.6}
+.stat-trend{font-size:.72rem;margin-top:8px;color:var(--muted)}
+.stat-trend.up{color:#34d399}
+.section-title{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:24px 30px 12px}
+.activity-list{padding:0 30px;display:flex;flex-direction:column;gap:8px}
+.activity-item{background:rgba(14,8,32,0.6);border:1px solid var(--border-lt);border-radius:12px;padding:13px 16px;display:flex;align-items:center;gap:14px;font-size:.83rem}
+.activity-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.activity-dot.green{background:#34d399;box-shadow:0 0 8px rgba(52,211,153,0.5)}
+.activity-dot.purple{background:var(--purple-lt);box-shadow:0 0 8px rgba(192,132,252,0.5)}
+.activity-dot.amber{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,0.5)}
+.activity-dot.red{background:#f87171;box-shadow:0 0 8px rgba(248,113,113,0.5)}
+.activity-text{flex:1;color:#d8d0f0}
+.activity-time{color:var(--muted);font-size:.75rem;white-space:nowrap}
+.toolbar{display:flex;align-items:center;gap:10px;padding:18px 30px;flex-shrink:0;flex-wrap:wrap}
+.btn-primary{display:flex;align-items:center;gap:7px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;border:none;border-radius:10px;padding:10px 20px;font-size:.85rem;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;white-space:nowrap;box-shadow:0 2px 18px rgba(124,58,237,0.35);transition:opacity .15s,transform .12s}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.search-box{flex:1;max-width:280px;background:rgba(12,7,28,0.8);border:1px solid var(--border);border-radius:10px;padding:10px 15px;color:var(--text);font-size:.84rem;font-family:'Inter',sans-serif;outline:none;transition:border-color .15s}
+.search-box::placeholder{color:rgba(140,120,200,0.3)}
+.search-box:focus{border-color:rgba(139,92,246,0.5)}
+.filter-btn{background:rgba(12,7,28,0.8);border:1px solid var(--border);border-radius:10px;padding:10px 15px;color:var(--muted);font-size:.84rem;font-family:'Inter',sans-serif;cursor:pointer;transition:border-color .15s,color .15s}
+.filter-btn:hover{border-color:rgba(139,92,246,0.5);color:#c0b0e0}
+.tbl-wrap{flex:1;overflow-y:auto;padding:0 30px 28px}
+table{width:100%;border-collapse:collapse}
+thead tr{border-bottom:1px solid rgba(139,92,246,0.15)}
+th{text-align:left;padding:10px 14px;font-size:.65rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(196,181,253,0.4);font-weight:700}
+tbody tr{border-bottom:1px solid rgba(80,50,140,0.08);transition:background .12s}
+tbody tr:hover{background:rgba(100,60,180,0.07)}
+td{padding:15px 14px;font-size:.86rem;color:#c8c0e4;vertical-align:middle}
+.td-label{font-weight:700;color:#ede9fe;font-size:.9rem}
+.td-key{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#9888c8;display:flex;align-items:center;gap:8px}
+.icon-btn{background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:5px;font-size:.8rem;color:rgba(160,130,220,0.35);transition:color .12s,background .12s}
+.icon-btn:hover{color:#a880f0;background:rgba(139,92,246,0.1)}
+.icon-btn.del:hover{color:#f87171;background:rgba(239,68,68,0.1)}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 11px;border-radius:99px;font-size:.67rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%}
+.badge.active{background:rgba(52,211,153,0.1);color:#34d399;border:1px solid rgba(52,211,153,0.22)}
+.badge.active::before{background:#34d399}
+.badge.expired{background:rgba(192,132,252,0.1);color:#c084fc;border:1px solid rgba(192,132,252,0.2)}
+.badge.expired::before{background:#c084fc}
+.td-uses{color:rgba(196,181,253,0.45);font-size:.82rem}
+.empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:.88rem}
+.ip-badge{display:inline-block;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.3);color:var(--purple-lt);font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:600;padding:4px 10px;border-radius:7px;letter-spacing:.02em}
+.td-user{display:flex;align-items:center;gap:9px;font-weight:600;color:#ede9fe}
+.user-dot{width:28px;height:28px;border-radius:50%;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.25);display:flex;align-items:center;justify-content:center;font-size:.7rem;color:var(--purple-lt);font-weight:700}
+.overlay{position:fixed;inset:0;background:rgba(4,2,12,0.75);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:rgba(12,7,28,0.97);border:1px solid rgba(139,92,246,0.35);border-radius:20px;padding:32px;width:430px;max-width:94vw;transform:translateY(14px);transition:transform .2s;box-shadow:0 0 50px rgba(139,92,246,0.15),0 32px 80px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.04)}
+.overlay.open .modal{transform:translateY(0)}
+.modal h2{font-family:'Cinzel Decorative',serif;font-size:1.1rem;font-weight:700;color:#ede9fe;margin-bottom:4px;background:linear-gradient(135deg,#f3e8ff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.modal p{font-size:.8rem;color:var(--muted);margin-bottom:22px}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+.btn-ghost{background:rgba(20,12,42,0.9);border:1px solid var(--border);border-radius:10px;padding:10px 18px;color:var(--muted);font-size:.84rem;font-family:'Inter',sans-serif;cursor:pointer;transition:border-color .15s}
+.btn-ghost:hover{border-color:rgba(139,92,246,0.5);color:#c0b0e0}
+select{width:100%;background:rgba(8,4,20,0.9);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:13px 16px;font-size:.9rem;font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:border-color .15s}
+select:focus{border-color:var(--purple)}
+select option{background:#0c0720}
+.toast{position:fixed;bottom:24px;right:24px;z-index:500;padding:12px 20px;border-radius:12px;font-size:.84rem;font-weight:600;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s;pointer-events:none}
+.toast.success{background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399}
+.toast.error{background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.3);color:#f87171}
+.toast.show{opacity:1;transform:translateY(0)}
 </style>
 </head>
 <body>
+<canvas id="matrix"></canvas>
 
-<canvas id="bg-canvas"></canvas>
+<div id="pg-panel" class="page active">
 
-<nav>
-  <a href="/" class="nav-logo">⚡ TILINX</a>
-  <div class="nav-right"></div>
-</nav>
+  <aside class="sidebar">
+    <a href="/" style="text-decoration:none">
+      <div class="sb-brand">
+        <div class="bolt">⚡</div>
+        <div>
+          <div class="name">tilinX</div>
+          <div class="sub">Command Center</div>
+        </div>
+      </div>
+    </a>
+    <div class="sb-divider"></div>
+    <div class="nav-item active" id="nav-dash" onclick="showView('dash')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" id="nav-keys" onclick="showView('keys')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M12 11l9-9"/><path d="M17 6l2 2"/></svg>
+      Access Keys
+      <span class="nav-badge" id="nav-badge">0</span>
+    </div>
+    <div class="nav-item" id="nav-ip" onclick="showView('ip')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      IP Monitor
+    </div>
+    <div class="sb-spacer"></div>
+    <div class="sb-user">
+      <div class="sb-avatar">A</div>
+      <div>
+        <div class="sb-uname">Admin</div>
+        <div class="sb-role">Administrador</div>
+      </div>
+      <button class="btn-logout" title="Cerrar sesión" onclick="doLogout()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
+  </aside>
 
-<div style="padding:100px 20px 30px;max-width:1100px;margin:0 auto;position:relative;z-index:1">
+  <main class="main">
+    <div class="topbar" id="breadcrumb">TILINX / DASHBOARD</div>
 
-  <div class="nav-admin">
-    <a href="/">← SITE</a>
-    <a href="#" style="border-color:var(--accent);color:var(--accent)">📊 DASHBOARD</a>
-    <button class="btn btn-sm btn-outline" id="logout-btn">LOGOUT</button>
-  </div>
+    <div class="view show" id="view-dash">
+      <div class="view-header">
+        <div class="view-title">System Status</div>
+        <div class="view-sub">Real-time overview of proxy infrastructure.</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Keys <span class="stat-icon">🔑</span></div>
+          <div class="stat-value" id="s-total">—</div>
+          <div class="stat-trend">Todas las claves registradas</div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-label purple">Active Keys <span class="stat-icon">🛡</span></div>
+          <div class="stat-value purple" id="s-active">—</div>
+          <div class="stat-trend up">↑ Operativas ahora</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Expired Keys <span class="stat-icon">⏱</span></div>
+          <div class="stat-value" id="s-expired" style="color:#c084fc">—</div>
+          <div class="stat-trend">Requieren renovación</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Used / Total <span class="stat-icon">📊</span></div>
+          <div class="stat-value" id="s-uses" style="color:#60a5fa">—</div>
+          <div class="stat-trend up">↑ Keys canjeadas</div>
+        </div>
+      </div>
+      <div class="section-title">Actividad reciente</div>
+      <div class="activity-list" id="activity-list">
+        <div class="activity-item"><span class="activity-dot green"></span><span class="activity-text">Cargando...</span><span class="activity-time"></span></div>
+      </div>
+    </div>
 
-  <div class="admin-grid">
-    <div class="stat-card"><div class="num" id="admin-cpu">—</div><div class="lbl">CPU</div></div>
-    <div class="stat-card"><div class="num" id="admin-ram">—</div><div class="lbl">RAM</div></div>
-    <div class="stat-card"><div class="num" id="admin-disk">—</div><div class="lbl">DISK</div></div>
-    <div class="stat-card"><div class="num" id="admin-uptime">—</div><div class="lbl">UPTIME</div></div>
-  </div>
+    <div class="view" id="view-keys">
+      <div class="view-header">
+        <div class="view-title">Access Keys</div>
+        <div class="view-sub">Manage proxy authentication tokens.</div>
+      </div>
+      <div class="toolbar">
+        <button class="btn-primary" onclick="openModal()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Generar Key
+        </button>
+        <input class="search-box" id="search-keys" type="text" placeholder="Buscar label o key…" oninput="renderKeys()"/>
+        <button class="filter-btn" id="filter-btn" onclick="toggleFilter()">▽ Filtrar</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Label</th><th>Key</th><th>Estado</th><th>Expira</th><th>Usos</th><th></th>
+          </tr></thead>
+          <tbody id="keys-tbody"></tbody>
+        </table>
+      </div>
+    </div>
 
-  <h3 style="font-family:monospace;font-size:16px;color:rgba(180,80,255,0.9);margin-bottom:12px">📋 ACTIVITY</h3>
-  <div class="table-wrap">
-    <table>
-      <thead><tr><th>LEVEL</th><th>EVENT</th><th>DETAIL</th><th>TIME</th></tr></thead>
-      <tbody id="logs-body"><tr><td colspan="4" style="text-align:center;color:rgba(180,80,255,0.5)">LOADING...</td></tr></tbody>
-    </table>
+    <div class="view" id="view-ip">
+      <div class="view-header">
+        <div class="view-title">IP Monitor</div>
+        <div class="view-sub">Audit log of proxy connections.</div>
+      </div>
+      <div class="toolbar">
+        <input class="search-box" id="search-ip" type="text" placeholder="Buscar IP, usuario o key…" oninput="renderIP()"/>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Usuario</th><th>IP Address</th><th>Key Usada</th><th>Fecha acceso</th><th>Estado</th>
+          </tr></thead>
+          <tbody id="ip-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="overlay" id="modal-overlay" onclick="bgClose(event)">
+  <div class="modal">
+    <h2>Nueva Access Key</h2>
+    <p>La key se genera automáticamente. Elige un label y duración.</p>
+    <div class="field">
+      <label>Label</label>
+      <input type="text" id="m-label" placeholder="Ej: Bot, Producción, Test…"/>
+    </div>
+    <div class="field" style="margin-top:16px">
+      <label>Duración</label>
+      <select id="m-duration">
+        <option value="30">30 días</option>
+        <option value="60">60 días</option>
+        <option value="90">90 días</option>
+        <option value="180">180 días</option>
+        <option value="365">1 año</option>
+        <option value="0">Sin expiración</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="generateKey()">Generar</button>
+    </div>
   </div>
 </div>
 
-<script src="/assets/js/main.js"></script>
-<script src="/assets/js/dashboard.js"></script>
+<div class="toast" id="toast"></div>
+
+<script>
+const VIEWS={dash:'Dashboard',keys:'Access Keys',ip:'IP Monitor'}
+let keys=[],ipLog=[],filterOn=false
+
+function showView(id){
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'))
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('show'))
+  document.getElementById('nav-'+id).classList.add('active')
+  document.getElementById('view-'+id).classList.add('show')
+  document.getElementById('breadcrumb').textContent='TILINX / '+VIEWS[id].toUpperCase()
+}
+
+function doLogout(){
+  fetch('/api/logout',{method:'POST'}).then(()=>window.location.href='/login')
+}
+
+async function loadKeys(){
+  try{
+    const r=await fetch('/api/keys');keys=await r.json()
+    renderKeys();updateStats()
+  }catch{}
+}
+
+async function loadIPs(){
+  try{
+    const r=await fetch('/api/ips');ipLog=await r.json()
+    renderIP()
+  }catch{}
+}
+
+async function loadActivity(){
+  try{
+    const r=await fetch('/api/logs?limit=10');const logs=await r.json()
+    const el=document.getElementById('activity-list')
+    if(!logs.length){
+      el.innerHTML='<div class="activity-item"><span class="activity-dot green"></span><span class="activity-text">Sin actividad registrada.</span><span class="activity-time"></span></div>'
+      return
+    }
+    const dots={info:'green',warn:'amber',error:'red',success:'green',key_created:'purple',key_deleted:'red',admin_login:'purple',login_failed:'red'}
+    el.innerHTML=logs.map(l=>{
+      const dot=dots[l.level]||dots[l.event]||'green'
+      return `<div class="activity-item"><span class="activity-dot ${dot}"></span><span class="activity-text">${x(l.event)} — ${x(l.detail||'')}</span><span class="activity-time">${fmtTime(l.time)}</span></div>`
+    }).join('')
+  }catch{}
+}
+
+async function loadStats(){
+  try{
+    const r=await fetch('/api/status');const d=await r.json()
+    document.getElementById('s-uptime').textContent=fmtUptime(d.uptime)
+  }catch{}
+}
+
+function updateStats(){
+  const total=keys.length
+  const active=keys.filter(k=>k.status==='active').length
+  const expired=keys.filter(k=>k.status==='expired').length
+  const used=keys.filter(k=>k.uses>0).length
+  document.getElementById('s-total').textContent=total
+  document.getElementById('s-active').textContent=active
+  document.getElementById('s-expired').textContent=expired
+  document.getElementById('s-uses').textContent=used+' / '+total
+  document.getElementById('nav-badge').textContent=total
+}
+
+function renderKeys(){
+  const q=document.getElementById('search-keys').value.toLowerCase()
+  let data=filterOn?keys.filter(k=>k.status==='active'):[...keys]
+  if(q)data=data.filter(k=>k.label.toLowerCase().includes(q)||k.key.toLowerCase().includes(q))
+  const tb=document.getElementById('keys-tbody')
+  if(!data.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">No se encontraron keys.</div></td></tr>';return}
+  tb.innerHTML=data.map(k=>`
+    <tr>
+      <td class="td-label">${x(k.label)}</td>
+      <td><div class="td-key">${x(k.key)}<button class="icon-btn" title="Copiar" onclick="copyKey('${x(k.key)}')">⧉</button></div></td>
+      <td><span class="badge ${k.status==='active'?'active':'expired'}">${k.status==='active'?'Activa':'Expirada'}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.78rem;color:#9888c8">${k.expires==='never'?'<span style="color:var(--muted)">∞ Sin límite</span>':k.expires}</td>
+      <td class="td-uses">${k.uses}</td>
+      <td><button class="icon-btn del" title="Eliminar" onclick="deleteKey('${x(k.key)}')">✕</button></td>
+    </tr>
+  `).join('')
+}
+
+function toggleFilter(){
+  filterOn=!filterOn
+  const b=document.getElementById('filter-btn')
+  b.style.borderColor=filterOn?'var(--purple)':'';b.style.color=filterOn?'#c0b0e0':''
+  b.textContent=filterOn?'▲ Todas':'▽ Filtrar'
+  renderKeys()
+}
+
+function openModal(){document.getElementById('modal-overlay').classList.add('open');setTimeout(()=>document.getElementById('m-label').focus(),100)}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');document.getElementById('m-label').value='';document.getElementById('m-duration').value='30'}
+function bgClose(e){if(e.target===document.getElementById('modal-overlay'))closeModal()}
+
+async function generateKey(){
+  const label=document.getElementById('m-label').value.trim()
+  if(!label){
+    const inp=document.getElementById('m-label')
+    inp.style.borderColor='#ef4444';inp.focus();setTimeout(()=>inp.style.borderColor='',1500);return
+  }
+  const days=parseInt(document.getElementById('m-duration').value)
+  try{
+    const r=await fetch('/api/keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label,duration:days})})
+    if(r.ok){
+      closeModal();await loadKeys();await loadActivity()
+      toast('Key "'+label+'" creada exitosamente','success')
+    }else toast('Error al crear key','error')
+  }catch{toast('Error de conexión','error')}
+}
+
+async function deleteKey(code){
+  if(!confirm('¿Eliminar key '+code+'?'))return
+  try{
+    const r=await fetch('/api/keys/'+encodeURIComponent(code),{method:'DELETE'})
+    if(r.ok){await loadKeys();await loadActivity();toast('Key eliminada','error')}
+    else toast('Error al eliminar','error')
+  }catch{toast('Error de conexión','error')}
+}
+
+function copyKey(k){
+  navigator.clipboard.writeText(k).catch(()=>{})
+  toast('Key copiada','success')
+}
+
+function renderIP(){
+  const q=document.getElementById('search-ip').value.toLowerCase()
+  let data=q?ipLog.filter(r=>r.ip.includes(q)||r.key.toLowerCase().includes(q)||r.user.toLowerCase().includes(q)):[...ipLog]
+  const tb=document.getElementById('ip-tbody')
+  if(!data.length){tb.innerHTML='<tr><td colspan="5"><div class="empty">Sin registros.</div></td></tr>';return}
+  tb.innerHTML=data.map(r=>`
+    <tr>
+      <td><div class="td-user"><div class="user-dot">${(r.user||'?')[0].toUpperCase()}</div>${x(r.user||'?')}</div></td>
+      <td><span class="ip-badge">${x(r.ip)}</span></td>
+      <td style="font-weight:600;color:#ddd4ff">${x(r.key)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:.77rem;color:#9888c8">${x(r.date)}</td>
+      <td><span class="badge ${r.ok?'active':'expired'}">${r.ok?'OK':'Fallido'}</span></td>
+    </tr>
+  `).join('')
+}
+
+function x(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function fmtTime(t){
+  try{const d=new Date(t);const now=new Date();const diff=Math.floor((now-d)/1000)
+    if(diff<60)return 'hace '+diff+'s';if(diff<3600)return 'hace '+Math.floor(diff/60)+'min'
+    if(diff<86400)return 'hace '+Math.floor(diff/3600)+'h'
+    return d.toLocaleDateString('es-ES')}catch{return t||'—'}
+}
+function fmtUptime(s){const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);return d+'d '+h+'h '+m+'m'}
+
+let toastT
+function toast(msg,type='success'){
+  const el=document.getElementById('toast')
+  el.textContent=msg;el.className='toast '+type+' show'
+  clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('show'),2800)
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape')closeModal()
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openModal()}
+})
+
+loadKeys();loadIPs();loadActivity()
+setInterval(loadActivity,10000)
+
+(function(){
+  const canvas=document.getElementById('matrix'),ctx=canvas.getContext('2d')
+  const KAT='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモ01アイウ10110'.split('')
+  const W=22;let drops=[]
+  function resize(){
+    canvas.width=innerWidth;canvas.height=innerHeight
+    const n=Math.ceil(canvas.width/W)
+    if(drops.length<n)drops=[...drops,...Array.from({length:n-drops.length},()=>Math.random()*-(canvas.height/W))]
+    else drops=drops.slice(0,n)
+  }
+  function draw(){
+    ctx.fillStyle='rgba(6,4,16,0.055)';ctx.fillRect(0,0,canvas.width,canvas.height)
+    drops.forEach((y,i)=>{
+      const ch=KAT[Math.random()*KAT.length|0]
+      const bright=Math.random()>0.92
+      if(bright){ctx.fillStyle='rgba(230,210,255,0.7)';ctx.font='bold 13px JetBrains Mono,monospace'}
+      else{const a=0.06+Math.random()*0.16;ctx.fillStyle=`rgba(139,92,246,${a})`;ctx.font='13px JetBrains Mono,monospace'}
+      ctx.fillText(ch,i*W,y*W)
+      if(y*W>canvas.height&&Math.random()>0.975)drops[i]=0
+      drops[i]+=0.38
+    })
+  }
+  resize();window.addEventListener('resize',resize);setInterval(draw,46)
+})()
+</script>
 </body>
 </html>

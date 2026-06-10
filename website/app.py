@@ -4,6 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from flask import Flask, render_template, jsonify, request, redirect, session, url_for
 from models import db, Log, init_db
 from logger import log
+from database import load as load_db
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("TilinX_WEB_SECRET", os.urandom(32).hex())
@@ -61,8 +62,9 @@ def login_page():
 # ─── API Routes ────────────────────────────────────────────
 @app.route("/api/login", methods=["POST"])
 def api_login():
-    data = request.get_json()
-    if data and data.get("password") == DASH_PASSWORD:
+    data = request.get_json() or {}
+    password = data.get("password") or data.get("pass", "")
+    if password == DASH_PASSWORD:
         session["logged_in"] = True
         log_event("admin_login", "Admin logged in")
         return jsonify(success=True)
@@ -99,6 +101,84 @@ def api_logs():
     limit = request.args.get("limit", 50, type=int)
     logs = Log.query.order_by(Log.id.desc()).limit(limit).all()
     return jsonify([{"event": l.event, "detail": l.detail, "level": l.level, "time": l.timestamp} for l in logs])
+
+# ─── Keys API ──────────────────────────────────────────────
+@app.route("/api/keys")
+def api_keys():
+    if not session.get("logged_in"):
+        return jsonify([]), 401
+    from keys import list_keys
+    raw = list_keys()
+    out = []
+    for k in raw:
+        expires_ts = k.get("created_at", 0) + k.get("duration", 0)
+        now = time.time()
+        status = "active" if (not k.get("used") and expires_ts > now) else "expired"
+        if k.get("used"):
+            status = "expired"
+        out.append({
+            "id": k["code"],
+            "label": k.get("label", k["code"][:12]),
+            "key": k["code"],
+            "status": status,
+            "expires": time.strftime("%Y-%m-%d", time.localtime(expires_ts)) if k.get("duration", 0) > 0 else "never",
+            "uses": 1 if k.get("used") else 0,
+            "created": time.strftime("%Y-%m-%d %H:%M", time.localtime(k.get("created_at", 0))),
+        })
+    return jsonify(out)
+
+@app.route("/api/keys", methods=["POST"])
+def api_create_key():
+    if not session.get("logged_in"):
+        return jsonify(success=False), 401
+    data = request.get_json()
+    label = (data or {}).get("label", "")
+    days = int((data or {}).get("duration", 30))
+    duration_sec = days * 86400
+    from keys import generate_key
+    code = generate_key(duration_sec, label)
+    log_event("key_created", f"Key {code} ({days}d) label={label}")
+    return jsonify(success=True, code=code)
+
+@app.route("/api/keys/<code>", methods=["DELETE"])
+def api_delete_key(code):
+    if not session.get("logged_in"):
+        return jsonify(success=False), 401
+    from keys import delete_key
+    ok = delete_key(code)
+    if ok:
+        log_event("key_deleted", f"Key {code} deleted")
+        return jsonify(success=True)
+    return jsonify(success=False), 404
+
+# ─── IPs API ───────────────────────────────────────────────
+@app.route("/api/ips")
+def api_ips():
+    if not session.get("logged_in"):
+        return jsonify([]), 401
+    db = load_db()
+    out = []
+    for ip, data in db.items():
+        used_time = data.get("used_at", data.get("expires_at", 0))
+        out.append({
+            "user": ip.split(".")[-1] if "." in ip else ip,
+            "ip": ip,
+            "key": data.get("key_used", "—"),
+            "date": time.strftime("%d/%m/%Y %H:%M", time.localtime(used_time)) if used_time else "—",
+            "ok": data.get("status") == "active",
+        })
+    # Add failed attempts from logs
+    failed = Log.query.filter(Log.event == "key_redeem_failed").order_by(Log.id.desc()).limit(20).all()
+    for f in failed:
+        out.append({
+            "user": "???",
+            "ip": f.detail.split(" ")[-1] if " " in f.detail else "—",
+            "key": "—",
+            "date": f.timestamp[:16] if f.timestamp else "—",
+            "ok": False,
+        })
+    out.sort(key=lambda x: x["date"], reverse=True)
+    return jsonify(out)
 
 # ─── Admin Routes ──────────────────────────────────────────
 @app.route("/admin")

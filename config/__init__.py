@@ -5,6 +5,8 @@ from pathlib import Path
 BASE_DIR = Path(os.path.dirname(os.path.abspath(__file__))).parent
 LOG_DIR = os.environ.get("TilinX_LOG_DIR", str(BASE_DIR / "logs"))
 DATA_DIR = os.environ.get("TilinX_DATA_DIR", str(BASE_DIR / "data" / "TilinX"))
+DB_PATH = os.environ.get("TilinX_DB_PATH", str(BASE_DIR / "ips.json"))
+KEYS_PATH = os.environ.get("TilinX_KEYS_PATH", str(BASE_DIR / "keys.json"))
 
 class BaseConfig:
     BOT_TOKEN = os.environ.get("TilinX_BOT_TOKEN", "")
