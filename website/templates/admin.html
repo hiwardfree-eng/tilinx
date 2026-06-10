@@ -40,7 +40,6 @@
 .ray:nth-child(6){top:20%;animation-delay:6.5s;height:2px;width:110%;background:linear-gradient(90deg,transparent,var(--pink),transparent)}
 .ray:nth-child(7){top:60%;animation-delay:4.3s;height:3px;width:70%;background:linear-gradient(90deg,transparent,var(--blue),transparent)}
 .ray:nth-child(8){top:40%;animation-delay:7.2s;height:2px;width:140%}
-}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif}
 #matrix{position:fixed;inset:0;z-index:0;pointer-events:none}
 .page{position:fixed;inset:0;z-index:10;display:none}
@@ -51,7 +50,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #pg-panel{flex-direction:row}
 .sidebar{width:230px;flex-shrink:0;background:rgba(8,4,20,0.95);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:0 10px;backdrop-filter:blur(20px)}
 .sb-brand{display:flex;align-items:center;gap:11px;padding:22px 12px 18px}
-.sb-brand .bolt{width:36px;height:36px;border-radius:10px;flex-shrink:0;object-fit:cover;box-shadow:0 0 16px rgba(139,92,246,0.45)}
+/* .bolt uses inline styles */
 .sb-brand .name{font-family:'Cinzel Decorative',serif;font-size:1.05rem;font-weight:900;background:linear-gradient(135deg,#e9d5ff,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:.05em}
 .sb-brand .sub{font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);-webkit-text-fill-color:rgba(196,181,253,0.5);margin-top:1px}
 .sb-divider{height:1px;background:var(--border-lt);margin:6px 0 10px}
@@ -168,7 +167,7 @@ select option{background:#0c0720}
   <aside class="sidebar">
     <a href="/" style="text-decoration:none">
       <div class="sb-brand">
-        <img src="/assets/img/logo-icon.png" class="bolt" alt=""/>
+        <div class="bolt" id="logo-bolt" style="background-image:url(/assets/img/logo-icon.png);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff;width:36px;height:36px;border-radius:10px;flex-shrink:0;box-shadow:0 0 16px rgba(139,92,246,0.45)">⚡</div>
         <div>
           <div class="name">tilinX</div>
           <div class="sub">Command Center</div>
