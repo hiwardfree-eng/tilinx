@@ -11,8 +11,9 @@
 html,body{width:100%;height:100%;overflow:hidden;background:#060410;color:#ede9fe;font-family:'Inter',system-ui,sans-serif}
 canvas#matrix{position:fixed;inset:0;z-index:0;pointer-events:none}
 canvas#rays{position:fixed;inset:0;z-index:1;pointer-events:none}
+canvas#glow{position:fixed;inset:0;z-index:2;pointer-events:none}
 .splash{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(6,4,16,0.3);backdrop-filter:blur(2px)}
-.logo{font-family:'Cinzel Decorative',serif;font-size:4.5rem;font-weight:900;background:linear-gradient(135deg,#e9d5ff,#c084fc,#8b5cf6,#e879f9);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 4s ease infinite;letter-spacing:.06em;text-shadow:0 0 60px rgba(139,92,246,0.4);margin-bottom:8px;opacity:0;transform:scale(0.6);animation:fadeInScale 1.2s ease forwards}
+.logo{font-family:'Cinzel Decorative',serif;font-size:4.5rem;font-weight:900;background:linear-gradient(135deg,#e9d5ff,#c084fc,#8b5cf6,#e879f9);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 4s ease infinite;letter-spacing:.06em;text-shadow:0 0 80px rgba(139,92,246,0.6),0 0 160px rgba(139,92,246,0.3);margin-bottom:8px;opacity:0;transform:scale(0.6);animation:fadeInScale 1.2s ease forwards}
 @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 @keyframes fadeInScale{0%{opacity:0;transform:scale(0.6)}100%{opacity:1;transform:scale(1)}}
 .tagline{font-size:.85rem;letter-spacing:.35em;text-transform:uppercase;color:rgba(196,181,253,0.5);font-weight:600;margin-bottom:50px;opacity:0;animation:fadeIn 1s ease forwards;animation-delay:0.4s}
@@ -44,6 +45,7 @@ canvas#rays{position:fixed;inset:0;z-index:1;pointer-events:none}
 <body>
 <canvas id="matrix"></canvas>
 <canvas id="rays"></canvas>
+<canvas id="glow"></canvas>
 <div class="splash">
   <div class="logo">tilinX</div>
   <div class="tagline" id="tagline">Inicializando sistema</div>
@@ -72,80 +74,111 @@ canvas#rays{position:fixed;inset:0;z-index:1;pointer-events:none}
 (function(){
   var mc=document.getElementById("matrix"),mx=mc.getContext("2d");
   var rc=document.getElementById("rays"),rx=rc.getContext("2d");
+  var gc=document.getElementById("glow"),gx=gc.getContext("2d");
   var lf=document.getElementById("load-fill"),lp=document.getElementById("load-pct"),lm=document.getElementById("load-msg");
   var el=document.getElementById("electric");
-  var W,H,drops=[],pct=0;
+  var W,H,drops=[],start=Date.now(),DUR=6000;
   var msgs=["Conectando...","Estabilizando enlace...","Cifrando conexion...","Cargando modulo proxy...","Sincronizando servidores...","Verificando seguridad...","Optimizando rendimiento...","Sistema listo"];
   var rs=[];
   function resize(){
-    W=mc.width=rc.width=innerWidth;
-    H=mc.height=rc.height=innerHeight;
-    var n=Math.ceil(W/20);
-    while(drops.length<n)drops.push(Math.random()*-H/20);
+    W=mc.width=rc.width=gc.width=innerWidth;
+    H=mc.height=rc.height=gc.height=innerHeight;
+    var n=Math.ceil(W/18);
+    while(drops.length<n)drops.push(Math.random()*-H/18);
     drops=drops.slice(0,n);
   }
   // Matrix purple rain
   function drawMatrix(){
-    mx.fillStyle="rgba(6,4,16,0.045)";
+    mx.fillStyle="rgba(6,4,16,0.05)";
     mx.fillRect(0,0,W,H);
     for(var i=0;i<drops.length;i++){
       var ch=String.fromCharCode(0x30A0+Math.random()*96|0);
-      var bright=Math.random()>0.93;
-      if(bright){mx.fillStyle="rgba(230,210,255,"+(0.5+Math.random()*0.3)+")";mx.font="bold 14px JetBrains Mono,monospace"}
-      else{mx.fillStyle="rgba(139,92,246,"+(0.04+Math.random()*0.12)+")";mx.font="14px JetBrains Mono,monospace"}
-      mx.fillText(ch,i*20,drops[i]*20);
-      if(drops[i]*20>H&&Math.random()>0.975)drops[i]=0;
-      drops[i]+=0.25+Math.random()*0.3;
+      var bright=Math.random()>0.91;
+      if(bright){mx.fillStyle="rgba(230,210,255,"+(0.6+Math.random()*0.3)+")";mx.font="bold 15px JetBrains Mono,monospace"}
+      else{mx.fillStyle="rgba(139,92,246,"+(0.05+Math.random()*0.15)+")";mx.font="15px JetBrains Mono,monospace"}
+      mx.fillText(ch,i*18,drops[i]*18);
+      if(drops[i]*18>H&&Math.random()>0.97)drops[i]=0;
+      drops[i]+=0.3+Math.random()*0.4;
     }
   }
-  // Rays
+  // Epic rays: faster, brighter, more frequent, longer
   function drawRays(){
     rx.clearRect(0,0,W,H);
+    // Spawn more rays
+    if(Math.random()>0.8){
+      var nRays=1+Math.floor(Math.random()*3);
+      for(var ri=0;ri<nRays;ri++){
+        rs.push({
+          x:Math.random()*W,y:-10,
+          vx:(Math.random()-0.5)*4,vy:8+Math.random()*12,
+          w:1.5+Math.random()*4,
+          o:0.4+Math.random()*0.6,
+          life:15+Math.random()*35,
+          maxLife:15+Math.random()*35
+        });
+      }
+    }
+    // Also spawn some from sides
+    if(Math.random()>0.92){
+      var side=Math.random()>0.5;
+      rs.push({
+        x:side?W+10:0-10,y:Math.random()*H*0.5,
+        vx:(side?-1:1)*(6+Math.random()*8),vy:3+Math.random()*6,
+        w:1+Math.random()*3,
+        o:0.3+Math.random()*0.5,
+        life:10+Math.random()*25,
+        maxLife:10+Math.random()*25
+      });
+    }
     for(var i=0;i<rs.length;i++){
       var r=rs[i];
       r.x+=r.vx;r.y+=r.vy;
       r.life--;
-      if(r.life<=0||r.y>H||r.x<0||r.x>W){rs.splice(i,1);i--;continue}
-      var grad=rx.createLinearGradient(r.x,r.y,r.x-r.vx*30,r.y-r.vy*30);
-      grad.addColorStop(0,"rgba(192,132,252,"+(r.o*(r.life/r.maxLife)*0.8)+")");
+      if(r.life<=0||r.y>H+20||r.x<-50||r.x>W+50){rs.splice(i,1);i--;continue}
+      var grad=rx.createLinearGradient(r.x,r.y,r.x-r.vx*20,r.y-r.vy*20);
+      var alpha=r.o*(r.life/r.maxLife);
+      grad.addColorStop(0,"rgba(200,150,255,"+(alpha*0.9)+")");
+      grad.addColorStop(0.4,"rgba(160,100,255,"+(alpha*0.5)+")");
       grad.addColorStop(1,"rgba(139,92,246,0)");
       rx.strokeStyle=grad;
       rx.lineWidth=r.w;
-      rx.shadowColor="rgba(192,132,252,"+(r.o*0.3)+")";
-      rx.shadowBlur=12;
+      rx.shadowColor="rgba(180,120,255,"+(alpha*0.5)+")";
+      rx.shadowBlur=25+r.w*5;
       rx.beginPath();
       rx.moveTo(r.x,r.y);
-      rx.lineTo(r.x-r.vx*25,r.y-r.vy*25);
+      rx.lineTo(r.x-r.vx*15,r.y-r.vy*15);
       rx.stroke();
       rx.shadowBlur=0;
     }
-    if(Math.random()>0.92){
-      rs.push({
-        x:Math.random()*W,y:0,
-        vx:(Math.random()-0.5)*3,vy:4+Math.random()*6,
-        w:1+Math.random()*2.5,
-        o:0.3+Math.random()*0.5,
-        life:20+Math.random()*40,
-        maxLife:20+Math.random()*40
-      });
-    }
+  }
+  // Ambient glow pulse on third canvas
+  function drawGlow(){
+    gx.clearRect(0,0,W,H);
+    var pulse=0.5+Math.sin(Date.now()*0.003)*0.3;
+    var grd=gx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.6);
+    grd.addColorStop(0,"rgba(139,92,246,"+(0.04*pulse)+")");
+    grd.addColorStop(0.5,"rgba(100,60,200,"+(0.02*pulse)+")");
+    grd.addColorStop(1,"rgba(6,4,16,0)");
+    gx.fillStyle=grd;
+    gx.fillRect(0,0,W,H);
   }
   function anim(){
     drawMatrix();
     drawRays();
+    drawGlow();
     requestAnimationFrame(anim);
   }
   resize();
   window.addEventListener("resize",resize);
   anim();
-  // Loading bar
-  var it=setInterval(function(){
-    pct+=Math.random()*5+2;
-    if(pct>=100){pct=100;clearInterval(it)}
+  // Loading bar — exactly 6 seconds
+  function updateBar(){
+    var elapsed=Date.now()-start;
+    var pct=Math.min(100,elapsed/DUR*100);
     lf.style.width=pct+"%";
     lp.textContent=Math.floor(pct)+"%";
     lm.textContent=msgs[Math.min(Math.floor(msgs.length*(pct/100)),msgs.length-1)];
-    if(pct>30&&pct<70)el.classList.add("active");
+    if(pct>25&&pct<75)el.classList.add("active");
     else el.classList.remove("active");
     if(pct>=100){
       lm.textContent="Bienvenido";
@@ -153,9 +186,10 @@ canvas#rays{position:fixed;inset:0;z-index:1;pointer-events:none}
         document.querySelector(".splash").style.opacity="0";
         document.querySelector(".splash").style.transition="opacity 0.8s ease";
         setTimeout(function(){window.location.href="/home"},800);
-      },600);
-    }
-  },160);
+      },400);
+    }else{requestAnimationFrame(updateBar)}
+  }
+  requestAnimationFrame(updateBar);
 })();
 </script>
 </body>
