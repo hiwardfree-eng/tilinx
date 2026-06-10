@@ -95,6 +95,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   if(!O||!I)return // bail if critical elements missing
 
   var h=[],hi=-1,snow=true
+  var tIdx=-1,tMatches=[],tOrig=""
   var S=document.getElementById("sbtn")
 
   // ---- Boot ----
@@ -157,15 +158,34 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   if(S)S.onclick=tS
 
   function hU(){
-    var e=document.getElementById("tf");if(e)e.textContent="FPS: "+(60+Math.floor(Math.random()*70))
-    var e=document.getElementById("tc");if(e)e.textContent="CPU: "+(20+Math.floor(Math.random()*40))+"%"
-    var e=document.getElementById("tr");if(e)e.textContent="RAM: "+(30+Math.floor(Math.random()*35))+"%"
+    var xhr=new XMLHttpRequest()
+    xhr.open("GET","/api/terminal-stats",true)
+    xhr.onload=function(){
+      if(xhr.status===200){
+        try{
+          var d=JSON.parse(xhr.responseText)
+          var e1=document.getElementById("tf");if(e1)e1.textContent="FPS: "+(d.fps||"--")
+          var e2=document.getElementById("tc");if(e2)e2.textContent="CPU: "+(d.cpu_percent||"--")+"%"
+          var e3=document.getElementById("tr");if(e3)e3.textContent="RAM: "+(d.ram_percent||"--")+"%"
+        }catch(e){hUFallback()}
+      }else{hUFallback()}
+    }
+    xhr.onerror=function(){hUFallback()}
+    xhr.send()
+    function hUFallback(){
+      var e1=document.getElementById("tf");if(e1)e1.textContent="FPS: "+(60+Math.floor(Math.random()*70))
+      var e2=document.getElementById("tc");if(e2)e2.textContent="CPU: "+(20+Math.floor(Math.random()*40))+"%"
+      var e3=document.getElementById("tr");if(e3)e3.textContent="RAM: "+(30+Math.floor(Math.random()*35))+"%"
+    }
   }
 
   function pr(h,c){var d=document.createElement("div");d.className="l "+(c||"");d.innerHTML=h;O.appendChild(d);B.scrollTop=B.scrollHeight}
   function cmd(s){var d=document.createElement("div");d.className="l cmd";d.textContent=s;O.appendChild(d);B.scrollTop=B.scrollHeight}
 
   function fu(s){var d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);return d+"d "+h+"h "+m+"m"}
+  function randIP(){var p=[];for(var i=0;i<4;i++)p.push(Math.floor(Math.random()*254+1));return p.join(".")}
+  function padRight(s,n){while(s.length<n)s+=" ";return s}
+  function repeatStr(s,n){var r="";while(n-->0)r+=s;return r}
 
   // ---- Commands ----
   function hA(f){
@@ -183,18 +203,21 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
       history:"Historial comandos",date:"Fecha y hora",clear:"Limpiar terminal",
       snow:"Activar/desactivar nieve",matrix:"Efecto matrix",
       color:"<color> Cambiar color (green,purple,blue,red,pink)",
-      uptime:"Tiempo activo",exit:"Cerrar sesion",restart:"Reiniciar",shutdown:"Apagar",help:"<cmd> Ayuda"
+      uptime:"Tiempo activo",exit:"Cerrar sesion",restart:"Reiniciar",shutdown:"Apagar",help:"<cmd> Ayuda",
+      banner:"Mostrar banner ASCII",calc:"<expr> Calculadora",echo:"<text> Eco de texto",
+      sysinfo:"Info detallada del sistema (API)",hack:"Simulacion de hackeo",
+      env:"Variables de entorno",cls:"Limpiar terminal"
     }
     if(f&&g[f]){pr("<b style='color:var(--g)'>"+f+"</b> &mdash; "+g[f]);return}
     pr("<span style='color:var(--p);font-weight:700'>╔══════════════════════════╗</span>")
     pr("<span style='color:var(--p);font-weight:700'>║   TILINX TERMINAL V10    ║</span>")
     pr("<span style='color:var(--p);font-weight:700'>╚══════════════════════════╝</span>")
     pr("")
-    var gr=[["SISTEMA","system cpu ram gpu disk temp network internet uptime neofetch whoami date".split(" ")],
+    var gr=[["SISTEMA","system cpu ram gpu disk temp network internet uptime neofetch whoami date sysinfo".split(" ")],
             ["MONITOREO","status monitor logs report security services ping".split(" ")],
             ["GAMING","fps optimizer boost turbo ultra sensitivity crosshair tracking reaction training movement aimtest".split(" ")],
-            ["EPICO","godmode".split(" ")],
-            ["TERMINAL","help clear history snow matrix color exit restart shutdown".split(" ")]]
+            ["EPICO","godmode hack".split(" ")],
+            ["TERMINAL","help clear cls history snow matrix color echo banner calc env exit restart shutdown".split(" ")]]
     for(var i=0;i<gr.length;i++){
       pr("<span style='color:var(--pk)'>"+gr[i][0]+"</span>","bb")
       for(var j=0;j<gr[i][1].length;j++){
@@ -256,12 +279,12 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   }
   function cNetwork(){
     box("NETWORK INTERFACES")
-    for(var i=0;i<4;i++)pr("eth"+i+"  "+Array.from({length:4},function(){return Math.floor(Math.random()*254+1)}).join(".")+"  <span style='color:var(--g)'>UP</span>")
+    for(var i=0;i<4;i++)pr("eth"+i+"  "+randIP()+"  <span style='color:var(--g)'>UP</span>")
   }
   function cInternet(){
     box("INTERNET STATUS")
     pr("Status ..... <span style='color:var(--g)'>CONNECTED</span>")
-    pr("IP ......... <span style='color:var(--g)'>"+Array.from({length:4},function(){return Math.floor(Math.random()*254+1)}).join(".")+"</span>")
+    pr("IP ......... <span style='color:var(--g)'>"+randIP()+"</span>")
     pr("Latency .... <span style='color:var(--g)'>"+(5+Math.random()*40).toFixed(0)+" ms</span>")
   }
   function cPing(host){
@@ -276,7 +299,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   function cServices(){
     box("SYSTEM SERVICES")
     var sv=["tilinx-proxy","tilinx-api","tilinx-bot","nginx","postgresql","redis","docker","ssh","ufw","fail2ban"]
-    for(var i=0;i<sv.length;i++)pr("  <span style='color:var(--g)'>\u25CF</span> "+sv[i].padEnd(18)+" <span style='color:var(--g)'>active</span>")
+    for(var i=0;i<sv.length;i++)    pr("  <span style='color:var(--g)'>\u25CF</span> "+padRight(sv[i],18)+" <span style='color:var(--g)'>active</span>")
     pr("Total: "+sv.length+" servicios activos","d")
   }
   function cMonitor(){
@@ -315,7 +338,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   function cSecurity(){
     box("SECURITY SCAN")
     var ch=[["Firewall","ACTIVO"],["Fail2Ban","ACTIVO"],["Rootkits","NINGUNO"],["Malware","LIMPIO"],["SSL/TLS","VALIDO"],["DDoS Protection","ACTIVO"],["Key System","ENCRIPTADO"]]
-    for(var i=0;i<ch.length;i++)pr("  "+ch[i][0].padEnd(18)+" <span style='color:var(--g)'>"+ch[i][1]+"</span>")
+    for(var i=0;i<ch.length;i++)pr("  "+padRight(ch[i][0],18)+" <span style='color:var(--g)'>"+ch[i][1]+"</span>")
     pr("")
     pr("<span style='color:var(--g);font-weight:700'>SEGURO — 7/7 CHECKS OK</span>")
   }
@@ -406,7 +429,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   function cMovement(){
     box("MOVEMENT ANALYSIS")
     var st={Velocidad:60+Math.random()*35,Aceleracion:50+Math.random()*40,Precision:40+Math.random()*50}
-    for(var k in st)pr(k.padEnd(14)+" "+(Math.floor(st[k])/4|0)+"%")
+    for(var k in st)pr(padRight(k,14)+" "+(Math.floor(st[k])/4|0)+"%")
   }
   function cAimtest(){
     var s=55+Math.floor(Math.random()*45)
@@ -420,7 +443,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
     var i=0
     var it=setInterval(function(){
       if(i>=md.length){clearInterval(it);pr("");pr("<span style='color:var(--g);font-weight:700'>ALL MODULES ACTIVATED</span>");return}
-      pr("<span style='color:var(--p)'>["+"\u2588".repeat(20)+"] 100%</span> "+md[i]+" <span style='color:var(--g)'>ONLINE</span>")
+      pr("<span style='color:var(--p)'>["+repeatStr("\u2588",20)+"] 100%</span> "+md[i]+" <span style='color:var(--g)'>ONLINE</span>")
       i++
     },300)
   }
@@ -438,6 +461,84 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   function cWhoami(){pr("root | UID: 0 | Home: /root | Shell: /bin/tilinx-sh")}
   function cHistory(){if(!h.length){pr("Sin historial.","d");return};for(var i=0;i<h.length;i++)pr("  "+(i+1)+"  "+h[i])}
 
+  // ---- New Commands ----
+  function cBanner(){
+    pr("<span style='color:var(--p)'>    .d8888b.  8888888888 88888888888 </span>")
+    pr("<span style='color:var(--p)'>   d88P  Y88b 888            888    </span>")
+    pr("<span style='color:var(--p)'>   Y88b.      888            888    </span>")
+    pr("<span style='color:var(--p)'>    'Y888b.   88888888       888    </span>")
+    pr("<span style='color:var(--p)'>       'Y88b. 888            888    </span>")
+    pr("<span style='color:var(--p)'>         '888 888            888    </span>")
+    pr("<span style='color:var(--p)'>   Y88b  d88P 888            888    </span>")
+    pr("<span style='color:var(--p)'>    'Y8888P'  8888888888     888    </span>")
+    pr("<span style='color:var(--g)'>   TilinX Terminal v10 - Interactive Shell</span>")
+  }
+  function cCalc(expr){
+    if(!expr){pr("Uso: calc &lt;expr&gt; (ej. 2+2*3)","y");return}
+    var sanitized=expr.replace(/[^0-9+\-*/.()% ]/g,"")
+    if(!sanitized){pr("Expresion invalida","r");return}
+    try{var result=eval(sanitized);pr(expr+" = <span style='color:var(--g);font-weight:700'>"+result+"</span>")}catch(e){pr("Error de calculo","r")}
+  }
+  function cEcho(text){pr(text||"")}
+  function cSysinfo(){
+    box("REAL SYSTEM INFO")
+    pr("Fetching data from API...","d")
+    var xhr=new XMLHttpRequest()
+    xhr.open("GET","/api/terminal-stats",true)
+    xhr.onload=function(){
+      if(xhr.status===200){
+        try{
+          var d=JSON.parse(xhr.responseText)
+          pr("OS ............. <span style='color:var(--g)'>"+(d.os||"N/A")+"</span>")
+          pr("Hostname ....... <span style='color:var(--g)'>"+(d.hostname||"N/A")+"</span>")
+          pr("CPU ............ <span style='color:var(--g)'>"+(d.cpu_model||"N/A")+"</span>")
+          pr("CPU Cores ...... <span style='color:var(--g)'>"+(d.cpu_cores||"N/A")+"</span>")
+          pr("CPU Usage ...... <span style='color:var(--g)'>"+(d.cpu_percent||"N/A")+"%</span>")
+          pr("RAM Total ...... <span style='color:var(--g)'>"+(d.ram_total||"N/A")+"</span>")
+          pr("RAM Used ....... <span style='color:var(--g)'>"+(d.ram_used||"N/A")+"</span>")
+          pr("RAM Percent .... <span style='color:var(--g)'>"+(d.ram_percent||"N/A")+"%</span>")
+          pr("Uptime ......... <span style='color:var(--g)'>"+(d.uptime||"N/A")+"</span>")
+          pr("Users .......... <span style='color:var(--g)'>"+(d.users||"N/A")+"</span>")
+          pr("Processes ...... <span style='color:var(--g)'>"+(d.processes||"N/A")+"</span>")
+        }catch(e){pr("Error parsing API data","r")}
+      }else{pr("API error: "+xhr.status,"r")}
+    }
+    xhr.onerror=function(){pr("Failed to reach API - using offline mode","y");cSystem()}
+    xhr.send()
+  }
+  function cHack(){
+    pr("<span style='color:var(--g)'>INITIALIZING HACK SEQUENCE...</span>","bb")
+    var targets=["root@tilinx.local","192.168.1."+Math.floor(Math.random()*254),"gateway.tilinx.net","firewall.tilinx.com"]
+    var msgs=["Bypassing firewall...","Cracking encryption...","Injecting payload...","Escalating privileges...","Extracting data...","Covering tracks...","Establishing backdoor..."]
+    var step=0,pct=0
+    var it=setInterval(function(){
+      if(step>=3&&pct>=100){
+        clearInterval(it)
+        pr("")
+        pr("<span style='color:var(--g);font-weight:700'>ACCESS GRANTED - SYSTEM COMPROMISED</span>")
+        pr("<span style='color:var(--p)'>Target: "+targets[Math.floor(Math.random()*targets.length)]+"</span>")
+        return
+      }
+      if(pct>=100){step++;pct=0;if(step<3){var bar="";for(var bi=0;bi<20;bi++)bar+="\u2588";pr("<span style='color:var(--p)'>["+bar+"] 100% - "+targets[step-1]+" COMPROMISED</span>")}return}
+      pct+=Math.floor(Math.random()*15+5);if(pct>100)pct=100
+      var bar="";for(var bi=0;bi<17;bi++)bar+=bi<Math.floor(pct/6)?"\u2588":"\u2591"
+      pr("  ["+bar+"] "+pct+"% - "+msgs[Math.floor(Math.random()*msgs.length)]+" ["+targets[Math.min(step,targets.length-1)]+"]","d")
+    },200)
+  }
+  function cEnv(){
+    box("ENVIRONMENT VARIABLES")
+    pr("SHELL=<span style='color:var(--g)'>/bin/tilinx-sh</span>")
+    pr("USER=<span style='color:var(--g)'>root</span>")
+    pr("PATH=<span style='color:var(--g)'>/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</span>")
+    pr("HOME=<span style='color:var(--g)'>/root</span>")
+    pr("TERM=<span style='color:var(--g)'>xterm-256color</span>")
+    pr("LANG=<span style='color:var(--g)'>es_ES.UTF-8</span>")
+    pr("EDITOR=<span style='color:var(--g)'>vim</span>")
+    pr("DISPLAY=<span style='color:var(--g)'>:0</span>")
+    pr("TILINX_VERSION=<span style='color:var(--g)'>10.0.0</span>")
+    pr("TILINX_MODE=<span style='color:var(--g)'>ULTIMATE</span>")
+  }
+
   // ---- Command Router ----
   function exec(cmd){
     if(!cmd.trim())return
@@ -447,7 +548,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
     try{
       switch(c){
         case "help":hA(a);break
-        case "clear":O.innerHTML="";break
+        case "clear":case "cls":O.innerHTML="";break
         case "history":cHistory();break
         case "whoami":cWhoami();break
         case "date":pr(new Date().toLocaleString());break
@@ -482,9 +583,15 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
         case "godmode":cGodmode();break
         case "snow":tS();pr(snow?"Nieve activada":"Nieve desactivada",snow?"p":"d");break
         case "matrix":pr("Matrix rain activado.","p");break
+        case "banner":cBanner();break
+        case "calc":cCalc(a);break
+        case "echo":cEcho(a);break
+        case "sysinfo":cSysinfo();break
+        case "hack":cHack();break
+        case "env":cEnv();break
         case "color":(function(){
-          var cl={green:"#00ff41",purple:"#b44aff",blue:"#4488ff",red:"#ff4444",pink:"#e879f9"}
-          if(cl[a]){document.documentElement.style.setProperty("--g",cl[a]);document.documentElement.style.setProperty("--gd",cl[a]+"66");pr("Color cambiado a "+a,"g")}
+          var cl={green:["#00ff41","#b44aff"],purple:["#b44aff","#e879f9"],blue:["#4488ff","#b44aff"],red:["#ff4444","#e879f9"],pink:["#e879f9","#b44aff"]}
+          if(cl[a]){document.documentElement.style.setProperty("--g",cl[a][0]);document.documentElement.style.setProperty("--gd",cl[a][0]+"66");document.documentElement.style.setProperty("--p",cl[a][1]);pr("Color cambiado a "+a,"g")}
           else pr("Colores: green, purple, blue, red, pink","y")
         })();break
         case "uptime":pr("Uptime: "+fu(Math.floor(Math.random()*86400*7+86400)));break
@@ -506,9 +613,17 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
       e.preventDefault();if(hi<h.length-1){hi++;I.value=h[hi]}else{hi=h.length;I.value=""}
     }else if(e.key==="Tab"){
       e.preventDefault()
-      var cmds="help|clear|history|whoami|date|neofetch|system|cpu|ram|gpu|disk|temp|temperature|network|internet|ping|services|monitor|status|logs|report|security|fps|optimizer|boost|turbo|ultra|sensitivity|crosshair|tracking|reaction|training|movement|aimtest|godmode|snow|matrix|color|uptime|exit|restart|shutdown".split("|")
+      var cmds="help|clear|cls|history|whoami|date|neofetch|system|cpu|ram|gpu|disk|temp|temperature|network|internet|ping|services|monitor|status|logs|report|security|fps|optimizer|boost|turbo|ultra|sensitivity|crosshair|tracking|reaction|training|movement|aimtest|godmode|snow|matrix|color|uptime|exit|restart|shutdown|banner|calc|echo|sysinfo|hack|env".split("|")
       var pv=I.value.toLowerCase()
-      for(var i=0;i<cmds.length;i++){if(cmds[i].indexOf(pv)===0&&pv){I.value=cmds[i];break}}
+      if(pv===""){tIdx=-1;tMatches=[];return}
+      if(tOrig!==pv||tMatches.length===0){
+        tOrig=pv;tMatches=[]
+        for(var i=0;i<cmds.length;i++){if(cmds[i].indexOf(pv)===0)tMatches.push(cmds[i])}
+        tIdx=-1
+      }
+      if(tMatches.length===0)return
+      tIdx=(tIdx+1)%tMatches.length
+      I.value=tMatches[tIdx]
     }
   })
 

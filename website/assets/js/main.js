@@ -62,16 +62,19 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("contextmenu", e => e.preventDefault());
 
   // Detect devtools (basic)
-  let devtoolsOpen = false;
-  setInterval(() => {
-    const widthThreshold = window.outerWidth - window.innerWidth > 160;
-    const heightThreshold = window.outerHeight - window.innerHeight > 160;
+  var devtoolsOpen = false;
+  var devtoolsCount = 0;
+  setInterval(function() {
+    var widthThreshold = window.outerWidth - window.innerWidth > 160;
+    var heightThreshold = window.outerHeight - window.innerHeight > 160;
     if (widthThreshold || heightThreshold) {
-      if (!devtoolsOpen) {
+      devtoolsCount++;
+      if (devtoolsCount >= 2 && !devtoolsOpen) {
         devtoolsOpen = true;
-        document.body.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:rgba(180,80,255,0.8);font-family:monospace;font-size:18px;text-align:center;padding:30px">🔒 DevTools detected. Please close and reload.</div>`;
+        document.body.innerHTML = "<div style=\"display:flex;align-items:center;justify-content:center;height:100vh;background:#000;color:rgba(180,80,255,0.8);font-family:monospace;font-size:18px;text-align:center;padding:30px\">" + String.fromCharCode(128274) + " DevTools detected. Please close and reload.</div>";
       }
     } else {
+      devtoolsCount = 0;
       devtoolsOpen = false;
     }
   }, 1000);
@@ -92,14 +95,26 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ── Active nav link ────────────────────────────────
-  const path = window.location.pathname;
-  document.querySelectorAll(".nav-links a").forEach(a => {
-    if (a.getAttribute("href") === path) a.classList.add("active");
+  var path = window.location.pathname;
+  document.querySelectorAll(".nav-links a").forEach(function(a) {
+    var href = a.getAttribute("href");
+    if (href === path || (href !== "/" && path.indexOf(href) === 0)) a.classList.add("active");
   });
 
   // ── Load Status ────────────────────────────────────
   const statusEl = document.getElementById("live-status");
   if (statusEl) loadStatus();
+
+  // ── Health Indicator ──────────────────────────────
+  var navRight = document.querySelector(".nav-right");
+  if (navRight) {
+    var dot = document.createElement("span");
+    dot.id = "health-dot";
+    dot.className = "health-dot dot-red";
+    navRight.insertBefore(dot, navRight.firstChild);
+    loadHealth();
+  }
+  setInterval(loadHealth, 30000);
 
   // ── Login ──────────────────────────────────────────
   const loginForm = document.getElementById("login-form");
@@ -160,4 +175,18 @@ function formatUptime(s) {
   const h = Math.floor((s % 86400) / 3600);
   const m = Math.floor((s % 3600) / 60);
   return `${d}d ${h}h ${m}m`;
+}
+
+// ── Health Check ──────────────────────────────────
+function loadHealth() {
+  var dot = document.getElementById("health-dot");
+  if (!dot) return;
+  fetch("/api/status").then(function(r) {
+    return r.json();
+  }).then(function(d) {
+    var cls = d.status === "operational" ? "dot-green" : "dot-red";
+    dot.className = "health-dot " + cls;
+  }).catch(function() {
+    dot.className = "health-dot dot-red";
+  });
 }

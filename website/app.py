@@ -55,7 +55,7 @@ def downloads():
 
 @app.route("/status")
 def status():
-    return redirect("/")
+    return render_template("status.html")
 
 @app.route("/contact")
 def contact():
@@ -64,6 +64,10 @@ def contact():
 @app.route("/terminal")
 def terminal():
     return render_template("terminal.html")
+
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"})
 
 @app.route("/login")
 def login_page():
@@ -88,6 +92,18 @@ def api_logout():
 
 @app.route("/api/status")
 def api_status():
+    import psutil
+    uptime = time.time() - psutil.boot_time()
+    return jsonify({
+        "status": "operational",
+        "uptime": round(uptime),
+        "cpu": psutil.cpu_percent(),
+        "ram": psutil.virtual_memory().percent,
+        "disk": psutil.disk_usage("/").percent,
+    })
+
+@app.route("/api/terminal-stats")
+def api_terminal_stats():
     import psutil
     uptime = time.time() - psutil.boot_time()
     return jsonify({
@@ -199,7 +215,8 @@ def api_home_stats():
         total = len(raw)
         active = sum(1 for k in raw if not k.get("used") and (k.get("duration", 0) == 0 or k.get("created_at", 0) + k.get("duration", 0) > time.time()))
         used = sum(1 for k in raw if k.get("used"))
-    except Exception:
+    except Exception as e:
+        log.warning(f"Error fetching home stats: {e}")
         total = active = used = 0
     return jsonify(total=total, active=active, used=used)
 

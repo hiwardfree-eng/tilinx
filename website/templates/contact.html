@@ -24,11 +24,55 @@
     </a>
   </div>
 
-  <div class="glass" style="max-width:500px;margin:30px auto;padding:24px;border-color:rgba(130,0,255,0.4)">
-    <p style="font-family:monospace;font-size:13px;color:rgba(180,80,255,0.6);line-height:1.8">
-      ⏱️ Respuesta rápida — usually within minutes.<br>
-      🛡️ Tu información está segura.
+  <div class="glass" style="max-width:500px;margin:30px auto;padding:28px;border-color:rgba(130,0,255,0.4)">
+    <p style="font-family:monospace;font-size:13px;color:rgba(180,80,255,0.6);margin-bottom:20px;line-height:1.8">
+      📧 O envíanos un mensaje directo
     </p>
+    <form id="contact-form" style="display:flex;flex-direction:column;gap:14px">
+      <input type="text" name="name" placeholder="Tu nombre" required
+        style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(130,0,255,0.3);background:rgba(0,0,0,0.3);color:#fff;font-family:monospace;font-size:13px;box-sizing:border-box">
+      <input type="email" name="email" placeholder="Tu correo electrónico" required
+        style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(130,0,255,0.3);background:rgba(0,0,0,0.3);color:#fff;font-family:monospace;font-size:13px;box-sizing:border-box">
+      <textarea name="message" placeholder="Tu mensaje" required rows="5"
+        style="width:100%;padding:12px;border-radius:6px;border:1px solid rgba(130,0,255,0.3);background:rgba(0,0,0,0.3);color:#fff;font-family:monospace;font-size:13px;resize:vertical;box-sizing:border-box"></textarea>
+      <button type="submit" class="btn btn-outline" style="width:100%;padding:12px;cursor:pointer">📤 ENVIAR MENSAJE</button>
+    </form>
+    <div id="contact-success" style="display:none;font-family:monospace;font-size:13px;color:#4ade80;margin-top:12px">✅ Mensaje enviado correctamente. Te responderemos pronto.</div>
+    <div id="contact-error" style="display:none;font-family:monospace;font-size:13px;color:#f87171;margin-top:12px">❌ Error al enviar el mensaje. Inténtalo de nuevo.</div>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('contact-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var form = this;
+  var data = {
+    name: form.querySelector('[name="name"]').value,
+    email: form.querySelector('[name="email"]').value,
+    message: form.querySelector('[name="message"]').value
+  };
+  fetch('/api/contact', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(function(r) { return r.json() })
+  .then(function(res) {
+    if (res.ok) {
+      document.getElementById('contact-success').style.display = 'block';
+      document.getElementById('contact-error').style.display = 'none';
+      form.reset();
+    } else {
+      document.getElementById('contact-error').style.display = 'block';
+      document.getElementById('contact-success').style.display = 'none';
+    }
+  })
+  .catch(function() {
+    document.getElementById('contact-error').style.display = 'block';
+    document.getElementById('contact-success').style.display = 'none';
+  });
+});
+</script>
 {% endblock %}

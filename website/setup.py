@@ -7,7 +7,7 @@ import os, sys, shutil
 BASE = os.path.dirname(os.path.abspath(__file__))
 DEST = "/home/runner/tilinx/website"
 FILES = [
-    "website.py", "models.py", "start.sh", "deploy.sh", "nginx.conf",
+    "app.py", "models.py", "start.sh", "deploy.sh", "nginx.conf",
     "requirements.txt", "robots.txt", "sitemap.xml",
 ]
 
