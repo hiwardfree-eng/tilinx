@@ -5,7 +5,7 @@ services:
     region: oregon
     plan: free
     buildCommand: pip install -r website/requirements.txt
-    startCommand: gunicorn website.wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    startCommand: gunicorn -c gunicorn.conf.py website.wsgi:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     envVars:
       - key: TilinX_DASH_PASSWORD
         value: hw132319

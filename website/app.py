@@ -9,12 +9,6 @@ from database import load as load_db
 app = Flask(__name__)
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 
-# ─── Telegram Bot (background thread) ──────────────────
-import threading
-from bot_control import start_bot
-bot_thread = threading.Thread(target=start_bot, daemon=True)
-bot_thread.start()
-
 @app.route("/assets/<path:filename>")
 def serve_assets(filename):
     return send_from_directory(ASSETS_DIR, filename)
