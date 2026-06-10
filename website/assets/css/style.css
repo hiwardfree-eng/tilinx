@@ -249,6 +249,20 @@ th { padding: 14px 16px; text-align: left; font-size: 12px; color: rgba(180,80,2
 td { padding: 14px 16px; font-size: 13px; font-family: monospace; border-top: 1px solid rgba(130,0,255,0.15); }
 tr:hover td { background: rgba(130,0,255,0.08); }
 
+/* ─── Contact Buttons ─────────────────────────────────────── */
+.contact-btn { display:flex; align-items:center; gap:16px; padding:18px 24px; border-radius:16px; text-decoration:none; border:2px solid; transition:all .3s ease; backdrop-filter:blur(6px); }
+.contact-btn:hover { transform:translateY(-3px); }
+.contact-btn.whatsapp { background:rgba(0,0,0,0.7); border-color:rgba(37,211,102,0.4); color:#25D366; }
+.contact-btn.whatsapp:hover { border-color:#25D366; box-shadow:0 0 30px rgba(37,211,102,0.2); }
+.contact-btn.telegram { background:rgba(0,0,0,0.7); border-color:rgba(0,136,204,0.4); color:#0088cc; }
+.contact-btn.telegram:hover { border-color:#0088cc; box-shadow:0 0 30px rgba(0,136,204,0.2); }
+.contact-icon { font-size:28px; flex-shrink:0; }
+.contact-text { flex:1; text-align:left; }
+.contact-label { display:block; font-size:11px; letter-spacing:1.5px; color:rgba(180,80,255,0.5); font-family:monospace; }
+.contact-val { display:block; font-size:16px; font-weight:700; color:var(--text); font-family:monospace; margin-top:2px; }
+.contact-arrow { font-size:20px; color:rgba(180,80,255,0.3); transition:transform .3s ease; }
+.contact-btn:hover .contact-arrow { transform:translateX(4px); }
+
 /* ─── Forms ───────────────────────────────────────────────── */
 .form-group { margin-bottom: 16px; }
 .form-group label { display: block; margin-bottom: 6px; font-size: 12px; color: rgba(130,0,255,0.8); font-family: monospace; letter-spacing: 1px; }
@@ -305,10 +319,31 @@ footer {
 
 /* ─── Animations ──────────────────────────────────────────── */
 @keyframes fadeIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+@keyframes fadeUp { from { opacity:0; transform:translateY(40px); } to { opacity:1; transform:translateY(0); } }
+@keyframes pulseGlow { 0%,100% { box-shadow:0 0 20px rgba(130,0,255,0.3); } 50% { box-shadow:0 0 40px rgba(130,0,255,0.6); } }
 .animate { animation: fadeIn 0.6s ease forwards; }
 .animate-d1 { animation-delay: 0.1s; }
 .animate-d2 { animation-delay: 0.2s; }
 .animate-d3 { animation-delay: 0.3s; }
+
+/* ─── Scroll Reveal ───────────────────────────────────────── */
+.reveal { opacity:0; transform:translateY(40px); transition:opacity .7s ease,transform .7s ease; }
+.reveal.visible { opacity:1; transform:translateY(0); }
+
+/* ─── Hero Stats ──────────────────────────────────────────── */
+.hero-stats { display:flex; gap:24px; justify-content:center; flex-wrap:wrap; }
+.h-stat { background:rgba(0,0,0,0.7); border:2px solid rgba(130,0,255,0.35); border-radius:16px; padding:18px 24px; min-width:140px; backdrop-filter:blur(8px); animation:pulseGlow 3s ease infinite; }
+.h-num { font-size:32px; font-weight:900; color:var(--accent); font-family:monospace; }
+.h-lbl { font-size:10px; letter-spacing:1.5px; color:rgba(180,80,255,0.6); font-family:monospace; margin-top:4px; }
+
+/* ─── Proxy Status ────────────────────────────────────────── */
+.proxy-status { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:12px; max-width:800px; margin:0 auto; }
+.ps-card { display:flex; align-items:center; gap:16px; background:rgba(0,0,0,0.7); border:2px solid rgba(130,0,255,0.3); border-radius:14px; padding:16px 20px; backdrop-filter:blur(6px); transition:all .3s ease; }
+.ps-card:hover { border-color:var(--accent); transform:translateY(-3px); box-shadow:0 0 25px rgba(0,255,65,0.1); }
+.ps-icon { font-size:22px; flex-shrink:0; }
+.ps-info { flex:1; }
+.ps-val { font-size:16px; font-weight:700; color:var(--text); font-family:monospace; }
+.ps-lbl { font-size:11px; color:rgba(180,80,255,0.5); font-family:monospace; letter-spacing:.5px; margin-top:2px; }
 
 /* ─── Misc ────────────────────────────────────────────────── */
 code { background: rgba(130,0,255,0.15); padding: 2px 8px; border-radius: 4px; font-size: 12px; font-family: monospace; }

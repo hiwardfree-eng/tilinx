@@ -55,7 +55,7 @@ def downloads():
 
 @app.route("/status")
 def status():
-    return render_template("status.html")
+    return redirect("/")
 
 @app.route("/contact")
 def contact():
@@ -185,6 +185,19 @@ def api_ips():
         })
     out.sort(key=lambda x: x["date"], reverse=True)
     return jsonify(out)
+
+# ─── Home Stats API ────────────────────────────────────────
+@app.route("/api/home-stats")
+def api_home_stats():
+    try:
+        from keys import list_keys
+        raw = list_keys()
+        total = len(raw)
+        active = sum(1 for k in raw if not k.get("used") and (k.get("duration", 0) == 0 or k.get("created_at", 0) + k.get("duration", 0) > time.time()))
+        used = sum(1 for k in raw if k.get("used"))
+    except Exception:
+        total = active = used = 0
+    return jsonify(total=total, active=active, used=used)
 
 # ─── Admin Routes ──────────────────────────────────────────
 @app.route("/admin")

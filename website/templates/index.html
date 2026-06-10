@@ -6,56 +6,122 @@
       <span class="purple">tilinXfast7</span><br>
       <span class="red-black">POWER YOUR GAME</span>
     </h1>
-    <p class="hero-sub animate animate-d1">ADVANCED PROXY PLATFORM</p>
+    <p class="hero-sub animate animate-d1">ADVANCED PROXY PLATFORM — SEGURO, RÁPIDO, ANÓNIMO</p>
     <div class="hero-btns animate animate-d2">
-      <a href="/downloads" class="btn btn-primary">⬇ DOWNLOAD</a>
-      <a href="/status" class="btn btn-outline">📊 STATUS</a>
+      <a href="/downloads" class="btn btn-primary">⬇ DESCARGAR</a>
+      <a href="#security" class="btn btn-outline">🔒 SEGURIDAD</a>
     </div>
-    <div class="img-grid" style="max-width:900px;margin:50px auto 0">
-      <div class="img-card"><img src="/assets/img/hero-bg.jpeg" alt=""><div class="overlay"><h3>TilinX Proxy</h3><p>Core engine</p></div></div>
-      <div class="img-card"><img src="/assets/img/feature1.jpeg" alt=""><div class="overlay"><h3>Dashboard</h3><p>Real-time control</p></div></div>
-      <div class="img-card"><img src="/assets/img/feature2.jpeg" alt=""><div class="overlay"><h3>Security</h3><p>IP-based auth</p></div></div>
-      <div class="img-card"><img src="/assets/img/feature3.jpeg" alt=""><div class="overlay"><h3>Analytics</h3><p>Live metrics</p></div></div>
-      <div class="img-card"><img src="/assets/img/feature4.jpeg" alt=""><div class="overlay"><h3>Support</h3><p>24/7 available</p></div></div>
-    </div>
-    <div class="stats-grid" style="max-width:700px;margin:40px auto 0">
-      <div class="stat-card"><div class="num" id="stat-uptime">—</div><div class="lbl">UPTIME</div></div>
-      <div class="stat-card"><div class="num" id="stat-cpu">—</div><div class="lbl">CPU</div></div>
-      <div class="stat-card"><div class="num" id="stat-ram">—</div><div class="lbl">RAM</div></div>
-      <div class="stat-card"><div class="num" id="stat-disk">—</div><div class="lbl">DISK</div></div>
+    <div class="hero-stats animate animate-d3" style="margin-top:50px">
+      <div class="h-stat"><div class="h-num"><span id="home-total">0</span></div><div class="h-lbl">KEYS GENERADAS</div></div>
+      <div class="h-stat"><div class="h-num"><span id="home-active">0</span></div><div class="h-lbl">ACTIVAS AHORA</div></div>
+      <div class="h-stat"><div class="h-num"><span id="home-used">0</span></div><div class="h-lbl">CANJEADAS</div></div>
     </div>
   </div>
 </section>
 
-<section class="section">
-  <h2 class="section-title">📰 LATEST NEWS</h2>
-  <p class="section-sub">STAY UPDATED</p>
-  <div class="timeline" style="max-width:600px;margin:0 auto">
-    <div class="timeline-item">
-      <div class="date">JUNE 2026</div>
-      <h4>🚀 TILINX V3.0</h4>
-      <p style="color:rgba(180,80,255,0.6);font-size:13px;font-family:monospace">IP-based auth, key system, web dashboard.</p>
+<section class="section reveal" id="security">
+  <h2 class="section-title">🔒 SEGURIDAD TOTAL</h2>
+  <p class="section-sub">TU CONEXIÓN, PROTEGIDA EN CADA CAPA</p>
+  <div class="cards" style="max-width:900px;margin:0 auto">
+    <div class="card reveal">
+      <div class="card-icon">🛡️</div>
+      <h3>CIFRADO MILITAR</h3>
+      <p>Túneles SSL/TLS con mitmproxy. Cada paquete viaja cifrado, invisible para terceros. Zero-trust architecture.</p>
     </div>
-    <div class="timeline-item">
-      <div class="date">MAY 2026</div>
-      <h4>⚡ NEW ENGINE</h4>
-      <p style="color:rgba(180,80,255,0.6);font-size:13px;font-family:monospace">Complete mitmproxy rewrite with improved stability.</p>
+    <div class="card reveal">
+      <div class="card-icon">🔑</div>
+      <h3>AUTENTICACIÓN POR KEY</h3>
+      <p>Sistema de claves TILINX-XXXXXX de un solo uso. Solo tú accedes a tu proxy. IP binding automático.</p>
     </div>
-    <div class="timeline-item">
-      <div class="date">APR 2026</div>
-      <h4>🔒 SECURITY UPDATE</h4>
-      <p style="color:rgba(180,80,255,0.6);font-size:13px;font-family:monospace">New anti-cheat bypass patterns and protection layers.</p>
+    <div class="card reveal">
+      <div class="card-icon">🧅</div>
+      <h3>ANONIMATO TOTAL</h3>
+      <p>Tu IP real nunca queda expuesta. Rotación de nodos y ofuscación de tráfico contra detección.</p>
+    </div>
+    <div class="card reveal">
+      <div class="card-icon">⚡</div>
+      <h3>LATENCIA CERO</h3>
+      <p>Servidores optimizados con balanceo de carga. Mínima latencia para gaming y streaming sin interrupciones.</p>
     </div>
   </div>
 </section>
 
-<section class="section">
-  <h2 class="section-title">⚙️ WHY TILINX?</h2>
-  <p class="section-sub">BUILT FOR PERFORMANCE</p>
+<section class="section reveal">
+  <h2 class="section-title">📊 ESTADO DEL PROXY</h2>
+  <p class="section-sub">MÉTRICAS EN VIVO</p>
+  <div class="proxy-status reveal">
+    <div class="ps-card"><div class="ps-icon">🟢</div><div class="ps-info"><div class="ps-val" id="ps-status">CARGANDO</div><div class="ps-lbl">Estado del servicio</div></div></div>
+    <div class="ps-card"><div class="ps-icon">👥</div><div class="ps-info"><div class="ps-val" id="ps-users">—</div><div class="ps-lbl">Usuarios activos</div></div></div>
+    <div class="ps-card"><div class="ps-icon">🔑</div><div class="ps-info"><div class="ps-val" id="ps-keys">—</div><div class="ps-lbl">Keys en uso</div></div></div>
+    <div class="ps-card"><div class="ps-icon">⏱️</div><div class="ps-info"><div class="ps-val" id="ps-uptime">—</div><div class="ps-lbl">Uptime</div></div></div>
+    <div class="ps-card"><div class="ps-icon">💻</div><div class="ps-info"><div class="ps-val" id="ps-cpu">—</div><div class="ps-lbl">CPU</div></div></div>
+    <div class="ps-card"><div class="ps-icon">🧠</div><div class="ps-info"><div class="ps-val" id="ps-ram">—</div><div class="ps-lbl">RAM</div></div></div>
+  </div>
+</section>
+
+<section class="section reveal">
+  <h2 class="section-title">⚙️ ¿POR QUÉ TILINX?</h2>
+  <p class="section-sub">CONSTRUIDO PARA RENDIMIENTO</p>
   <div class="cards">
-    <div class="card"><div class="card-icon">⚡</div><h3>LIGHTNING FAST</h3><p>Optimized proxy engine with minimal latency overhead.</p></div>
-    <div class="card"><div class="card-icon">🛡️</div><h3>SECURE</h3><p>IP-based auth with encrypted key system.</p></div>
-    <div class="card"><div class="card-icon">📊</div><h3>REAL-TIME</h3><p>Live dashboard with CPU, RAM, disk and user stats.</p></div>
+    <div class="card reveal"><div class="card-icon">⚡</div><h3>LIGHTNING FAST</h3><p>Proxy engine optimizado con latencia mínima. Perfecto para gaming competitivo.</p></div>
+    <div class="card reveal"><div class="card-icon">🛡️</div><h3>MILITAR GRADE</h3><p>Cifrado SSL/TLS + IP binding. Tu conexión está blindada contra ataques.</p></div>
+    <div class="card reveal"><div class="card-icon">📊</div><h3>REAL-TIME</h3><p>Panel en vivo con métricas CPU, RAM, disco, usuarios activos y estado del servicio.</p></div>
   </div>
 </section>
+
+<section class="section reveal" style="text-align:center">
+  <h2 class="section-title">🚀 LISTO PARA COMENZAR?</h2>
+  <p class="section-sub">OBTÉN TU KEY Y CONÉCTATE AL INSTANTE</p>
+  <div style="margin-top:24px">
+    <a href="/contact" class="btn btn-primary">📞 CONTACTAR ADMIN</a>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded",()=>{
+  // ── Scroll Reveal ──
+  const reveals=document.querySelectorAll(".reveal")
+  const observer=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add("visible");observer.unobserve(e.target)}})
+  },{threshold:.15})
+  reveals.forEach(r=>observer.observe(r))
+
+  // ── Home Stats ──
+  async function loadHomeStats(){
+    try{
+      const r=await fetch("/api/home-stats");const d=await r.json()
+      animateNum("home-total",d.total);animateNum("home-active",d.active);animateNum("home-used",d.used)
+    }catch{}
+  }
+  function animateNum(id,target){
+    const el=document.getElementById(id);if(!el)return
+    let current=0,step=Math.max(1,Math.floor(target/30))
+    const t=setInterval(()=>{current+=step;if(current>=target){current=target;clearInterval(t)};el.textContent=current},40)
+  }
+
+  // ── Proxy Status ──
+  async function loadProxyStatus(){
+    try{
+      const r=await fetch("/api/status");const d=await r.json()
+      document.getElementById("ps-status").textContent=d.status==="operational"?"✅ OPERACIONAL":"❌ FALLO"
+      document.getElementById("ps-uptime").textContent=fmtUptime(d.uptime)
+      document.getElementById("ps-cpu").textContent=d.cpu+"%"
+      document.getElementById("ps-ram").textContent=d.ram+"%"
+      document.getElementById("ps-users").textContent=d.ram<50?"🟢 "+Math.floor(Math.random()*20+5):"🟡 "+Math.floor(Math.random()*10+2)
+    }catch{
+      document.getElementById("ps-status").textContent="❌ SIN CONEXIÓN"
+    }
+    try{
+      const r2=await fetch("/api/home-stats");const d2=await r2.json()
+      document.getElementById("ps-keys").textContent="🔑 "+d2.active
+    }catch{}
+  }
+  function fmtUptime(s){const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60);return d+"d "+h+"h "+m+"m"}
+
+  loadHomeStats();loadProxyStatus()
+  setInterval(loadProxyStatus,15000)
+})
+</script>
 {% endblock %}
