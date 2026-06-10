@@ -20,6 +20,11 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 100
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("TilinX_SESSION_SECURE", "1") == "1"
+app.config["SESSION_PERMANENT"] = True
+app.config["PERMANENT_SESSION_LIFETIME"] = 3600
 db.init_app(app)
 
 DASH_PASSWORD = os.environ.get("TilinX_DASH_PASSWORD", "hw132319")
@@ -251,6 +256,7 @@ def api_login():
     password = data.get("password") or data.get("pass", "")
     if password == DASH_PASSWORD:
         session.clear()
+        session.permanent = True
         session["logged_in"] = True
         session["fingerprint"] = _get_fingerprint()
         session["last_activity"] = time.time()
@@ -505,6 +511,8 @@ def api_home_stats():
 # ─── Admin Routes ──────────────────────────────────────────
 @app.route("/admin")
 def admin_index():
+    if not session.get("logged_in"):
+        return redirect("/login")
     return render_template("admin.html")
 
 # ─── 404 ───────────────────────────────────────────────────

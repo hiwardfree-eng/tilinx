@@ -92,10 +92,10 @@ function doLogin(){
   const err=document.getElementById('login-err');
   if(!pass){err.textContent='Ingresa la contraseña.';return}
   fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})})
-    .then(r=>{if(r.ok)window.location.href='/admin';else{r.text().then(()=>{err.textContent='Contraseña incorrecta.';const c=document.querySelector('.login-card');c.style.animation='none';c.offsetHeight;c.style.animation='shake .4s ease'})}})
-    .catch(()=>{err.textContent='Error de conexión.'})
+    .then(r=>{if(r.ok)window.location.href='/admin';else{r.text().then(t=>{err.textContent=t||'Contraseña incorrecta.';const c=document.querySelector('.login-card');c.style.animation='none';c.offsetHeight;c.style.animation='shake .4s ease'})}})
+    .catch(e=>{err.textContent='Error de conexión: '+(e.message||'')})
 }
-document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('pg-login').classList.contains('active'))doLogin()});
+document.addEventListener('keydown',function(e){var k=e.key||'';if((k==='Enter'||e.keyCode===13)&&document.getElementById('pg-login').classList.contains('active'))doLogin()});
 
 (function(){
   const canvas=document.getElementById('matrix'),ctx=canvas.getContext('2d');
