@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TilinX — Terminal V10</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--green:#00ff41;--green-dim:rgba(0,255,65,0.4);--green-bg:rgba(0,10,0,0.92);--purple:#b44aff;--purple-dim:rgba(130,0,255,0.3);--pink:#e879f9;--text:#c0e0c0;--font:'JetBrains Mono',monospace}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:var(--green);font-family:var(--font);font-size:14px;line-height:1.5;cursor:default}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 50% 50%,rgba(0,255,65,0.03),transparent);pointer-events:none;z-index:0}
+canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.35}
+#snow-canvas{z-index:1;opacity:0.7;pointer-events:none}
+.terminal{position:relative;z-index:10;width:100%;height:100%;display:flex;flex-direction:column;background:var(--green-bg);backdrop-filter:blur(4px)}
+.term-header{display:flex;align-items:center;justify-content:space-between;padding:10px 18px;border-bottom:1px solid var(--green-dim);flex-shrink:0;background:rgba(0,5,0,0.95);min-height:44px}
+.term-title{font-size:12px;font-weight:700;letter-spacing:2px;color:var(--green);text-shadow:0 0 10px var(--green)}
+.term-title .blink{animation:blink 1.2s step-end infinite}
+@keyframes blink{50%{opacity:0}}
+.term-stats{display:flex;gap:16px;font-size:10px;color:var(--green-dim)}
+.term-stats span{display:flex;align-items:center;gap:4px}
+.term-stats .dot{width:5px;height:5px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green)}
+.term-body{flex:1;overflow-y:auto;padding:10px 16px 4px;display:flex;flex-direction:column}
+.term-body::-webkit-scrollbar{width:4px}
+.term-body::-webkit-scrollbar-track{background:transparent}
+.term-body::-webkit-scrollbar-thumb{background:var(--green-dim);border-radius:99px}
+.term-output{flex:1;overflow-y:auto;min-height:0;padding-bottom:6px}
+.term-output .line{margin-bottom:1px;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.5}
+.term-output .line.green{color:var(--green)}
+.term-output .line.dim{color:rgba(0,255,65,0.45)}
+.term-output .line.purple{color:var(--purple)}
+.term-output .line.pink{color:var(--pink)}
+.term-output .line.red{color:#ff4444}
+.term-output .line.yellow{color:#ffdd44}
+.term-output .line.blue{color:#4488ff}
+.term-output .line.white{color:#e0ffe0}
+.term-output .line.b{font-weight:700}
+.term-output .line.big{font-size:11px;line-height:1.15;letter-spacing:0}
+.term-output .line.cmd{margin-top:4px;color:var(--green);font-weight:700}
+.term-output .line.cmd::before{content:'❯ ';color:var(--green-dim)}
+.term-input-line{display:flex;align-items:center;gap:8px;padding:6px 0 10px;flex-shrink:0;border-top:1px solid rgba(0,255,65,0.08)}
+.term-prompt{font-size:13px;font-weight:700;color:var(--green);text-shadow:0 0 6px var(--green);white-space:nowrap}
+.term-prompt .host{color:var(--purple)}
+.term-input{flex:1;background:transparent;border:none;color:var(--green);font-family:var(--font);font-size:13px;outline:none;caret-color:var(--green);text-shadow:0 0 6px var(--green)}
+.term-input::placeholder{color:rgba(0,255,65,0.15);font-size:12px}
+.term-cursor{display:inline-block;width:8px;height:15px;background:var(--green);box-shadow:0 0 8px var(--green);animation:blink 1s step-end infinite;margin-left:-3px}
+/* Progress bars */
+.prog-bar{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:12px}
+.prog-track{flex:1;height:16px;background:rgba(0,20,0,0.8);border:1px solid var(--green-dim);border-radius:3px;overflow:hidden;max-width:280px}
+.prog-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--green-dim),var(--green));transition:width .15s;box-shadow:0 0 12px var(--green)}
+.prog-label{color:var(--green-dim);font-size:10px;min-width:30px;text-align:right;font-weight:700}
+/* Boot screen */
+.boot-screen{position:absolute;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font);transition:opacity .5s}
+.boot-screen.hide{opacity:0;pointer-events:none}
+.boot-ascii{font-size:7px;line-height:1.1;color:var(--purple);text-shadow:0 0 20px var(--purple);text-align:center;margin-bottom:20px;white-space:pre}
+.boot-bar{width:300px;height:4px;background:rgba(0,20,0,0.8);border:1px solid var(--green-dim);border-radius:4px;overflow:hidden;margin:8px auto}
+.boot-fill{height:100%;width:0%;background:var(--green);box-shadow:0 0 16px var(--green);transition:width .3s}
+.boot-text{color:var(--green-dim);font-size:11px;letter-spacing:2px;margin-top:10px;font-weight:500}
+/* Snow toggle */
+.snow-btn{position:fixed;bottom:20px;right:20px;z-index:50;background:rgba(0,10,0,0.7);border:1px solid var(--purple-dim);border-radius:10px;color:var(--purple);padding:8px 14px;font-family:var(--font);font-size:11px;cursor:pointer;transition:all .3s;backdrop-filter:blur(4px)}
+.snow-btn:hover{border-color:var(--purple);box-shadow:0 0 16px var(--purple-dim)}
+/* Responsive */
+@media(max-width:600px){
+  .term-header{flex-wrap:wrap;gap:4px;padding:8px 12px}
+  .term-stats{font-size:8px;gap:8px}
+  .term-title{font-size:10px}
+  .term-body{padding:6px 10px 2px}
+  .term-output .line{font-size:11px}
+  .term-output .line.big{font-size:8px}
+  .term-input,.term-prompt{font-size:11px}
+  .boot-ascii{font-size:3px}
+  .boot-bar{width:200px}
+}
+</style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+<canvas id="snow-canvas"></canvas>
+
+<div class="boot-screen" id="boot">
+  <div class="boot-ascii" id="boot-ascii"></div>
+  <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+  <div class="boot-text" id="boot-text">INICIALIZANDO...</div>
+</div>
+
+<div class="terminal" id="terminal">
+  <div class="term-header">
+    <div class="term-title">TILINX TERMINAL <span style="color:var(--purple)">v10</span> <span class="blink">█</span></div>
+    <div class="term-stats">
+      <span><span class="dot"></span> ONLINE</span>
+      <span id="term-fps">FPS: --</span>
+      <span id="term-cpu">CPU: --%</span>
+      <span id="term-ram">RAM: --%</span>
+    </div>
+  </div>
+  <div class="term-body" id="term-body">
+    <div class="term-output" id="term-output"></div>
+    <div class="term-input-line">
+      <span class="term-prompt"><span class="host">root</span>@tilinx:~$</span>
+      <input class="term-input" id="term-input" type="text" placeholder="type help" spellcheck="false" autocomplete="off" autofocus/>
+    </div>
+  </div>
+</div>
+
+<button class="snow-btn" id="snow-btn" onclick="toggleSnow()">❄ NIEVE</button>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// BOOT SEQUENCE
+// ═══════════════════════════════════════════════════════════
+const BOOT_ASCII=`
+████████╗██╗██╗     ██╗███╗   ██╗██╗  ██╗
+╚══██╔══╝██║██║     ██║████╗  ██║╚██╗██╔╝
+   ██║   ██║██║     ██║██╔██╗ ██║ ╚███╔╝
+   ██║   ██║██║     ██║██║╚██╗██║ ██╔██╗
+   ██║   ██║███████╗██║██║ ╚████║██╔╝ ██╗
+   ╚═╝   ╚═╝╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝
+`
+
+const BOOT_MESSAGES=[
+  "Booting TilinX Terminal...",
+  "Loading Modules...",
+  "Initializing System...",
+  "Connection Established",
+  "Terminal Ready"
+]
+
+const TERM=document.getElementById("terminal")
+const OUTPUT=document.getElementById("term-output")
+const INPUT=document.getElementById("term-input")
+const BODY=document.getElementById("term-body")
+const BOOT=document.getElementById("boot")
+const BOOT_FILL=document.getElementById("boot-fill")
+const BOOT_TEXT=document.getElementById("boot-text")
+const BOOT_ASCII_EL=document.getElementById("boot-ascii")
+
+let history=[]
+let hIdx=-1
+let snowOn=true
+let pS=false
+
+function boot(){
+  BOOT_ASCII_EL.textContent=BOOT_ASCII
+  let p=0
+  const bootInt=setInterval(()=>{
+    p+=Math.random()*18+4
+    if(p>=100){p=100;clearInterval(bootInt)}
+    BOOT_FILL.style.width=p+"%"
+    const idx=Math.min(Math.floor(p/20),BOOT_MESSAGES.length-1)
+    BOOT_TEXT.textContent=BOOT_MESSAGES[idx]
+  },180)
+  setTimeout(()=>{
+    BOOT.classList.add("hide")
+    INPUT.focus()
+    showHelp()
+    updateHeader()
+    setInterval(updateHeader,2000)
+  },2800)
+}
+
+// ═══════════════════════════════════════════════════════════
+// MATRIX RAIN
+// ═══════════════════════════════════════════════════════════
+;(function(){
+  const c=document.getElementById("matrix-canvas"),ctx=c.getContext("2d")
+  const chars="アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモラリルレロ01"
+  let w,h,drops=[]
+  function resize(){w=c.width=innerWidth;h=c.height=innerHeight;const n=Math.ceil(w/18);while(drops.length<n)drops.push(Math.random()*-h/18);drops=drops.slice(0,n)}
+  function draw(){
+    ctx.fillStyle="rgba(0,0,0,0.06)";ctx.fillRect(0,0,w,h)
+    for(let i=0;i<drops.length;i++){
+      const ch=chars[Math.random()*chars.length|0]
+      const a=Math.random()>0.95?0.7:0.08+Math.random()*0.12
+      ctx.fillStyle=`rgba(0,255,65,${a})`;ctx.font="12px JetBrains Mono,monospace"
+      ctx.fillText(ch,i*18,drops[i]*18)
+      if(drops[i]*18>h&&Math.random()>0.975)drops[i]=0
+      drops[i]+=0.4+Math.random()*0.3
+    }
+    requestAnimationFrame(draw)
+  }
+  resize();window.addEventListener("resize",resize);draw()
+})()
+
+// ═══════════════════════════════════════════════════════════
+// PURPLE SNOW
+// ═══════════════════════════════════════════════════════════
+;(function(){
+  const c=document.getElementById("snow-canvas"),ctx=c.getContext("2d")
+  let w,h,flakes=[]
+  function resize(){w=c.width=innerWidth;h=c.height=innerHeight}
+  function init(){resize();flakes=Array.from({length:120},()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*3+1.5,s:Math.random()*0.8+0.2,o:Math.random()*0.6+0.2,w:Math.random()*2-1}))}
+  function draw(){
+    ctx.clearRect(0,0,w,h)
+    if(!snowOn){requestAnimationFrame(draw);return}
+    for(const f of flakes){
+      f.y+=f.s;f.x+=Math.sin(f.y*0.01)*0.3+f.w*0.1
+      if(f.y>h+10){f.y=-10;f.x=Math.random()*w}
+      if(f.x<0)f.x=w;if(f.x>w)f.x=0
+      ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,Math.PI*2)
+      ctx.fillStyle=`rgba(180,74,255,${f.o})`;ctx.fill()
+      ctx.shadowColor="rgba(180,74,255,0.4)";ctx.shadowBlur=8
+    }
+    requestAnimationFrame(draw)
+  }
+  resize();window.addEventListener("resize",()=>{resize();init()});init();draw()
+})()
+
+function toggleSnow(){snowOn=!snowOn;document.getElementById("snow-btn").textContent=snowOn?"❄ NIEVE":"☀ SIN NIEVE"}
+
+// ═══════════════════════════════════════════════════════════
+// HEADER STATS
+// ═══════════════════════════════════════════════════════════
+function updateHeader(){
+  document.getElementById("term-fps").textContent="FPS: "+(60+Math.floor(Math.random()*70))
+  document.getElementById("term-cpu").textContent="CPU: "+(20+Math.floor(Math.random()*40))+"%"
+  document.getElementById("term-ram").textContent="RAM: "+(30+Math.floor(Math.random()*35))+"%"
+}
+
+// ═══════════════════════════════════════════════════════════
+// TERMINAL OUTPUT
+// ═══════════════════════════════════════════════════════════
+function print(html,cls=""){
+  const d=document.createElement("div");d.className="line "+cls;d.innerHTML=html;OUTPUT.appendChild(d)
+  BODY.scrollTop=BODY.scrollHeight
+}
+
+function printCmd(cmd){
+  const d=document.createElement("div");d.className="line cmd";d.textContent=cmd;OUTPUT.appendChild(d)
+  BODY.scrollTop=BODY.scrollHeight
+}
+
+// ═══════════════════════════════════════════════════════════
+// COMMAND PROCESSOR
+// ═══════════════════════════════════════════════════════════
+async function processCmd(cmd){
+  const parts=cmd.trim().split(/\s+/)
+  const c=parts[0].toLowerCase()
+  const arg=parts.slice(1).join(" ")
+
+  if(!cmd.trim())return
+
+  printCmd(cmd)
+  history.push(cmd.trim())
+  hIdx=history.length
+
+  switch(c){
+    case "help":cmdHelp(arg);break
+    case "clear":OUTPUT.innerHTML="";break
+    case "history":cmdHistory();break
+    case "whoami":cmdWhoami();break
+    case "date":print(new Date().toLocaleString("es-DO",{timeZone:"America/Santo_Domingo"})+" AST");break
+    case "neofetch":cmdNeofetch();break
+    case "system":cmdSystem();break
+    case "cpu":cmdCpu();break
+    case "ram":cmdRam();break
+    case "gpu":cmdGpu();break
+    case "disk":cmdDisk();break
+    case "temperature":cmdTemperature();break
+    case "temp":cmdTemperature();break
+    case "network":cmdNetwork();break
+    case "internet":cmdInternet();break
+    case "ping":cmdPing(arg);break
+    case "services":cmdServices();break
+    case "monitor":cmdMonitor();break
+    case "status":cmdStatus();break
+    case "logs":cmdLogs();break
+    case "report":cmdReport();break
+    case "security":cmdSecurity();break
+    case "fps":cmdFps();break
+    case "optimizer":cmdOptimizer();break
+    case "boost":cmdBoost();break
+    case "turbo":cmdTurbo();break
+    case "ultra":cmdUltra();break
+    case "sensitivity":cmdSensitivity();break
+    case "crosshair":cmdCrosshair();break
+    case "tracking":cmdTracking();break
+    case "reaction":cmdReaction();break
+    case "training":cmdTraining();break
+    case "movement":cmdMovement();break
+    case "aimtest":cmdAimtest();break
+    case "godmode":cmdGodmode();break
+    case "snow":snowOn=!snowOn;print(snowOn?"❄ Nieve morada activada":"☀ Nieve desactivada",snowOn?"purple":"dim");document.getElementById("snow-btn").textContent=snowOn?"❄ NIEVE":"☀ SIN NIEVE";break
+    case "matrix":cmdMatrix();break
+    case "color":cmdColor(arg);break
+    case "uptime":print("Uptime: "+fmtUptime(Math.floor(Math.random()*86400*7+86400)));break
+    case "exit":print("Sesión terminada. Presiona cualquier tecla para reconectar.","dim");break
+    case "restart":print("Reiniciando sistema...","yellow");setTimeout(()=>{OUTPUT.innerHTML="";print("Sistema reiniciado. ✅","green")},800);break
+    case "shutdown":print("Apagando...","red");setTimeout(()=>{OUTPUT.innerHTML="";print("Sistema apagado. Presiona cualquier tecla.","dim")},1000);break
+    default:print(`Comando desconocido: "${c}". Escribe <span style="color:var(--green)">help</span> para ver los comandos.`,"red")
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELP
+// ═══════════════════════════════════════════════════════════
+function showHelp(){cmdHelp()}
+
+function cmdHelp(filter){
+  const cmds={
+    system:"Información del sistema",
+    cpu:"Detalles de la CPU",
+    ram:"Uso de memoria RAM",
+    gpu:"Información de la GPU",
+    disk:"Uso del disco",
+    temp:"Temperatura del sistema",
+    network:"Interfaces de red",
+    internet:"Estado de conexión",
+    ping:"<host> — Prueba de latencia",
+    fps:"Analizador de FPS",
+    optimizer:"Optimizar sistema",
+    boost:"Modo rendimiento",
+    turbo:"Turbo mode +25%",
+    ultra:"Ultra rendimiento",
+    sensitivity:"Analizar sensibilidad",
+    crosshair:"Configurar mira",
+    tracking:"Análisis de tracking",
+    reaction:"Tiempo de reacción",
+    training:"Centro de entrenamiento",
+    movement:"Análisis de movimiento",
+    aimtest:"Prueba de precisión",
+    godmode:"Activar todos los módulos",
+    services:"Servicios activos",
+    monitor:"Monitor en tiempo real",
+    status:"Estado del sistema",
+    logs:"Registros del sistema",
+    report:"Generar reporte",
+    security:"Escaneo de seguridad",
+    neofetch:"Info del sistema estilo neofetch",
+    whoami:"Usuario actual",
+    history:"Historial de comandos",
+    date:"Fecha y hora actual",
+    clear:"Limpiar terminal",
+    snow:"Activar/desactivar nieve",
+    matrix:"Efecto matrix",
+    color:"<color> — Cambiar color (green|purple|blue|red|pink)",
+    uptime:"Tiempo activo del sistema",
+    exit:"Cerrar sesión",
+    restart:"Reiniciar sistema",
+    shutdown:"Apagar sistema",
+    help:"<comando> — Ayuda detallada"
+  }
+
+  if(filter){
+    if(cmds[filter]){print(`<span style="color:var(--green);font-weight:700">${filter}</span> — ${cmds[filter]}`,"green")}
+    else{print(`No hay ayuda disponible para "${filter}"`,"red")}
+    return
+  }
+
+  const groups={
+    "⚙ SISTEMA":["system","cpu","ram","gpu","disk","temp","network","internet","uptime","neofetch","whoami","date"],
+    "📊 MONITOREO":["status","monitor","logs","report","security","services","ping"],
+    "🎮 GAMING":["fps","optimizer","boost","turbo","ultra","sensitivity","crosshair","tracking","reaction","training","movement","aimtest"],
+    "⚡ ÉPICO":["godmode"],
+    "🛠 TERMINAL":["help","clear","history","snow","matrix","color","exit","restart","shutdown"]
+  }
+
+  print("<span style='color:var(--purple);font-weight:700'>╔══════════════════════════════════════╗</span>","big")
+  print("<span style='color:var(--purple);font-weight:700'>║        TILINX TERMINAL V10           ║</span>","big")
+  print("<span style='color:var(--purple);font-weight:700'>╚══════════════════════════════════════╝</span>","big")
+  print("")
+
+  for(const [group,list] of Object.entries(groups)){
+    print(`<span style="color:var(--pink)">${group}</span>`,"b")
+    for(const k of list){
+      print(`  <span style="color:var(--green);font-weight:700">${k.padEnd(12)}</span> <span style="color:rgba(0,255,65,0.4)">${cmds[k]||''}</span>`)
+    }
+    print("")
+  }
+
+  print("<span style='color:var(--green-dim)'>Escribe help [comando] para ayuda detallada.</span>","dim")
+}
+
+// ═══════════════════════════════════════════════════════════
+// SYSTEM COMMANDS
+// ═══════════════════════════════════════════════════════════
+function cmdSystem(){
+  const d=new Date()
+  print("╔══════════════════════════════════╗","dim")
+  print("║        SYSTEM INFORMATION        ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`OS ................ <span style="color:var(--green)">TilinX OS v10.0.0 (x86_64)</span>`)
+  print(`Kernel ........... <span style="color:var(--green)">6.8.0-tilinx-amd64</span>`)
+  print(`Host ............. <span style="color:var(--green)">TilinX-PRO-7</span>`)
+  print(`Uptime ........... <span style="color:var(--green)">${fmtUptime(Math.floor(Math.random()*86400*14+3600))}</span>`)
+  print(`Shell ............ <span style="color:var(--green)">TilinX SH v10</span>`)
+  print(`Terminal ......... <span style="color:var(--green)">TilinX Terminal v10 GOD EDITION</span>`)
+  print(`Date ............. <span style="color:var(--green)">${d.toLocaleDateString("es-DO")} ${d.toLocaleTimeString("es-DO")}</span>`)
+  print(`Users ............ <span style="color:var(--green)">root (admin)</span>`)
+  print(`Locale ........... <span style="color:var(--green)">es_DO.UTF-8</span>`)
+}
+
+function cmdCpu(){
+  const cores=Math.floor(Math.random()*4+8)
+  const arch=["x86_64","aarch64","amd64"][Math.floor(Math.random()*3)]
+  const freq=(3.2+Math.random()*2.8).toFixed(1)
+  const usage=20+Math.floor(Math.random()*50)
+  print("╔══════════════════════════════════╗","dim")
+  print("║           CPU INFORMATION        ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Model ........... <span style="color:var(--green)">AMD Ryzen 9 ${Math.floor(5000+Math.random()*2000)}X</span>`)
+  print(`Architecture .... <span style="color:var(--green)">${arch}</span>`)
+  print(`Cores ........... <span style="color:var(--green)">${cores}C / ${Math.floor(cores*2)}T</span>`)
+  print(`Frequency ....... <span style="color:var(--green)">${freq} GHz</span>`)
+  print(`Usage ........... <span style="color:var(--green)">${usage}%</span>`)
+  const bar="█".repeat(Math.floor(usage/4))+"░".repeat(25-Math.floor(usage/4))
+  print(`Load ............ <span style="color:var(--green)">[${bar}]</span>`)
+  print(`Cache ........... <span style="color:var(--green)">L1: 512K | L2: 8M | L3: 64M</span>`)
+  print(`Temperature ..... <span style="color:${usage>60?'#ff4444':'var(--green)'}">${(45+usage*0.3).toFixed(1)}°C</span>`)
+}
+
+function cmdRam(){
+  const total=16+Math.floor(Math.random()*16)
+  const used=Math.floor(total*(0.3+Math.random()*0.4))
+  const free=total-used
+  const pct=Math.floor(used/total*100)
+  print("╔══════════════════════════════════╗","dim")
+  print("║          MEMORY INFORMATION      ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Total .......... <span style="color:var(--green)">${total} GB</span>`)
+  print(`Used ........... <span style="color:${pct>70?'#ff4444':'var(--green)'}">${used} GB (${pct}%)</span>`)
+  print(`Free ........... <span style="color:var(--green)">${free} GB</span>`)
+  const bar="█".repeat(Math.floor(pct/4))+"░".repeat(25-Math.floor(pct/4))
+  print(`Load ........... <span style="color:var(--green)">[${bar}]</span>`)
+  print(`Swap ........... <span style="color:var(--green)">${(total*0.5).toFixed(0)} GB total | ${Math.floor(total*0.5*0.1)} GB used</span>`)
+  print(`Type ........... <span style="color:var(--green)">DDR5-6000</span>`)
+}
+
+function cmdGpu(){
+  const gpus=[
+    {name:"NVIDIA GeForce RTX 4090",vram:"24 GB GDDR6X",freq:"2.52 GHz",cuda:"16384"},
+    {name:"NVIDIA GeForce RTX 4080",vram:"16 GB GDDR6X",freq:"2.51 GHz",cuda:"9728"},
+    {name:"AMD Radeon RX 7900 XTX",vram:"24 GB GDDR6",freq:"2.5 GHz",cuda:"—"},
+    {name:"NVIDIA GeForce RTX 5090",vram:"32 GB GDDR7",freq:"2.7 GHz",cuda:"21760"}
+  ]
+  const gpu=gpus[Math.floor(Math.random()*gpus.length)]
+  const temp=55+Math.floor(Math.random()*25)
+  const usage=20+Math.floor(Math.random()*60)
+  print("╔══════════════════════════════════╗","dim")
+  print("║          GPU INFORMATION         ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Model ........... <span style="color:var(--green)">${gpu.name}</span>`)
+  print(`VRAM ........... <span style="color:var(--green)">${gpu.vram}</span>`)
+  print(`Clock .......... <span style="color:var(--green)">${gpu.freq}</span>`)
+  if(gpu.cuda!=="—")print(`CUDA Cores ..... <span style="color:var(--green)">${gpu.cuda}</span>`)
+  print(`Usage .......... <span style="color:var(--green)">${usage}%</span>`)
+  print(`Temperature .... <span style="color:${temp>75?'#ff4444':'var(--green)'}">${temp}°C</span>`)
+  print(`Driver ......... <span style="color:var(--green)">${(["561.09","560.94","555.99","565.90"])[Math.floor(Math.random()*4)]}</span>`)
+}
+
+function cmdDisk(){
+  const total=256+Math.floor(Math.random()*512)
+  const used=Math.floor(total*(0.2+Math.random()*0.4))
+  const free=total-used
+  const pct=Math.floor(used/total*100)
+  print("╔══════════════════════════════════╗","dim")
+  print("║          DISK INFORMATION        ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  for(const m of["/","/home","/var","/tmp"]){
+    const t=Math.floor(total*(0.4+Math.random()*0.6))
+    const u=Math.floor(t*(0.2+Math.random()*0.5))
+    const p=Math.floor(u/t*100)
+    const bar="█".repeat(Math.floor(p/4))+"░".repeat(25-Math.floor(p/4))
+    print(`${m.padEnd(12)} ${String(t).padStart(5,' ')}G  <span style="color:${p>75?'#ff4444':'var(--green)'}">[${bar}] ${p}%</span>`,"dim")
+  }
+  print(`───`,"dim")
+  print(`Total .......... <span style="color:var(--green)">${total} GB</span>`)
+  print(`Used ........... <span style="color:${pct>80?'#ff4444':'var(--green)'}">${used} GB (${pct}%)</span>`)
+  print(`Free ........... <span style="color:var(--green)">${free} GB</span>`)
+}
+
+function cmdTemperature(){
+  const cpuT=(45+Math.random()*30).toFixed(1)
+  const gpuT=(50+Math.random()*30).toFixed(1)
+  const moboT=(35+Math.random()*15).toFixed(1)
+  print("╔══════════════════════════════════╗","dim")
+  print("║         TEMPERATURES             ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`CPU ........... <span style="color:${parseFloat(cpuT)>65?'#ff4444':'var(--green)'}">${cpuT}°C</span>`)
+  print(`GPU ........... <span style="color:${parseFloat(gpuT)>65?'#ff4444':'var(--green)'}">${gpuT}°C</span>`)
+  print(`Motherboard ... <span style="color:var(--green)">${moboT}°C</span>`)
+  print(`Storage ....... <span style="color:var(--green)">${(35+Math.random()*8).toFixed(1)}°C</span>`)
+  print("")
+  print(`<span style="color:var(--green-dim)">Status: ${parseFloat(cpuT)<70?'✅ NORMAL':'⚠ ALERTA'}</span>`,"dim")
+}
+
+function cmdNetwork(){
+  const ifaces=["eth0","wlan0","lo","docker0","tun0"]
+  print("╔══════════════════════════════════╗","dim")
+  print("║        NETWORK INTERFACES        ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  for(const iface of ifaces){
+    const ip=Array.from({length:4},()=>Math.floor(Math.random()*254+1)).join(".")
+    const mac=Array.from({length:6},()=>Math.floor(Math.random()*256).toString(16).padStart(2,"0")).join(":")
+    const rx=(Math.random()*500).toFixed(1)
+    const tx=(Math.random()*200).toFixed(1)
+    const up=iface!=="tun0"?true:Math.random()>0.3
+    print(`<span style="color:${up?'var(--green)':'#ff4444'}">${up?'🟢':'🔴'}</span> ${iface.padEnd(8)} ${ip}  ↓${rx}MB  ↑${tx}MB  ${mac}`,"dim")
+  }
+}
+
+function cmdInternet(){
+  print("╔══════════════════════════════════╗","dim")
+  print("║         INTERNET STATUS          ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Status ......... <span style="color:var(--green)">✅ CONNECTED</span>`)
+  print(`ISP ............ <span style="color:var(--green)">TilinX Communications</span>`)
+  print(`External IP .... <span style="color:var(--green)">${Array.from({length:4},()=>Math.floor(Math.random()*254+1)).join(".")}</span>`)
+  print(`DNS ............ <span style="color:var(--green)">1.1.1.1, 8.8.8.8</span>`)
+  print(`Latency ........ <span style="color:var(--green)">${(5+Math.random()*40).toFixed(0)} ms</span>`)
+  print(`Bandwidth ...... <span style="color:var(--green)">${(200+Math.random()*600).toFixed(0)} Mbps</span>`)
+}
+
+function cmdPing(host){
+  if(!host){print("Uso: ping &lt;host&gt; — Ej: ping google.com","yellow");return}
+  print(`Haciendo ping a ${host} (${Array.from({length:4},()=>Math.floor(Math.random()*254+1)).join(".")})...`)
+  let count=0
+  const int=setInterval(()=>{
+    const ms=(5+Math.random()*60).toFixed(1)
+    const ttl=55+Math.floor(Math.random()*10)
+    print(`<span style="color:var(--green)">${count+1}</span> ${host} — icmp_seq=${count+1} ttl=${ttl} time=${ms} ms`,"dim")
+    count++
+    if(count>=4){clearInterval(int);print(`--- ${host} ping statistics ---`);print(`${count} packets transmitted, ${count} received, 0% packet loss, time ${(Math.random()*200+100).toFixed(0)}ms`)}
+  },600)
+}
+
+async function cmdServices(){
+  const services=[
+    {name:"tilinx-proxy",stat:"active"}, {name:"tilinx-api",stat:"active"}, {name:"tilinx-bot",stat:"active"},
+    {name:"nginx",stat:"active"}, {name:"postgresql",stat:"active"}, {name:"redis",stat:"active"},
+    {name:"docker",stat:"active"}, {name:"ssh",stat:"active"}, {name:"ufw",stat:"active"},
+    {name:"cron",stat:"active"}, {name:"fail2ban",stat:"active"}, {name:"prometheus",stat:"active"}
+  ]
+  print("╔══════════════════════════════════╗","dim")
+  print("║           SYSTEM SERVICES        ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  for(const s of services){
+    const elapsed=Math.floor(Math.random()*3600*48)
+    print(`  <span style="color:var(--green)">●</span> ${s.name.padEnd(18)} <span style="color:var(--green)">${s.stat.padEnd(8)}</span> <span style="color:rgba(0,255,65,0.3)">uptime: ${fmtUptime(elapsed)}</span>`)
+  }
+  print(`<span style="color:var(--green-dim)">Total: ${services.length} servicios — ${services.filter(s=>s.stat==='active').length} activos</span>`)
+}
+
+function cmdMonitor(){
+  print("📊 MONITOR EN VIVO (actualizando cada 2s) — Presiona cualquier tecla para salir.","yellow")
+  let running=true
+  const int=setInterval(()=>{
+    if(!running){clearInterval(int);return}
+    const cpu=20+Math.floor(Math.random()*50)
+    const ram=30+Math.floor(Math.random()*40)
+    const disk=25+Math.floor(Math.random()*30)
+    const up=Math.floor(Math.random()*86400*7)
+    const cBar="█".repeat(Math.floor(cpu/4))+"░".repeat(25-Math.floor(cpu/4))
+    const rBar="█".repeat(Math.floor(ram/4))+"░".repeat(25-Math.floor(ram/4))
+    const line=document.createElement("div");line.className="line dim"
+    line.style.fontSize="11px"
+    line.textContent=`[${new Date().toLocaleTimeString()}] CPU:[${cBar}] ${cpu}% | RAM:[${rBar}] ${ram}% | DISK: ${disk}% | UP: ${fmtUptime(up)}`
+    OUTPUT.appendChild(line)
+    BODY.scrollTop=BODY.scrollHeight
+  },2000)
+  const handler=()=>{running=false;clearInterval(int);print("Monitor detenido. ✅","dim");document.removeEventListener("keydown",handler)}
+  document.addEventListener("keydown",handler)
+}
+
+function cmdStatus(){
+  const cpu=20+Math.floor(Math.random()*30)
+  const ram=30+Math.floor(Math.random()*25)
+  const disk=20+Math.floor(Math.random()*15)
+  print("╔══════════════════════════════════╗","dim")
+  print("║          SYSTEM STATUS           ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`CPU ............. <span style="color:${cpu>60?'#ff4444':'var(--green)'}">${cpu}% — ${cpu>60?'⚠ ALTA':'✅ NORMAL'}</span>`)
+  print(`RAM ............. <span style="color:${ram>70?'#ff4444':'var(--green)'}">${ram}% — ${ram>70?'⚠ ALTA':'✅ NORMAL'}</span>`)
+  print(`DISK ............ <span style="color:${disk>80?'#ff4444':'var(--green)'}">${disk}% — ${disk>80?'⚠ ALTA':'✅ NORMAL'}</span>`)
+  print(`Network ......... <span style="color:var(--green)">✅ CONNECTED</span>`)
+  print(`Security ........ <span style="color:var(--green)">✅ ALL OK</span>`)
+  print(`Services ........ <span style="color:var(--green)">✅ 12/12 ACTIVE</span>`)
+  print(`<span style="color:var(--green-dim)">Overall Status: ✅ OPERATIONAL</span>`,"b")
+}
+
+function cmdLogs(){
+  const events=[
+    {ev:"SYSTEM BOOT",type:"info",time:"justo ahora"},
+    {ev:"SERVICE START: tilinx-proxy",type:"info",time:"hace 2min"},
+    {ev:"SERVICE START: tilinx-api",type:"info",time:"hace 2min"},
+    {ev:"SERVICE START: tilinx-bot",type:"info",time:"hace 2min"},
+    {ev:"AUTH LOGIN: root@admin",type:"info",time:"hace 3min"},
+    {ev:"NETWORK INIT: eth0",type:"info",time:"hace 3min"},
+    {ev:"NETWORK INIT: wlan0",type:"info",time:"hace 3min"},
+    {ev:"FIREWALL RULES LOADED",type:"info",time:"hace 4min"},
+    {ev:"DISK CHECK: 0 ERRORS",type:"info",time:"hace 5min"},
+    {ev:"MEMORY TEST: PASSED",type:"info",time:"hace 6min"},
+    {ev:"CPU INIT: 16 CORES",type:"info",time:"hace 6min"},
+    {ev:"KERNEL LOAD: 6.8.0",type:"info",time:"hace 7min"},
+    {ev:"BIOS POST: SUCCESS",type:"info",time:"hace 8min"}
+  ]
+  print("╔══════════════════════════════════╗","dim")
+  print("║           SYSTEM LOGS            ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  for(const e of events){
+    print(`  [${e.time.padEnd(14)}] <span style="color:rgba(0,255,65,0.5)">${e.ev}</span>`,"dim")
+  }
+}
+
+function cmdReport(){
+  const cpu=20+Math.floor(Math.random()*25)
+  const ram=30+Math.floor(Math.random()*20)
+  const disk=20+Math.floor(Math.random()*10)
+  print("╔══════════════════════════════════╗","dim")
+  print("║        SYSTEM REPORT             ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Fecha: ${new Date().toLocaleString("es-DO")}`)
+  print(`Sistema: TilinX OS v10.0.0`)
+  print(`Kernel: 6.8.0-tilinx-amd64`)
+  print(`Uptime: ${fmtUptime(Math.floor(Math.random()*86400*14+3600))}`)
+  print(`CPU: ${cpu}% — RAM: ${ram}% — DISK: ${disk}%`)
+  print(`Servicios: 12 activos, 0 caídos`)
+  print(`Seguridad: Firewall activo, fail2ban activo`)
+  print(`<span style="color:var(--green)">✅ Reporte generado exitosamente.</span>`)
+}
+
+function cmdSecurity(){
+  print("╔══════════════════════════════════╗","dim")
+  print("║         SECURITY SCAN            ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  const checks={
+    "Firewall (UFW)":"✅ ACTIVO","Fail2Ban":"✅ ACTIVO","Puertos abiertos":"✅ 3 (22,80,443)","Rootkits":"✅ NINGUNO",
+    "Malware Scan":"✅ LIMPIO","SSL/TLS":"✅ VÁLIDO","DNS Security":"✅ DNSSEC ACTIVO","DDoS Protection":"✅ ACTIVO",
+    "Intrusion Detection":"✅ ACTIVO","SSH Hardening":"✅ CONFIGURADO","Autenticación 2FA":"✅ ACTIVA",
+    "Key System":"✅ ENCRIPTADO"
+  }
+  for(const [k,v] of Object.entries(checks)){
+    print(`  ${k.padEnd(22)} ${v}`)
+  }
+  print("")
+  print(`<span style="color:var(--green);font-weight:700">🔒 SISTEMA SEGURO — 12/12 CHECKS SUPERADOS ✅</span>`)
+}
+
+// ═══════════════════════════════════════════════════════════
+// GAMING COMMANDS
+// ═══════════════════════════════════════════════════════════
+function cmdFps(){
+  const fps=60+Math.floor(Math.random()*85)
+  const min=Math.max(40,fps-30-Math.floor(Math.random()*20))
+  const max=fps+Math.floor(Math.random()*30)
+  const avg=Math.floor((min+max)/2+Math.random()*10-5)
+  const perf=fps>=120?"EXCELLENT":fps>=90?"GOOD":fps>=60?"AVERAGE":"LOW"
+  const bar="█".repeat(Math.floor(fps/5))+"░".repeat(28-Math.floor(fps/5))
+  print("╔══════════════════════════════════╗","dim")
+  print("║           FPS ANALYZER           ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Current FPS .... <span style="color:var(--green);font-size:18px;font-weight:700">${fps}</span>`)
+  print(`Average FPS .... <span style="color:var(--green)">${avg}</span>`)
+  print(`Minimum FPS .... <span style="color:#ff4444">${min}</span>`)
+  print(`Maximum FPS .... <span style="color:var(--green)">${max}</span>`)
+  print(`[${bar}]`)
+  print(`Performance .... <span style="color:${fps>=90?'var(--green)':'#ffdd44'}">${perf}</span>`)
+}
+
+function cmdOptimizer(){
+  print("⚡ OPTIMIZANDO SISTEMA...","yellow")
+  let p=0
+  const stages=[
+    "Analizando procesos...",
+    "Optimizando memoria...",
+    "Ajustando CPU...",
+    "Limpiando caché...",
+    "Optimizando disco...",
+    "Afinando red..."
+  ]
+  const int=setInterval(()=>{
+    p+=Math.floor(Math.random()*12+5)
+    if(p>=100){p=100;clearInterval(int)}
+    const bar="█".repeat(Math.floor(p/6))+"░".repeat(17-Math.floor(p/6))
+    const si=Math.min(Math.floor(stages.length*(p/100)),stages.length-1)
+    const line=document.createElement("div");line.className="line dim"
+    line.style.fontSize="11px"
+    line.innerHTML=`<span style="color:var(--green)">[${bar}]</span> ${p}% — ${stages[si]}`
+    OUTPUT.appendChild(line)
+    BODY.scrollTop=BODY.scrollHeight
+  },250)
+  setTimeout(()=>{
+    print("")
+    print(`<span style="color:var(--green);font-weight:700">✅ OPTIMIZACIÓN COMPLETA</span>`)
+  },3000)
+}
+
+function cmdBoost(){
+  print("╔══════════════════════════════════╗","dim")
+  print("║         PERFORMANCE MODE         ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`CPU Priority ........ <span style="color:var(--green)">HIGH</span>`)
+  print(`Memory Optimization . <span style="color:var(--green)">ENABLED</span>`)
+  print(`Background Tasks .... <span style="color:var(--green)">REDUCED</span>`)
+  print(`GPU Scheduling ...... <span style="color:var(--green)">HIGH PERFORMANCE</span>`)
+  print(`Network Priority .... <span style="color:var(--green)">GAMING</span>`)
+  print(`<span style="color:var(--green);font-weight:700">✅ BOOST ACTIVADO</span>`)
+}
+
+function cmdTurbo(){
+  print("╔══════════════════════════════════╗","dim")
+  print("║           TURBO MODE             ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`<span style="color:var(--green);font-size:16px;font-weight:700">🚀 TURBO MODE ENABLED</span>`)
+  print(`System Performance .. <span style="color:var(--green)">+25%</span>`)
+  print(`CPU Governor ........ <span style="color:var(--green)">performance</span>`)
+  print(`Fan Speed ........... <span style="color:var(--green)">${(80+Math.random()*15).toFixed(0)}%</span>`)
+}
+
+function cmdUltra(){
+  print("╔══════════════════════════════════╗","dim")
+  print("║       ULTRA PERFORMANCE MODE     ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`FPS Stability .......... <span style="color:var(--green)">MAXIMUM</span>`)
+  print(`System Latency ......... <span style="color:var(--green)">LOW</span>`)
+  print(`Resource Allocation .... <span style="color:var(--green)">OPTIMIZED</span>`)
+  print(`Power Plan ............. <span style="color:var(--green)">ULTRA PERFORMANCE</span>`)
+  print(`<span style="color:var(--green);font-weight:700">✅ ULTRA ACTIVADO</span>`)
+}
+
+function cmdSensitivity(){
+  const dpi=400+Math.floor(Math.random()*3200)
+  const sens=(0.5+Math.random()*3).toFixed(2)
+  const eDPI=Math.floor(dpi*parseFloat(sens))
+  const cm360=(10+Math.random()*40).toFixed(1)
+  const rec=customsRec(eDPI)
+  print("╔══════════════════════════════════╗","dim")
+  print("║       SENSITIVITY ANALYZER       ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`DPI ............... <span style="color:var(--green)">${dpi}</span>`)
+  print(`Sensitivity ....... <span style="color:var(--green)">${sens}</span>`)
+  print(`eDPI .............. <span style="color:var(--green)">${eDPI}</span>`)
+  print(`cm/360° ........... <span style="color:var(--green)">${cm360} cm</span>`)
+  print(`Recomendación ..... <span style="color:var(--purple)">${rec}</span>`)
+}
+
+function customsRec(edpi){
+  if(edpi<400)return "Muy baja — Prueba subir"
+  if(edpi<800)return "Baja — Precisión alta"
+  if(edpi<1600)return "Media — Balance ideal ✅"
+  if(edpi<3200)return "Alta — Rapidez, menos precisión"
+  return "Muy alta — Control difícil"
+}
+
+function cmdCrosshair(){
+  const colors=["green","red","yellow","purple","pink","cyan","white"]
+  const color=colors[Math.floor(Math.random()*colors.length)]
+  const size=Math.floor(Math.random()*4+2)
+  const gap=Math.floor(Math.random()*6+1)
+  const thick=Math.floor(Math.random()*2+1)
+  print("╔══════════════════════════════════╗","dim")
+  print("║         CROSSHAIR CONFIG         ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Color ........... <span style="color:var(--green)">${color}</span>`)
+  print(`Size ............ <span style="color:var(--green)">${size}</span>`)
+  print(`Gap ............. <span style="color:var(--green)">${gap}</span>`)
+  print(`Thickness ....... <span style="color:var(--green)">${thick}</span>`)
+  print(`Draw Outline .... <span style="color:var(--green)">ON</span>`)
+  print(`Center Dot ...... <span style="color:var(--green)">OFF</span>`)
+  print(`<span style="color:var(--green)">✅ Crosshair configurado.</span>`)
+}
+
+function cmdTracking(){
+  const score=60+Math.floor(Math.random()*40)
+  const bar="█".repeat(Math.floor(score/4))+"░".repeat(25-Math.floor(score/4))
+  print("╔══════════════════════════════════╗","dim")
+  print("║         TRACKING ANALYSIS        ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Precisión ....... <span style="color:var(--green)">${score}%</span>`)
+  print(`[${bar}]`)
+  print(`Smoothness ...... <span style="color:${score>75?'var(--green)':'#ffdd44}'}">${score>75?'SUAVE':'REGULAR'}</span>`)
+  print(`Reaction ........ <span style="color:var(--green)">${(150+Math.random()*100).toFixed(0)} ms</span>`)
+  const recs=["Mejora el seguimiento horizontal","Buena precisión vertical","Practica flick shots","Tracking consistente ✅"]
+  print(`Consejo ......... <span style="color:var(--purple)">${recs[Math.floor(Math.random()*recs.length)]}</span>`)
+}
+
+let reactTimeout=null
+function cmdReaction(){
+  if(reactTimeout){print("Ya hay una prueba en curso.","yellow");return}
+  print("🎯 PRUEBA DE REACCIÓN","yellow")
+  print("Espera la señal... presiona ESPACIO cuando veas el 🟢")
+  let started=false,startTime=0,fired=false
+  const timeout=setTimeout(()=>{
+    started=true
+    print("""")
+    print(`<span style="color:var(--green);font-size:20px;font-weight:700">🟢 ¡YA!</span>`)
+    startTime=Date.now()
+  },1500+Math.random()*2500)
+  const handler=(e)=>{
+    if(e.key===" "){
+      e.preventDefault()
+      if(!started){print("¡Muy rápido! Espera la señal 🟢","red");clearTimeout(timeout);reactTimeout=null;document.removeEventListener("keydown",handler);return}
+      if(fired)return;fired=true
+      const ms=Date.now()-startTime
+      if(ms<150)print(`<span style="color:var(--green)">⏱ ${ms} ms — 🔥 IMPRESIONANTE</span>`)
+      else if(ms<250)print(`<span style="color:var(--green)">⏱ ${ms} ms — 🎯 BUENO</span>`)
+      else if(ms<400)print(`<span style="color:#ffdd44">⏱ ${ms} ms — 😐 NORMAL</span>`)
+      else print(`<span style="color:#ff4444">⏱ ${ms} ms — 🐢 NECESITAS PRÁCTICA</span>`)
+      reactTimeout=null
+      document.removeEventListener("keydown",handler)
+    }
+  }
+  reactTimeout={timeout,handler}
+  document.addEventListener("keydown",handler)
+}
+
+function cmdTraining(){
+  const drills=["Seguimiento de objetivos","Flick shots","Tracking suave","Click timing","Reacción rápida","Prefire practice"]
+  const drill=drills[Math.floor(Math.random()*drills.length)]
+  print("╔══════════════════════════════════╗","dim")
+  print("║       TRAINING CENTER            ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Ejercicio: <span style="color:var(--green)">${drill}</span>`)
+  print(`Duración: <span style="color:var(--green)">${Math.floor(Math.random()*5+3)} min</span>`)
+  print(`Dificultad: <span style="color:var(--green)">${["Fácil","Media","Difícil","Experto"][Math.floor(Math.random()*4)]}</span>`)
+  print(`<span style="color:var(--purple)">🎯 Entrenamiento iniciado. ¡Concéntrate!</span>`)
+}
+
+function cmdMovement(){
+  const stats={velocidad:60+Math.random()*35,aceleracion:50+Math.random()*40,precision:40+Math.random()*50,anticipacion:30+Math.random()*55}
+  print("╔══════════════════════════════════╗","dim")
+  print("║       MOVEMENT ANALYSIS          ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  for(const [k,v] of Object.entries(stats)){
+    const bar="█".repeat(Math.floor(v/4))+"░".repeat(25-Math.floor(v/4))
+    print(`${k.padEnd(14)} [<span style="color:var(--green)">${bar}</span>] ${Math.floor(v)}%`)
+  }
+  print(`Overall: ${Math.floor(Object.values(stats).reduce((a,b)=>a+b,0)/4)}%`,"b")
+}
+
+function cmdAimtest(){
+  const score=55+Math.floor(Math.random()*45)
+  const hits=Math.floor(score/100*30)
+  const misses=30-hits
+  const bar="█".repeat(Math.floor(score/4))+"░".repeat(25-Math.floor(score/4))
+  print("╔══════════════════════════════════╗","dim")
+  print("║         AIM PRECISION TEST       ║","green")
+  print("╚══════════════════════════════════╝","dim")
+  print(`Precisión: <span style="color:var(--green)">${score}%</span>`)
+  print(`[${bar}]`)
+  print(`Hits: ${hits} | Misses: ${misses}`)
+  print(`Rating: <span style="color:${score>80?'var(--green)':score>60?'#ffdd44':'#ff4444'}">${score>80?'🔥 PRO':score>60?'👍 GOOD':'🔰 NOOB'}</span>`)
+}
+
+// ═══════════════════════════════════════════════════════════
+// GODMODE
+// ═══════════════════════════════════════════════════════════
+function cmdGodmode(){
+  const modules=["OPTIMIZER","BOOST","ULTRA","NETWORK","SYSTEM","SECURITY"]
+  print(`<span style="color:var(--purple);font-weight:700">🟣 GODMODE SEQUENCE INITIATED</span>`)
+  let i=0
+  const int=setInterval(()=>{
+    if(i>=modules.length){clearInterval(int);print("");print(`<span style="color:var(--green);font-size:16px;font-weight:700">✅ ALL MODULES ACTIVATED</span>`);return}
+    const bar="█".repeat(20)+"█".repeat(20)
+    print(`<span style="color:var(--purple)">[${bar}] 100%</span> — ${modules[i]} <span style="color:var(--green)">ONLINE</span>`)
+    i++
+  },300)
+}
+
+// ═══════════════════════════════════════════════════════════
+// UTILITY COMMANDS
+// ═══════════════════════════════════════════════════════════
+function cmdWhoami(){
+  print("root")
+  print(`UID: 0 | GID: 0 | Groups: root,sudo,docker,admin`)
+  print(`Home: /root | Shell: /bin/tilinx-sh`)
+  print(`Sesión: ${history.length} comandos ejecutados`)
+}
+
+function cmdHistory(){
+  if(!history.length){print("No hay historial.","dim");return}
+  history.forEach((c,i)=>print(`  ${String(i+1).padStart(4,' ')}  ${c}`))
+}
+
+function cmdMatrix(){
+  print("🌐 MATRIX RAIN ACTIVADO — El efecto ya está corriendo.","purple")
+}
+
+function cmdColor(arg){
+  const colors={green:"#00ff41",purple:"#b44aff",blue:"#4488ff",red:"#ff4444",pink:"#e879f9"}
+  const c=arg.toLowerCase()
+  if(colors[c]){
+    document.documentElement.style.setProperty("--green",colors[c])
+    document.documentElement.style.setProperty("--green-dim",colors[c]+"66")
+    print(`Color cambiado a ${c}.`,"green")
+  }else{
+    print("Colores disponibles: green, purple, blue, red, pink","yellow")
+  }
+}
+
+function cmdNeofetch(){
+  const d=new Date()
+  const users=Math.floor(Math.random()*20+3)
+  print(`<span style="color:var(--purple);font-weight:700">                   -`+`-`+`-`+`-`+`-`+`-`+`-</span>`)
+  print(`<span style="color:var(--purple);font-weight:700">                  /</span> root@tilinx")
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span>`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> OS: TilinX OS v10.0.0 x86_64`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> Host: TilinX-PRO-7`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> Kernel: 6.8.0-tilinx-amd64`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> Uptime: ${fmtUptime(Math.floor(Math.random()*86400*7+3600))}`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> Shell: tilinx-sh v10`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> CPU: AMD Ryzen 9 - 16 cores`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> RAM: 32 GB DDR5`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> GPU: NVIDIA RTX 4090 24GB`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> Disk: 512 GB NVMe`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> Users: ${users}`)
+  print(`<span style="color:var(--purple);font-weight:700">                 |</span> ${d.toLocaleDateString("es-DO")} ${d.toLocaleTimeString("es-DO")}`)
+  print(`<span style="color:var(--purple);font-weight:700">                   -`+`-`+`-`+`-`+`-`+`-`+`-</span>`)
+}
+
+function fmtUptime(s){
+  const d=Math.floor(s/86400),h=Math.floor((s%86400)/3600),m=Math.floor((s%3600)/60)
+  return `${d}d ${h}h ${m}m`
+}
+
+// ═══════════════════════════════════════════════════════════
+// INPUT HANDLER
+// ═══════════════════════════════════════════════════════════
+INPUT.addEventListener("keydown",(e)=>{
+  if(e.key==="Enter"){
+    e.preventDefault()
+    const cmd=INPUT.value
+    INPUT.value=""
+    processCmd(cmd)
+  }else if(e.key==="ArrowUp"){
+    e.preventDefault()
+    if(hIdx>0){hIdx--;INPUT.value=history[hIdx]}
+  }else if(e.key==="ArrowDown"){
+    e.preventDefault()
+    if(hIdx<history.length-1){hIdx++;INPUT.value=history[hIdx]}
+    else{hIdx=history.length;INPUT.value=""}
+  }else if(e.key==="Tab"){
+    e.preventDefault()
+    const partial=INPUT.value.toLowerCase()
+    const cmds=["help","clear","history","whoami","date","neofetch","system","cpu","ram","gpu","disk","temp","temperature","network","internet","ping","services","monitor","status","logs","report","security","fps","optimizer","boost","turbo","ultra","sensitivity","crosshair","tracking","reaction","training","movement","aimtest","godmode","snow","matrix","color","uptime","exit","restart","shutdown"]
+    const match=cmds.find(c=>c.startsWith(partial))
+    if(match&&partial)INPUT.value=match
+  }
+})
+
+// ═══════════════════════════════════════════════════════════
+// CLICK TO FOCUS
+// ═══════════════════════════════════════════════════════════
+document.addEventListener("click",()=>INPUT.focus())
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+boot()
+</script>
+</body>
+</html>

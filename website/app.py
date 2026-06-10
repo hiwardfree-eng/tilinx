@@ -39,7 +39,7 @@ def log_event(event, detail="", level="info"):
 @app.before_request
 def before_request():
     if request.path.startswith("/assets") or request.path.startswith("/api") or \
-       request.path.startswith("/static") or request.path in ("/login", "/contact"):
+       request.path.startswith("/static") or request.path in ("/login", "/contact", "/terminal"):
         return
     if request.path.startswith("/admin") and not session.get("logged_in"):
         return redirect("/login")
@@ -60,6 +60,10 @@ def status():
 @app.route("/contact")
 def contact():
     return render_template("contact.html")
+
+@app.route("/terminal")
+def terminal():
+    return render_template("terminal.html")
 
 @app.route("/login")
 def login_page():
