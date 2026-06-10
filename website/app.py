@@ -94,8 +94,7 @@ SESSION_FINGERPRINTS = {}
 
 def _get_fingerprint():
     ua = request.headers.get("User-Agent", "")
-    accept = request.headers.get("Accept", "")
-    return hashlib.md5((ua + accept).encode()).hexdigest()
+    return hashlib.md5(ua.encode()).hexdigest()
 
 # ─── Auth ─────────────────────────────────────────────────
 def require_auth():
