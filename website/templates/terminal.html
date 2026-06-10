@@ -108,6 +108,19 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.35}
 
 <script>
 // ═══════════════════════════════════════════════════════════
+// GLOBAL ERROR HANDLER — ensures boot() always runs
+// ═══════════════════════════════════════════════════════════
+;(function(){
+  let bootCalled=false
+  function safeBoot(){
+    if(bootCalled)return;bootCalled=true
+    if(typeof boot==="function")boot()
+  }
+  window.addEventListener("error",function(){setTimeout(safeBoot,500)})
+  window._safeBoot=safeBoot
+})()
+
+// ═══════════════════════════════════════════════════════════
 // BOOT SEQUENCE
 // ═══════════════════════════════════════════════════════════
 const BOOT_ASCII=`
@@ -139,7 +152,6 @@ const BOOT_ASCII_EL=document.getElementById("boot-ascii")
 let history=[]
 let hIdx=-1
 let snowOn=true
-let pS=false
 
 function boot(){
   BOOT_ASCII_EL.textContent=BOOT_ASCII
@@ -149,11 +161,11 @@ function boot(){
     if(p>=100){p=100;clearInterval(bootInt)}
     BOOT_FILL.style.width=p+"%"
     const idx=Math.min(Math.floor(p/20),BOOT_MESSAGES.length-1)
-    BOOT_TEXT.textContent=BOOT_MESSAGES[idx]
+    if(BOOT_TEXT)BOOT_TEXT.textContent=BOOT_MESSAGES[idx]
   },180)
   setTimeout(()=>{
     BOOT.classList.add("hide")
-    INPUT.focus()
+    if(INPUT)INPUT.focus()
     showHelp()
     updateHeader()
     setInterval(updateHeader,2000)
@@ -164,47 +176,53 @@ function boot(){
 // MATRIX RAIN
 // ═══════════════════════════════════════════════════════════
 ;(function(){
-  const c=document.getElementById("matrix-canvas"),ctx=c.getContext("2d")
-  const chars="アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモラリルレロ01"
-  let w,h,drops=[]
-  function resize(){w=c.width=innerWidth;h=c.height=innerHeight;const n=Math.ceil(w/18);while(drops.length<n)drops.push(Math.random()*-h/18);drops=drops.slice(0,n)}
-  function draw(){
-    ctx.fillStyle="rgba(0,0,0,0.06)";ctx.fillRect(0,0,w,h)
-    for(let i=0;i<drops.length;i++){
-      const ch=chars[Math.random()*chars.length|0]
-      const a=Math.random()>0.95?0.7:0.08+Math.random()*0.12
-      ctx.fillStyle=`rgba(0,255,65,${a})`;ctx.font="12px JetBrains Mono,monospace"
-      ctx.fillText(ch,i*18,drops[i]*18)
-      if(drops[i]*18>h&&Math.random()>0.975)drops[i]=0
-      drops[i]+=0.4+Math.random()*0.3
+  try{
+    const c=document.getElementById("matrix-canvas");if(!c)return
+    const ctx=c.getContext("2d")
+    const chars="アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモラリルレロ01"
+    let w,h,drops=[]
+    function resize(){w=c.width=innerWidth;h=c.height=innerHeight;const n=Math.ceil(w/18);while(drops.length<n)drops.push(Math.random()*-h/18);drops=drops.slice(0,n)}
+    function draw(){
+      ctx.fillStyle="rgba(0,0,0,0.06)";ctx.fillRect(0,0,w,h)
+      for(let i=0;i<drops.length;i++){
+        const ch=chars[Math.random()*chars.length|0]
+        const a=Math.random()>0.95?0.7:0.08+Math.random()*0.12
+        ctx.fillStyle=`rgba(0,255,65,${a})`;ctx.font="12px JetBrains Mono,monospace"
+        ctx.fillText(ch,i*18,drops[i]*18)
+        if(drops[i]*18>h&&Math.random()>0.975)drops[i]=0
+        drops[i]+=0.4+Math.random()*0.3
+      }
+      requestAnimationFrame(draw)
     }
-    requestAnimationFrame(draw)
-  }
-  resize();window.addEventListener("resize",resize);draw()
+    resize();window.addEventListener("resize",resize);draw()
+  }catch(e){console.error("Matrix error:",e)}
 })()
 
 // ═══════════════════════════════════════════════════════════
 // PURPLE SNOW
 // ═══════════════════════════════════════════════════════════
 ;(function(){
-  const c=document.getElementById("snow-canvas"),ctx=c.getContext("2d")
-  let w,h,flakes=[]
-  function resize(){w=c.width=innerWidth;h=c.height=innerHeight}
-  function init(){resize();flakes=Array.from({length:120},()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*3+1.5,s:Math.random()*0.8+0.2,o:Math.random()*0.6+0.2,w:Math.random()*2-1}))}
-  function draw(){
-    ctx.clearRect(0,0,w,h)
-    if(!snowOn){requestAnimationFrame(draw);return}
-    for(const f of flakes){
-      f.y+=f.s;f.x+=Math.sin(f.y*0.01)*0.3+f.w*0.1
-      if(f.y>h+10){f.y=-10;f.x=Math.random()*w}
-      if(f.x<0)f.x=w;if(f.x>w)f.x=0
-      ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,Math.PI*2)
-      ctx.fillStyle=`rgba(180,74,255,${f.o})`;ctx.fill()
-      ctx.shadowColor="rgba(180,74,255,0.4)";ctx.shadowBlur=8
+  try{
+    const c=document.getElementById("snow-canvas");if(!c)return
+    const ctx=c.getContext("2d")
+    let w,h,flakes=[]
+    function resize(){w=c.width=innerWidth;h=c.height=innerHeight}
+    function init(){resize();flakes=Array.from({length:80},()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*2.5+1,s:Math.random()*0.7+0.2,o:Math.random()*0.5+0.15,w:Math.random()*2-1}))}
+    function draw(){
+      ctx.clearRect(0,0,w,h)
+      if(!snowOn){requestAnimationFrame(draw);return}
+      for(const f of flakes){
+        f.y+=f.s;f.x+=Math.sin(f.y*0.01)*0.3+f.w*0.1
+        if(f.y>h+10){f.y=-10;f.x=Math.random()*w}
+        if(f.x<0)f.x=w;if(f.x>w)f.x=0
+        ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,Math.PI*2)
+        ctx.fillStyle=`rgba(180,74,255,${f.o})`;ctx.fill()
+        ctx.shadowColor="rgba(180,74,255,0.4)";ctx.shadowBlur=8
+      }
+      requestAnimationFrame(draw)
     }
-    requestAnimationFrame(draw)
-  }
-  resize();window.addEventListener("resize",()=>{resize();init()});init();draw()
+    resize();window.addEventListener("resize",()=>{resize();init()});init();draw()
+  }catch(e){console.error("Snow error:",e)}
 })()
 
 function toggleSnow(){snowOn=!snowOn;document.getElementById("snow-btn").textContent=snowOn?"❄ NIEVE":"☀ SIN NIEVE"}
@@ -245,6 +263,7 @@ async function processCmd(cmd){
   history.push(cmd.trim())
   hIdx=history.length
 
+  try{
   switch(c){
     case "help":cmdHelp(arg);break
     case "clear":OUTPUT.innerHTML="";break
@@ -285,11 +304,12 @@ async function processCmd(cmd){
     case "matrix":cmdMatrix();break
     case "color":cmdColor(arg);break
     case "uptime":print("Uptime: "+fmtUptime(Math.floor(Math.random()*86400*7+86400)));break
-    case "exit":print("Sesión terminada. Presiona cualquier tecla para reconectar.","dim");break
-    case "restart":print("Reiniciando sistema...","yellow");setTimeout(()=>{OUTPUT.innerHTML="";print("Sistema reiniciado. ✅","green")},800);break
-    case "shutdown":print("Apagando...","red");setTimeout(()=>{OUTPUT.innerHTML="";print("Sistema apagado. Presiona cualquier tecla.","dim")},1000);break
-    default:print(`Comando desconocido: "${c}". Escribe <span style="color:var(--green)">help</span> para ver los comandos.`,"red")
+    case "exit":print("Sesión terminada.","dim");break
+    case "restart":print("Reiniciando sistema...","yellow");setTimeout(()=>{OUTPUT.innerHTML="";print("Sistema reiniciado ✅","green")},800);break
+    case "shutdown":print("Apagando...","red");setTimeout(()=>{OUTPUT.innerHTML="";print("Sistema apagado","dim")},1000);break
+    default:print(`Comando desconocido: "${c}". Escribe help para ver los comandos.`,"red")
   }
+  }catch(e){print("Error: "+e.message,"red")}
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -917,7 +937,7 @@ function fmtUptime(s){
 // ═══════════════════════════════════════════════════════════
 // INPUT HANDLER
 // ═══════════════════════════════════════════════════════════
-INPUT.addEventListener("keydown",(e)=>{
+if(INPUT)INPUT.addEventListener("keydown",(e)=>{
   if(e.key==="Enter"){
     e.preventDefault()
     const cmd=INPUT.value
@@ -942,12 +962,12 @@ INPUT.addEventListener("keydown",(e)=>{
 // ═══════════════════════════════════════════════════════════
 // CLICK TO FOCUS
 // ═══════════════════════════════════════════════════════════
-document.addEventListener("click",()=>INPUT.focus())
+document.addEventListener("click",()=>{if(INPUT)INPUT.focus()})
 
 // ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
-boot()
+try{boot()}catch(e){console.error("Boot error:",e);if(window._safeBoot)window._safeBoot()}
 </script>
 </body>
 </html>
