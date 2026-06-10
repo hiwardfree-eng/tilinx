@@ -13,7 +13,9 @@ canvas#matrix{position:fixed;inset:0;z-index:0;pointer-events:none}
 canvas#rays{position:fixed;inset:0;z-index:1;pointer-events:none}
 canvas#glow{position:fixed;inset:0;z-index:2;pointer-events:none}
 .splash{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(6,4,16,0.3);backdrop-filter:blur(2px)}
-.logo{font-family:'Cinzel Decorative',serif;font-size:4.5rem;font-weight:900;background:linear-gradient(135deg,#e9d5ff,#c084fc,#8b5cf6,#e879f9);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 4s ease infinite;letter-spacing:.06em;text-shadow:0 0 80px rgba(139,92,246,0.6),0 0 160px rgba(139,92,246,0.3);margin-bottom:8px;opacity:0;transform:scale(0.6);animation:fadeInScale 1.2s ease forwards}
+.logo{font-family:'Cinzel Decorative',serif;font-size:4.5rem;font-weight:900;background:linear-gradient(135deg,#e9d5ff,#c084fc,#8b5cf6,#e879f9);background-size:300% 300%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:gradShift 4s ease infinite;letter-spacing:.06em;text-shadow:0 0 80px rgba(139,92,246,0.6),0 0 160px rgba(139,92,246,0.3);margin-bottom:8px;opacity:0;transform:scale(0.6);animation:fadeInScale 1.2s ease forwards;display:flex;align-items:center;justify-content:center;gap:16px}
+.splash-bolt{width:64px;height:64px;filter:brightness(1.3) drop-shadow(0 0 12px rgba(255,200,50,0.7));animation:splashBolt 1.8s ease-in-out infinite}
+@keyframes splashBolt{0%,100%{transform:scale(1) rotate(0deg);filter:brightness(1.3) drop-shadow(0 0 12px rgba(255,200,50,0.7))}50%{transform:scale(1.2) rotate(-5deg);filter:brightness(1.6) drop-shadow(0 0 24px rgba(255,200,50,1))}}
 @keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 @keyframes fadeInScale{0%{opacity:0;transform:scale(0.6)}100%{opacity:1;transform:scale(1)}}
 .tagline{font-size:.85rem;letter-spacing:.35em;text-transform:uppercase;color:rgba(196,181,253,0.5);font-weight:600;margin-bottom:50px;opacity:0;animation:fadeIn 1s ease forwards;animation-delay:0.4s}
@@ -47,7 +49,7 @@ canvas#glow{position:fixed;inset:0;z-index:2;pointer-events:none}
 <canvas id="rays"></canvas>
 <canvas id="glow"></canvas>
 <div class="splash">
-  <div class="logo">tilinX</div>
+  <div class="logo"><img src="/assets/img/bolt.png" class="splash-bolt" alt=""> TILINX</div>
   <div class="tagline" id="tagline">Inicializando sistema</div>
   <div class="load-wrap">
     <div class="electric" id="electric">

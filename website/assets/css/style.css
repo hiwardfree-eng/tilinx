@@ -67,10 +67,14 @@ nav {
 .nav-logo {
   font-family: var(--font-deco);
   font-size: 18px; font-weight: 700;
-  color: var(--accent); text-decoration: none;
-  letter-spacing: 2px;
-  text-shadow: 0 0 20px rgba(0,255,65,0.5);
+  color: #c084fc; text-decoration: none;
+  letter-spacing: 2px; display:flex; align-items:center; gap:8px;
+  text-shadow: 0 0 20px rgba(192,132,252,0.5),0 0 40px rgba(192,132,252,0.3);
+  animation: logoGlow 2s ease-in-out infinite;
 }
+@keyframes logoGlow{0%,100%{text-shadow:0 0 20px rgba(192,132,252,0.5),0 0 40px rgba(192,132,252,0.2)}50%{text-shadow:0 0 30px rgba(192,132,252,0.8),0 0 60px rgba(192,132,252,0.4),0 0 80px rgba(139,92,246,0.2)}}
+.nav-bolt{width:22px;height:22px;filter:brightness(1.2) drop-shadow(0 0 6px rgba(255,200,50,0.6));animation:boltPulse 1.5s ease-in-out infinite}
+@keyframes boltPulse{0%,100%{transform:scale(1) rotate(0deg);filter:brightness(1.2) drop-shadow(0 0 6px rgba(255,200,50,0.6))}50%{transform:scale(1.15) rotate(-3deg);filter:brightness(1.5) drop-shadow(0 0 12px rgba(255,200,50,0.9))}}
 .nav-links { display: flex; gap: 4px; list-style: none; align-items: center; }
 .nav-links a {
   color: rgba(180,80,255,0.8); text-decoration: none;
