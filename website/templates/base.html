@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}TilinX{% endblock %}</title>
+<meta name="description" content="TilinX - Advanced proxy platform">
+<meta name="robots" content="noindex, nofollow">
+<meta property="og:title" content="TilinX">
+<meta property="og:description" content="Advanced proxy platform">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<nav>
+  <a href="/" class="nav-logo">⚡ TILINX</a>
+  <ul class="nav-links" id="nav-links">
+    <li><a href="/">HOME</a></li>
+    <li><a href="/downloads">DOWNLOADS</a></li>
+    <li><a href="/status">STATUS</a></li>
+    <li><a href="/contact">CONTACT</a></li>
+  </ul>
+  <div class="nav-right">
+    <button class="menu-btn" id="menu-btn">☰</button>
+  </div>
+</nav>
+
+{% block content %}{% endblock %}
+
+<footer>
+  <p>⚡ TILINX &mdash; 2026</p>
+</footer>
+
+<script src="/assets/js/main.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

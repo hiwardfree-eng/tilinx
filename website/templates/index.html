@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <h1 class="hero-title animate">
+      <span class="purple">tilinXfast7</span><br>
+      <span class="red-black">POWER YOUR GAME</span>
+    </h1>
+    <p class="hero-sub animate animate-d1">ADVANCED PROXY PLATFORM</p>
+    <div class="hero-btns animate animate-d2">
+      <a href="/downloads" class="btn btn-primary">⬇ DOWNLOAD</a>
+      <a href="/status" class="btn btn-outline">📊 STATUS</a>
+    </div>
+    <div class="img-grid" style="max-width:900px;margin:50px auto 0">
+      <div class="img-card"><img src="/assets/img/hero-bg.jpeg" alt=""><div class="overlay"><h3>TilinX Proxy</h3><p>Core engine</p></div></div>
+      <div class="img-card"><img src="/assets/img/feature1.jpeg" alt=""><div class="overlay"><h3>Dashboard</h3><p>Real-time control</p></div></div>
+      <div class="img-card"><img src="/assets/img/feature2.jpeg" alt=""><div class="overlay"><h3>Security</h3><p>IP-based auth</p></div></div>
+      <div class="img-card"><img src="/assets/img/feature3.jpeg" alt=""><div class="overlay"><h3>Analytics</h3><p>Live metrics</p></div></div>
+      <div class="img-card"><img src="/assets/img/feature4.jpeg" alt=""><div class="overlay"><h3>Support</h3><p>24/7 available</p></div></div>
+    </div>
+    <div class="stats-grid" style="max-width:700px;margin:40px auto 0">
+      <div class="stat-card"><div class="num" id="stat-uptime">—</div><div class="lbl">UPTIME</div></div>
+      <div class="stat-card"><div class="num" id="stat-cpu">—</div><div class="lbl">CPU</div></div>
+      <div class="stat-card"><div class="num" id="stat-ram">—</div><div class="lbl">RAM</div></div>
+      <div class="stat-card"><div class="num" id="stat-disk">—</div><div class="lbl">DISK</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">📰 LATEST NEWS</h2>
+  <p class="section-sub">STAY UPDATED</p>
+  <div class="timeline" style="max-width:600px;margin:0 auto">
+    <div class="timeline-item">
+      <div class="date">JUNE 2026</div>
+      <h4>🚀 TILINX V3.0</h4>
+      <p style="color:rgba(180,80,255,0.6);font-size:13px;font-family:monospace">IP-based auth, key system, web dashboard.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="date">MAY 2026</div>
+      <h4>⚡ NEW ENGINE</h4>
+      <p style="color:rgba(180,80,255,0.6);font-size:13px;font-family:monospace">Complete mitmproxy rewrite with improved stability.</p>
+    </div>
+    <div class="timeline-item">
+      <div class="date">APR 2026</div>
+      <h4>🔒 SECURITY UPDATE</h4>
+      <p style="color:rgba(180,80,255,0.6);font-size:13px;font-family:monospace">New anti-cheat bypass patterns and protection layers.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-title">⚙️ WHY TILINX?</h2>
+  <p class="section-sub">BUILT FOR PERFORMANCE</p>
+  <div class="cards">
+    <div class="card"><div class="card-icon">⚡</div><h3>LIGHTNING FAST</h3><p>Optimized proxy engine with minimal latency overhead.</p></div>
+    <div class="card"><div class="card-icon">🛡️</div><h3>SECURE</h3><p>IP-based auth with encrypted key system.</p></div>
+    <div class="card"><div class="card-icon">📊</div><h3>REAL-TIME</h3><p>Live dashboard with CPU, RAM, disk and user stats.</p></div>
+  </div>
+</section>
+{% endblock %}

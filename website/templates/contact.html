@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section" style="padding-top:120px">
+  <h2 class="section-title">📬 CONTACT</h2>
+  <p class="section-sub">GET IN TOUCH</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;max-width:800px;margin:0 auto">
+    <div class="glass" style="padding:28px">
+      <form id="contact-form">
+        <div class="form-group">
+          <label for="cname">NAME</label>
+          <input class="form-control" id="cname" required placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label for="cemail">EMAIL</label>
+          <input class="form-control" id="cemail" type="email" required placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label for="cmessage">MESSAGE</label>
+          <textarea class="form-control" id="cmessage" required placeholder="Your message..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">SEND</button>
+      </form>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h3>📧 EMAIL</h3>
+        <p style="color:var(--accent);font-size:14px">support@tilinx.io</p>
+      </div>
+      <div class="card">
+        <h3>🤖 TELEGRAM</h3>
+        <p style="color:var(--accent);font-size:14px">@TilinXBot</p>
+      </div>
+      <div class="card">
+        <h3>🌐 SOCIAL</h3>
+        <p style="color:rgba(180,80,255,0.6);font-size:13px">Follow for updates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

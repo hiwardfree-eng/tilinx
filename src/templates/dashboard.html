@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TilinX Dashboard</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:system-ui,sans-serif; background:#0f0f14; color:#e0e0e0; padding:30px; }
+h1 { color:#00ff88; font-size:24px; margin-bottom:5px; }
+.sub { color:#888; margin-bottom:30px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:15px; margin-bottom:30px; }
+.card { background:#1a1a24; border-radius:12px; padding:20px; border:1px solid #2a2a3a; }
+.card .num { font-size:32px; font-weight:700; }
+.card .lbl { font-size:13px; color:#888; margin-top:4px; }
+.green { color:#00ff88; }
+.yellow { color:#ffaa00; }
+.red { color:#ff4444; }
+table { width:100%; border-collapse:collapse; background:#1a1a24; border-radius:12px; overflow:hidden; margin-top:10px; }
+th { background:#2a2a3a; padding:12px 16px; text-align:left; font-size:13px; color:#888; }
+td { padding:12px 16px; border-top:1px solid #2a2a3a; font-size:14px; }
+.badge { padding:2px 10px; border-radius:20px; font-size:12px; }
+.badge-active { background:#00ff8822; color:#00ff88; }
+.badge-expired { background:#ffaa0022; color:#ffaa00; }
+.badge-blocked { background:#ff444422; color:#ff4444; }
+.badge-available { background:#00aaff22; color:#00aaff; }
+.badge-used { background:#88888822; color:#888; }
+.metrics { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:20px; }
+.metrics .mcard { background:#1a1a24; border-radius:8px; padding:12px; text-align:center; }
+.metrics .mcard .v { font-size:20px; font-weight:600; }
+.metrics .mcard .l { font-size:11px; color:#888; margin-top:2px; }
+.tabs { display:flex; gap:10px; margin:20px 0; }
+.tab { padding:10px 20px; border-radius:8px; cursor:pointer; background:#1a1a24; border:1px solid #2a2a3a; color:#888; }
+.tab.active { background:#00ff8822; border-color:#00ff88; color:#00ff88; }
+.panel { display:none; }
+.panel.active { display:block; }
+.btn { padding:8px 16px; border-radius:6px; border:none; cursor:pointer; font-size:14px; }
+.btn-primary { background:#00ff88; color:#000; }
+.btn-danger { background:#ff4444; color:#fff; }
+.btn-small { padding:4px 10px; font-size:12px; }
+.input { padding:8px 12px; border-radius:6px; border:1px solid #2a2a3a; background:#1a1a24; color:#e0e0e0; font-size:14px; width:200px; }
+.key-gen { display:flex; gap:10px; align-items:center; margin:20px 0; flex-wrap:wrap; }
+.key-result { background:#1a1a24; border:1px solid #00ff88; border-radius:8px; padding:15px; margin:10px 0; display:none; }
+.key-result .code { font-size:18px; color:#00ff88; font-family:monospace; user-select:all; }
+</style>
+</head>
+<body>
+<h1>⚡ TilinX Dashboard</h1>
+<p class="sub">Admin Panel</p>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('ips')">📊 IPs</div>
+  <div class="tab" onclick="switchTab('keys')">🔑 Keys</div>
+</div>
+
+<div id="panel-ips" class="panel active">
+  <div class="grid">
+    <div class="card"><div class="num green" id="total">0</div><div class="lbl">Total IPs</div></div>
+    <div class="card"><div class="num green" id="active">0</div><div class="lbl">Active</div></div>
+    <div class="card"><div class="num yellow" id="expired">0</div><div class="lbl">Expired</div></div>
+    <div class="card"><div class="num red" id="blocked">0</div><div class="lbl">Banned</div></div>
+  </div>
+
+  <div class="metrics" id="metrics-box"></div>
+
+  <table>
+    <thead><tr><th>IP</th><th>Status</th><th>Expires</th><th></th></tr></thead>
+    <tbody id="users-body"><tr><td colspan="4">Loading...</td></tr></tbody>
+  </table>
+</div>
+
+<div id="panel-keys" class="panel">
+  <h2 style="margin-bottom:15px">🔑 Generate Key</h2>
+  <div class="key-gen">
+    <input class="input" id="key-duration" placeholder="30d / 7d / 6h / 1h" value="30d">
+    <button class="btn btn-primary" onclick="generateKey()">Generate</button>
+  </div>
+  <div class="key-result" id="key-result">
+    <div style="margin-bottom:5px;color:#888">New key:</div>
+    <div class="code" id="key-code"></div>
+    <div style="margin-top:5px;color:#888" id="key-dur"></div>
+  </div>
+
+  <h2 style="margin:30px 0 15px">📋 All Keys</h2>
+  <table>
+    <thead><tr><th>Key</th><th>Status</th><th>Duration</th><th>Used By</th><th></th></tr></thead>
+    <tbody id="keys-body"><tr><td colspan="5">Loading...</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+async function loadStats() {
+  const r = await fetch('/api/stats');
+  const d = await r.json();
+  document.getElementById('total').textContent = d.total;
+  document.getElementById('active').textContent = d.active;
+  document.getElementById('expired').textContent = d.expired;
+  document.getElementById('blocked').textContent = d.blocked;
+}
+async function loadMetrics() {
+  const r = await fetch('/api/metrics');
+  const m = await r.json();
+  document.getElementById('metrics-box').innerHTML = `
+    <div class="mcard"><div class="v">${Math.round(m.uptime||0)}s</div><div class="l">Uptime</div></div>
+    <div class="mcard"><div class="v">${m.errors_1m||0}</div><div class="l">Errors/min</div></div>
+    <div class="mcard"><div class="v">${m.ops_1m||0}</div><div class="l">Ops/min</div></div>
+  `;
+}
+async function loadUsers() {
+  const r = await fetch('/api/users');
+  const users = await r.json();
+  const tbody = document.getElementById('users-body');
+  tbody.innerHTML = users.map(u => {
+    const cls = u.status === 'active' ? 'badge-active' : u.status === 'expired' ? 'badge-expired' : 'badge-blocked';
+    const label = u.status === 'active' ? 'Active' : u.status === 'expired' ? 'Expired' : 'Banned';
+    const exp = u.expires_at ? new Date(u.expires_at * 1000).toLocaleString() : '—';
+    return `<tr><td><code>${u.ip}</code></td><td><span class="badge ${cls}">${label}</span></td><td>${exp}</td>
+      <td><button class="btn btn-danger btn-small" onclick="deleteIP('${u.ip}')">Delete</button></td></tr>`;
+  }).join('');
+}
+async function deleteIP(ip) {
+  if (!confirm(`Delete IP ${ip}?`)) return;
+  await fetch('/api/users/' + ip, { method: 'DELETE' });
+  loadUsers(); loadStats();
+}
+async function loadKeys() {
+  const r = await fetch('/api/keys/list');
+  const keys = await r.json();
+  const tbody = document.getElementById('keys-body');
+  tbody.innerHTML = keys.map(k => {
+    const status = k.used ? 'badge-used' : 'badge-available';
+    const label = k.used ? 'Used' : 'Available';
+    const ip = k.used_by_ip || '—';
+    return `<tr><td><code>${k.code}</code></td><td><span class="badge ${status}">${label}</span></td><td>${k.duration}s</td><td>${ip}</td>
+      <td><button class="btn btn-danger btn-small" onclick="deleteKey('${k.code}')">Delete</button></td></tr>`;
+  }).join('');
+}
+async function generateKey() {
+  const dur = document.getElementById('key-duration').value;
+  const r = await fetch('/api/keys/generate', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({duration: dur}),
+  });
+  const d = await r.json();
+  if (d.success) {
+    document.getElementById('key-code').textContent = d.code;
+    document.getElementById('key-dur').textContent = 'Duration: ' + d.duration;
+    document.getElementById('key-result').style.display = 'block';
+    loadKeys();
+  } else {
+    alert('Error: ' + d.error);
+  }
+}
+async function deleteKey(code) {
+  if (!confirm(`Delete key ${code}?`)) return;
+  const r = await fetch('/api/keys/delete', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({code}),
+  });
+  const d = await r.json();
+  if (d.success) loadKeys();
+  else alert('Error: ' + d.error);
+}
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab[onclick*="${name}"]`).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+  if (name === 'keys') loadKeys();
+}
+loadStats(); loadMetrics(); loadUsers(); loadKeys();
+setInterval(() => { loadStats(); loadMetrics(); loadUsers(); }, 10000);
+</script>
+</body>
+</html>

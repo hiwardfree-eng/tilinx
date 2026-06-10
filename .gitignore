@@ -1,0 +1,45 @@
+# TilinX
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Entornos
+.env
+.env.local
+.env.production
+*.env
+
+# DB
+*.db
+*.db.bak
+*.sqlite
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Proxys
+certs/
+mitmproxy-ca-cert.p12
+mitmproxy-ca-cert.pem
+mitmproxy-ca.pem
+mitmproxy-dhparam.pem
+
+# Temp
+tmp/
+temp/
+*.tmp

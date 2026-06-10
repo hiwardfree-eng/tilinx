@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="section" style="padding-top:120px">
+  <h2 class="section-title">📊 STATUS</h2>
+  <p class="section-sub">REAL-TIME MONITORING</p>
+
+  <div style="text-align:center;margin-top:30px" id="live-status">
+    <span class="status-badge"><span class="dot dot-green"></span> LOADING...</span>
+  </div>
+
+  <div class="stats-grid" style="max-width:500px;margin:40px auto">
+    <div class="stat-card"><div class="num" id="stat-uptime">—</div><div class="lbl">UPTIME</div></div>
+    <div class="stat-card"><div class="num" id="stat-cpu">—</div><div class="lbl">CPU</div></div>
+    <div class="stat-card"><div class="num" id="stat-ram">—</div><div class="lbl">RAM</div></div>
+    <div class="stat-card"><div class="num" id="stat-disk">—</div><div class="lbl">DISK</div></div>
+  </div>
+
+  <div style="max-width:600px;margin:50px auto">
+    <h3 style="font-family:monospace;font-size:16px;color:rgba(180,80,255,0.9);margin-bottom:12px">📜 INCIDENTS</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="date">JUNE 2026</div>
+        <h4>✅ ALL SYSTEMS OPERATIONAL</h4>
+        <p style="color:rgba(180,80,255,0.6);font-size:13px;font-family:monospace">No incidents reported. 100% uptime.</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

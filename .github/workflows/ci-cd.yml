@@ -1,0 +1,40 @@
+name: TilinX CI/CD
+
+on:
+  push:
+    branches: [ main, develop, testing ]
+  pull_request:
+    branches: [ main, testing ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install python-telegram-bot requests mitmproxy
+      - run: python -m unittest tests/test_all.py -v
+      - run: python -m py_compile *.py src/*.py scripts/*.py 2>/dev/null || true
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install flake8
+      - run: flake8 *.py --max-line-length=120 --extend-ignore=E203,F841
+
+  build:
+    if: github.ref == 'refs/heads/main'
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: mkdir -p dist
+      - run: cp *.py *.sh *.json dist/ 2>/dev/null; cp -r src scripts config data docs dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tilinx-build
+          path: dist/

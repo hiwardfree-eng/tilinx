@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: tilinx-web
+    runtime: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r website/requirements.txt
+    startCommand: gunicorn website.wsgi:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: TilinX_DASH_PASSWORD
+        value: hw132319
+      - key: TilinX_WEB_SECRET
+        generateValue: true
+      - key: TilinX_WEB_PORT
+        value: 8080
+      - key: PYTHON_VERSION
+        value: 3.11.0
