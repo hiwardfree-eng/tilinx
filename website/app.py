@@ -105,13 +105,30 @@ def api_status():
 @app.route("/api/terminal-stats")
 def api_terminal_stats():
     import psutil
-    uptime = time.time() - psutil.boot_time()
+    import platform
+    uptime_secs = time.time() - psutil.boot_time()
+    days = int(uptime_secs // 86400)
+    hours = int((uptime_secs % 86400) // 3600)
+    mins = int((uptime_secs % 3600) // 60)
+    uptime_str = f"{days}d {hours}h {mins}m"
+    ram = psutil.virtual_memory()
     return jsonify({
         "status": "operational",
-        "uptime": round(uptime),
+        "uptime": uptime_secs,
+        "uptime_str": uptime_str,
         "cpu": psutil.cpu_percent(),
-        "ram": psutil.virtual_memory().percent,
+        "cpu_percent": psutil.cpu_percent(),
+        "cpu_model": platform.processor() or "N/A",
+        "cpu_cores": psutil.cpu_count(logical=True),
+        "ram": ram.percent,
+        "ram_percent": ram.percent,
+        "ram_total": f"{ram.total // (1024**3)} GB",
+        "ram_used": f"{ram.used // (1024**3)} GB",
         "disk": psutil.disk_usage("/").percent,
+        "os": platform.system() + " " + platform.release(),
+        "hostname": platform.node(),
+        "users": len(psutil.users()),
+        "processes": len(psutil.pids()),
     })
 
 @app.route("/api/contact", methods=["POST"])

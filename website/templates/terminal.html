@@ -164,9 +164,9 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
       if(xhr.status===200){
         try{
           var d=JSON.parse(xhr.responseText)
-          var e1=document.getElementById("tf");if(e1)e1.textContent="FPS: "+(d.fps||"--")
-          var e2=document.getElementById("tc");if(e2)e2.textContent="CPU: "+(d.cpu_percent||"--")+"%"
-          var e3=document.getElementById("tr");if(e3)e3.textContent="RAM: "+(d.ram_percent||"--")+"%"
+          var e1=document.getElementById("tf");if(e1)e1.textContent="CPU: "+(d.cpu||"--")+"%"
+          var e2=document.getElementById("tc");if(e2)e2.textContent="RAM: "+(d.ram||"--")+"%"
+          var e3=document.getElementById("tr");if(e3)e3.textContent="DISK: "+(d.disk||"--")+"%"
         }catch(e){hUFallback()}
       }else{hUFallback()}
     }
@@ -542,7 +542,6 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   // ---- Command Router ----
   function exec(cmd){
     if(!cmd.trim())return
-    cmd(cmd.trim())
     h.push(cmd.trim());hi=h.length
     var p=cmd.trim().split(/\s+/),c=p[0].toLowerCase(),a=p.slice(1).join(" ")
     try{
