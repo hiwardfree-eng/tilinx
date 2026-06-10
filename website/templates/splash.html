@@ -101,55 +101,45 @@ canvas#glow{position:fixed;inset:0;z-index:2;pointer-events:none}
       drops[i]+=0.3+Math.random()*0.4;
     }
   }
-  // Epic rays: faster, brighter, more frequent, longer
+  // Lightning storm: jagged bolts with branches
   function drawRays(){
     rx.clearRect(0,0,W,H);
-    // Spawn more rays
-    if(Math.random()>0.8){
-      var nRays=1+Math.floor(Math.random()*3);
-      for(var ri=0;ri<nRays;ri++){
-        rs.push({
-          x:Math.random()*W,y:-10,
-          vx:(Math.random()-0.5)*4,vy:8+Math.random()*12,
-          w:1.5+Math.random()*4,
-          o:0.4+Math.random()*0.6,
-          life:15+Math.random()*35,
-          maxLife:15+Math.random()*35
-        });
-      }
+    // Spawn lightning bolts from top
+    if(Math.random()>0.85){
+      var bx=Math.random()*W;
+      drawBolt(rx,bx,-10,bx+(Math.random()-0.5)*60,H*0.3+Math.random()*H*0.6,
+        "rgba(220,180,255,"+(0.5+Math.random()*0.4)+")",2+Math.random()*3);
     }
-    // Also spawn some from sides
-    if(Math.random()>0.92){
-      var side=Math.random()>0.5;
-      rs.push({
-        x:side?W+10:0-10,y:Math.random()*H*0.5,
-        vx:(side?-1:1)*(6+Math.random()*8),vy:3+Math.random()*6,
-        w:1+Math.random()*3,
-        o:0.3+Math.random()*0.5,
-        life:10+Math.random()*25,
-        maxLife:10+Math.random()*25
-      });
+    // Spawn bigger main bolts less often
+    if(Math.random()>0.94){
+      var bx2=Math.random()*W;
+      drawBolt(rx,bx2,-10,bx2+(Math.random()-0.5)*80,H*0.2+Math.random()*H*0.7,
+        "rgba(255,220,255,"+(0.7+Math.random()*0.3)+")",3+Math.random()*4);
+      // Add branch
+      drawBolt(rx,bx2+(Math.random()-0.5)*30,H*0.1+Math.random()*H*0.3,
+        bx2+(Math.random()-0.5)*120,H*0.4+Math.random()*H*0.4,
+        "rgba(200,160,255,0.3)",1+Math.random()*1.5);
     }
-    for(var i=0;i<rs.length;i++){
-      var r=rs[i];
-      r.x+=r.vx;r.y+=r.vy;
-      r.life--;
-      if(r.life<=0||r.y>H+20||r.x<-50||r.x>W+50){rs.splice(i,1);i--;continue}
-      var grad=rx.createLinearGradient(r.x,r.y,r.x-r.vx*20,r.y-r.vy*20);
-      var alpha=r.o*(r.life/r.maxLife);
-      grad.addColorStop(0,"rgba(200,150,255,"+(alpha*0.9)+")");
-      grad.addColorStop(0.4,"rgba(160,100,255,"+(alpha*0.5)+")");
-      grad.addColorStop(1,"rgba(139,92,246,0)");
-      rx.strokeStyle=grad;
-      rx.lineWidth=r.w;
-      rx.shadowColor="rgba(180,120,255,"+(alpha*0.5)+")";
-      rx.shadowBlur=25+r.w*5;
-      rx.beginPath();
-      rx.moveTo(r.x,r.y);
-      rx.lineTo(r.x-r.vx*15,r.y-r.vy*15);
-      rx.stroke();
-      rx.shadowBlur=0;
+  }
+  function drawBolt(ctx,x1,y1,x2,y2,col,w){
+    var segments=8+Math.floor(Math.random()*10);
+    var dx=(x2-x1)/segments,dy=(y2-y1)/segments;
+    ctx.strokeStyle=col;
+    ctx.lineWidth=w;
+    ctx.shadowColor="rgba(200,160,255,0.5)";
+    ctx.shadowBlur=20+w*8;
+    ctx.beginPath();
+    ctx.moveTo(x1,y1);
+    var cx=x1,cy=y1;
+    for(var bi=0;bi<segments;bi++){
+      cx+=dx+(Math.random()-0.5)*50;
+      cy+=dy+(Math.random()-0.5)*15;
+      if(cy>H-20)break;
+      ctx.lineTo(cx,cy);
     }
+    ctx.lineTo(x2,Math.min(y2,H-20));
+    ctx.stroke();
+    ctx.shadowBlur=0;
   }
   // Ambient glow pulse on third canvas
   function drawGlow(){
