@@ -39,13 +39,7 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 .prompt .h{color:var(--p)}
 .inp{flex:1;background:transparent;border:none;color:var(--g);font-family:var(--f);font-size:12.5px;outline:none;caret-color:var(--g)}
 .inp::placeholder{color:rgba(0,255,65,0.12);font-size:11px}
-.boot{position:fixed;inset:0;z-index:100;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .4s}
-.boot.hide{opacity:0;pointer-events:none}
 .noscript-msg{position:fixed;inset:0;z-index:200;background:#000;display:flex;align-items:center;justify-content:center;color:rgba(0,255,65,0.6);font-family:monospace;font-size:14px;text-align:center;padding:30px}
-.boot-ascii{font-size:6px;line-height:1.1;color:var(--p);text-shadow:0 0 15px var(--p);text-align:center;white-space:pre;margin-bottom:16px}
-.boot-bar{width:280px;height:3px;background:rgba(0,20,0,0.8);border:1px solid var(--gd);border-radius:4px;overflow:hidden;margin:6px auto}
-.boot-fill{height:100%;width:0%;background:var(--g);box-shadow:0 0 12px var(--g);transition:width .15s}
-.boot-txt{color:var(--gd);font-size:10px;letter-spacing:2px;margin-top:8px}
 .sbtn{position:fixed;bottom:16px;right:16px;z-index:50;background:rgba(0,8,0,0.7);border:1px solid var(--pd);border-radius:10px;color:var(--p);padding:6px 12px;font-family:var(--f);font-size:10px;cursor:pointer;transition:.3s;backdrop-filter:blur(4px)}
 .sbtn:hover{border-color:var(--p);box-shadow:0 0 12px var(--pd)}
 @media(max-width:600px){
@@ -65,11 +59,6 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
 <canvas id="mx"></canvas>
 <canvas id="snow-c"></canvas>
 
-<div class="boot" id="boot">
-  <div class="boot-ascii" id="ba"></div>
-  <div class="boot-bar"><div class="boot-fill" id="bf"></div></div>
-  <div class="boot-txt" id="bt">INICIALIZANDO...</div>
-</div>
 <noscript><div class="noscript-msg">JavaScript requerido para la terminal.<br>Activá JavaScript y recargá.</div></noscript>
 
 <div class="term" id="term">
@@ -93,30 +82,14 @@ canvas{position:fixed;inset:0;z-index:0;pointer-events:none}
   var w=window
   // ---- DOM refs ----
   var O=document.getElementById("out"),I=document.getElementById("inp"),B=document.getElementById("tbody")
-  var BOOT=document.getElementById("boot"),BF=document.getElementById("bf"),BT=document.getElementById("bt"),BA=document.getElementById("ba")
-  if(!O||!I)return // bail if critical elements missing
+  if(!O||!I)return
 
   var h=[],hi=-1,snow=true
   var tIdx=-1,tMatches=[],tOrig=""
   var S=document.getElementById("sbtn")
-  // Fail-safe: force hide boot after 8s if JS error blocks normal boot
-  setTimeout(function(){if(BOOT)BOOT.classList.add("hide")},8000)
 
-  // ---- Boot ----
-  BA.textContent=
-  "\n████████╗██╗██╗     ██╗███╗   ██╗██╗  ██╗\n╚══██╔══╝██║██║     ██║████╗  ██║╚██╗██╔╝\n   ██║   ██║██║     ██║██╔██╗ ██║ ╚███╔╝\n   ██║   ██║██║     ██║██║╚██╗██║ ██╔██╗\n   ██║   ██║███████╗██║██║ ╚████║██╔╝ ██╗\n   ╚═╝   ╚═╝╚══════╝╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝"
-
-  var BM=["Booting TilinX Terminal...","Loading Modules...","Initializing System...","Connection Established","Terminal Ready"]
-  var p=0
-  var bi=setInterval(function(){
-    p+=Math.random()*18+4;if(p>=100){p=100;clearInterval(bi)}
-    BF.style.width=p+"%"
-    if(BT)BT.textContent=BM[Math.min(Math.floor(p/20),BM.length-1)]
-  },180)
-  setTimeout(function(){
-    BOOT.classList.add("hide");I.focus();hA();hU()
-    setInterval(hU,2000)
-  },2800)
+  I.focus();hA();hU()
+  setInterval(hU,2000)
 
   // ---- Matrix ----
   try{(function(){
