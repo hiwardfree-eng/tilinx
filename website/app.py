@@ -1,12 +1,18 @@
 import os, sys, time, json
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from flask import Flask, render_template, jsonify, request, redirect, session, url_for
+from flask import Flask, render_template, jsonify, request, redirect, session, url_for, send_from_directory
 from models import db, Log, init_db
 from logger import log
 from database import load as load_db
 
 app = Flask(__name__)
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
+
+@app.route("/assets/<path:filename>")
+def serve_assets(filename):
+    return send_from_directory(ASSETS_DIR, filename)
+
 app.secret_key = os.environ.get("TilinX_WEB_SECRET", os.urandom(32).hex())
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "TilinX_DATABASE_URL", "sqlite:///" + os.path.join(os.path.dirname(__file__), "tilinx.db")
@@ -33,7 +39,7 @@ def log_event(event, detail="", level="info"):
 @app.before_request
 def before_request():
     if request.path.startswith("/assets") or request.path.startswith("/api") or \
-       request.path in ("/login", "/contact"):
+       request.path.startswith("/static") or request.path in ("/login", "/contact"):
         return
     if request.path.startswith("/admin") and not session.get("logged_in"):
         return redirect("/login")
