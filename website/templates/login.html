@@ -100,7 +100,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementB
 (function(){
   const canvas=document.getElementById('matrix'),ctx=canvas.getContext('2d');
   const KAT='アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモ01アイウ10110'.split('');
-  const W=22;let drops=[];
+  const W=22;let drops=[],anim;
   function resize(){
     canvas.width=innerWidth;canvas.height=innerHeight;
     const n=Math.ceil(canvas.width/W);
@@ -109,17 +109,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementB
   }
   function draw(){
     ctx.fillStyle='rgba(6,4,16,0.055)';ctx.fillRect(0,0,canvas.width,canvas.height);
-    drops.forEach((y,i)=>{
+    for(let i=0;i<drops.length;i++){
       const ch=KAT[Math.random()*KAT.length|0];
       const bright=Math.random()>0.92;
       if(bright){ctx.fillStyle='rgba(230,210,255,0.7)';ctx.font='bold 13px JetBrains Mono,monospace'}
       else{const a=0.06+Math.random()*0.16;ctx.fillStyle=`rgba(139,92,246,${a})`;ctx.font='13px JetBrains Mono,monospace'}
-      ctx.fillText(ch,i*W,y*W);
-      if(y*W>canvas.height&&Math.random()>0.975)drops[i]=0;
+      ctx.fillText(ch,i*W,drops[i]*W);
+      if(drops[i]*W>canvas.height&&Math.random()>0.975)drops[i]=0;
       drops[i]+=0.38;
-    });
+    }
+    anim=requestAnimationFrame(draw);
   }
-  resize();window.addEventListener('resize',resize);setInterval(draw,46);
+  resize();window.addEventListener('resize',resize);anim=requestAnimationFrame(draw);
 })();
 </script>
 </body>

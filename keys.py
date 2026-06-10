@@ -55,7 +55,12 @@ def redeem_key(code: str, ip: str) -> str:
     _save(keys)
     from database import load, save
     db = load()
-    db[ip] = {"status": "active", "expires_at": time.time() + duration}
+    db[ip] = {
+        "status": "active",
+        "expires_at": time.time() + duration,
+        "key_used": code,
+        "used_at": time.time(),
+    }
     save(db)
     log.info(f"Key redeemed: {code} → IP {ip} ({duration}s)")
     return "OK"
