@@ -1,7 +1,7 @@
 import os, sys
 sys.path.insert(0, os.path.dirname(__file__))
 
-from website import app
+from app import app
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
