@@ -377,7 +377,7 @@ def api_keys():
             "label": k.get("label", k["code"][:12]),
             "key": k["code"],
             "status": status,
-            "expires": time.strftime("%Y-%m-%d", time.localtime(expires_ts)) if k.get("duration", 0) > 0 else "never",
+            "expires": time.strftime("%Y-%m-%d %H:%M", time.localtime(expires_ts)) if k.get("duration", 0) > 0 else "never",
             "uses": len(k.get("active_ips", [])) if k.get("used") else 0,
             "max_devices": k.get("max_devices", 1),
             "active_ips": k.get("active_ips", []),
@@ -395,7 +395,7 @@ def api_create_key():
         return jsonify(success=False, error="Label requerido"), 400
     if len(label) > 50:
         return jsonify(success=False, error="Label demasiado largo"), 400
-    days = int(data.get("duration", 30))
+    days = float(data.get("duration", 30))
     if days < 0 or days > 3650:
         return jsonify(success=False, error="Duracion invalida"), 400
     max_devices = int(data.get("max_devices", 1))
