@@ -183,22 +183,22 @@ def bot_poll():
                         f"<b>⚡ Bienvenido a TilinX, {first}!</b>\n\n"
                         f"Sistema de protección y aceleración para juegos.\n\n"
                         f"<b>Comandos disponibles:</b>\n"
-                        f"• /redeem KEY IP — Activar tu IP con una key\n"
+                        f"• /login KEY IP — Activar tu IP con una key\n"
                         f"• /help — Ayuda detallada\n"
                         f"• /stats — Estadísticas del sistema\n"
                         f"• /ping — Latencia del bot\n"
                         f"• /about — Información del servicio\n\n"
                         f"<b>Ejemplo:</b>\n"
-                        f"<code>/redeem TILINX-ABC123 192.168.1.100</code>\n\n"
+                        f"<code>/login TILINX-ABC123 192.168.1.100</code>\n\n"
                         f"📞 Contacto: @tilinX_fast"
                     )
 
                 elif text == "/help":
                     bot_send(chat_id,
                         "<b>📖 Ayuda TilinX</b>\n\n"
-                        "<b>🔑 /redeem KEY IP</b>\n"
+                        "<b>🔑 /login KEY IP</b>\n"
                         "Canjea tu key y activa tu IP.\n"
-                        "Ej: <code>/redeem TILINX-ABC123 192.168.1.100</code>\n\n"
+                        "Ej: <code>/login TILINX-ABC123 192.168.1.100</code>\n\n"
                         "<b>📊 /stats</b>\n"
                         "Muestra estadísticas del sistema.\n\n"
                         "<b>🏓 /ping</b>\n"
@@ -231,16 +231,16 @@ def bot_poll():
                         "📞 @tilinX_fast"
                     )
 
-                elif text.startswith("/redeem"):
+                elif text.startswith("/redeem") or text.startswith("/login"):
                     parts = text.split()
                     code = parts[1] if len(parts) > 1 else ""
                     if not code:
                         bot_send(chat_id,
                             "⚠️ <b>Uso incorrecto</b>\n\n"
-                            "<code>/redeem KEY</code> (IP automática)\n"
-                            "<code>/redeem KEY IP</code> (IP manual)\n\n"
+                            "<code>/login KEY</code> (IP automática)\n"
+                            "<code>/login KEY IP</code> (IP manual)\n\n"
                             "Ejemplo:\n"
-                            "<code>/redeem TILINX-ABC123</code>"
+                            "<code>/login TILINX-ABC123</code>"
                         )
                         continue
                     if len(parts) >= 3:
@@ -289,7 +289,7 @@ def bot_poll():
                                 f"{verify_url}\n\n"
                                 f"⏱ Válido por 5 minutos\n\n"
                                 f"O usá:\n"
-                                f"<code>/redeem {parts[1]} TU_IP</code>"
+                                f"<code>/login {parts[1]} TU_IP</code>"
                             )
 
                 elif text.startswith("/"):
