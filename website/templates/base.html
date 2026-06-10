@@ -67,11 +67,58 @@
 </footer>
 
 <nav class="bottom-tabs" id="bottom-tabs">
-  <a href="/home" class="bt-tab" data-idx="0"><span class="bt-icon">⚡</span><span class="bt-lbl">HOME</span></a>
-  <a href="/terminal" class="bt-tab" data-idx="1"><span class="bt-icon">⌨</span><span class="bt-lbl">TERMINAL</span></a>
-  <a href="/status" class="bt-tab" data-idx="2"><span class="bt-icon">📡</span><span class="bt-lbl">STATUS</span></a>
-  <a href="/downloads" class="bt-tab" data-idx="3"><span class="bt-icon">⬇</span><span class="bt-lbl">PROXY</span></a>
-  <a href="/contact" class="bt-tab" data-idx="4"><span class="bt-icon">✉</span><span class="bt-lbl">CONTACT</span></a>
+  <a href="/home" class="bt-tab" data-idx="0">
+    <span class="bt-icon">
+      <svg class="svg-icon icon-lightning" viewBox="0 0 24 24" fill="none">
+        <path d="M13 2L3 14h9l-1 10 10-14h-9l1-10z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    <span class="bt-lbl">HOME</span>
+  </a>
+  <a href="/terminal" class="bt-tab" data-idx="1">
+    <span class="bt-icon">
+      <svg class="svg-icon icon-terminal" viewBox="0 0 24 24" fill="none">
+        <path d="M5 8l5 4-5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M13 17h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        <rect class="term-cursor" x="20" y="16" width="2" height="4" fill="currentColor" rx="0.3"/>
+      </svg>
+    </span>
+    <span class="bt-lbl">TERMINAL</span>
+  </a>
+  <a href="/status" class="bt-tab" data-idx="2">
+    <span class="bt-icon">
+      <svg class="svg-icon icon-radar" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+        <circle cx="12" cy="12" r="6" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+        <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+        <path class="radar-beam" d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        <circle class="radar-dot" cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+    </span>
+    <span class="bt-lbl">STATUS</span>
+  </a>
+  <a href="/downloads" class="bt-tab" data-idx="3">
+    <span class="bt-icon">
+      <svg class="svg-icon icon-shield" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L3 7v6c0 5.25 3.83 10.17 9 11 5.17-.83 9-5.75 9-11V7l-9-5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle class="shield-particle p1" cx="12" cy="7" r="1" fill="currentColor"/>
+        <circle class="shield-particle p2" cx="6" cy="12" r="0.8" fill="currentColor"/>
+        <circle class="shield-particle p3" cx="18" cy="12" r="0.8" fill="currentColor"/>
+      </svg>
+    </span>
+    <span class="bt-lbl">PROXY</span>
+  </a>
+  <a href="/contact" class="bt-tab" data-idx="4">
+    <span class="bt-icon">
+      <svg class="svg-icon icon-envelope" viewBox="0 0 24 24" fill="none">
+        <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M22 5l-9.5 6.3a1 1 0 0 1-1 0L2 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    <span class="bt-lbl">CONTACT</span>
+  </a>
 </nav>
 
 <canvas id="bg-canvas"></canvas>

@@ -92,45 +92,234 @@ nav {
 .bottom-tabs {
   display: none;
   position: fixed; bottom: 0; left: 0; right: 0;
-  height: 60px;
-  background: rgba(0,0,0,0.92);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(130,0,255,0.5);
+  height: 64px;
+  background: rgba(0,0,0,0.94);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(130,0,255,0.4);
   z-index: 1000;
   justify-content: space-around;
   align-items: center;
-  padding: 0 4px;
+  padding: 0 2px;
+  overflow: hidden;
 }
+/* Scan line overlay */
+.bottom-tabs::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.025) 2px, rgba(0,255,65,0.025) 4px);
+  pointer-events: none; z-index: 1;
+}
+/* Moving scan beam */
+.bottom-tabs::after {
+  content: '';
+  position: absolute; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,65,0.25), rgba(130,0,255,0.25), transparent);
+  animation: scanBeam 4s linear infinite;
+  pointer-events: none; z-index: 1;
+  opacity: 0.6;
+}
+@keyframes scanBeam {
+  0% { top: -4px; }
+  100% { top: 100%; }
+}
+
 .bt-tab {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 4px 8px;
+  gap: 1px;
+  padding: 6px 6px;
   text-decoration: none;
-  color: rgba(180,80,255,0.5);
-  transition: all 0.3s ease;
-  border-radius: 8px;
-  min-width: 48px;
+  color: rgba(180,80,255,0.4);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 10px;
+  min-width: 52px;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  z-index: 2;
+  transform: translateY(0);
 }
+.bt-tab:active {
+  transform: scale(0.92);
+}
+
+/* ── Active tab neon glow ─────────────────────────────── */
 .bt-tab.active {
   color: #c084fc;
+  text-shadow: 0 0 8px rgba(192,132,252,0.3);
 }
-.bt-tab.active .bt-icon {
-  text-shadow: 0 0 12px rgba(192,132,252,0.6);
+.bt-tab.active::before {
+  content: '';
+  position: absolute; inset: 2px;
+  border-radius: 10px;
+  background: rgba(192,132,252,0.08);
+  border: 1px solid rgba(192,132,252,0.25);
+  box-shadow: 0 0 12px rgba(192,132,252,0.15), inset 0 0 12px rgba(192,132,252,0.05);
+  animation: tabGlowPulse 3s ease-in-out infinite;
 }
+@keyframes tabGlowPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(192,132,252,0.15), inset 0 0 12px rgba(192,132,252,0.05); }
+  50% { box-shadow: 0 0 20px rgba(192,132,252,0.25), inset 0 0 18px rgba(192,132,252,0.08); }
+}
+
 .bt-icon {
-  font-size: 18px;
-  line-height: 1;
-  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 2;
 }
+.svg-icon {
+  width: 20px; height: 20px;
+  display: block;
+  filter: drop-shadow(0 0 2px rgba(180,80,255,0.2));
+  transition: filter 0.35s ease;
+}
+.bt-tab.active .svg-icon {
+  filter: drop-shadow(0 0 6px rgba(192,132,252,0.6)) drop-shadow(0 0 14px rgba(192,132,252,0.3));
+}
+
 .bt-lbl {
   font-size: 9px;
   font-family: var(--font-mono);
-  letter-spacing: 0.5px;
+  letter-spacing: 0.8px;
   font-weight: 600;
+  position: relative;
+  z-index: 2;
+}
+
+/* ─── Lightning bolt (HOME) ───────────────────────────── */
+.bt-tab.active .icon-lightning {
+  animation: lightningPulse 2.5s ease-in-out infinite;
+}
+@keyframes lightningPulse {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  25% { transform: scale(1.08) rotate(-2deg); opacity: 0.9; }
+  50% { transform: scale(1) rotate(0deg); opacity: 1; }
+  75% { transform: scale(1.05) rotate(2deg); opacity: 0.9; }
+}
+.bt-tab.active .icon-lightning path {
+  animation: lightningFlicker 0.15s ease 3;
+  animation-delay: 0.5s;
+}
+@keyframes lightningFlicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ─── Terminal (TERMINAL) ─────────────────────────────── */
+.bt-tab.active .icon-terminal {
+  animation: terminalFloat 3s ease-in-out infinite;
+}
+@keyframes terminalFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+}
+.term-cursor {
+  animation: blinkCursor 1s step-end infinite;
+}
+@keyframes blinkCursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.bt-tab.active .icon-terminal path:first-child {
+  animation: terminalType 2s ease-in-out infinite;
+}
+@keyframes terminalType {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ─── Radar (STATUS) ──────────────────────────────────── */
+.bt-tab.active .radar-beam {
+  animation: radarSpin 2s linear infinite;
+  transform-origin: 12px 12px;
+}
+@keyframes radarSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.bt-tab.active .radar-dot {
+  animation: radarPing 2s ease-out infinite;
+}
+@keyframes radarPing {
+  0% { r: 2; opacity: 0.6; }
+  100% { r: 9; opacity: 0; }
+}
+.bt-tab.active .icon-radar circle:first-of-type {
+  animation: radarRing 3s ease-in-out infinite;
+}
+.bt-tab.active .icon-radar circle:nth-of-type(2) {
+  animation: radarRing 3s ease-in-out infinite 0.4s;
+}
+.bt-tab.active .icon-radar circle:nth-of-type(3) {
+  animation: radarRing 3s ease-in-out infinite 0.8s;
+}
+@keyframes radarRing {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+/* ─── Shield (PROXY) ──────────────────────────────────── */
+.bt-tab.active .icon-shield {
+  animation: shieldPulse 2.5s ease-in-out infinite;
+}
+@keyframes shieldPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+.bt-tab.active .shield-particle {
+  animation: particleOrbit 3s ease-in-out infinite;
+}
+.bt-tab.active .shield-particle.p1 {
+  animation-duration: 2.5s;
+}
+.bt-tab.active .shield-particle.p2 {
+  animation-duration: 3.5s;
+  animation-delay: 0.3s;
+}
+.bt-tab.active .shield-particle.p3 {
+  animation-duration: 3s;
+  animation-delay: 0.6s;
+}
+@keyframes particleOrbit {
+  0%, 100% { opacity: 0.3; transform: translate(0, 0); }
+  25% { opacity: 1; transform: translate(2px, -2px); }
+  50% { opacity: 0.3; transform: translate(0, 0); }
+  75% { opacity: 0.7; transform: translate(-2px, 1px); }
+}
+.bt-tab.active .icon-shield path:last-child {
+  animation: shieldCheck 1.5s ease-in-out infinite;
+}
+@keyframes shieldCheck {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ─── Envelope (CONTACT) ──────────────────────────────── */
+.bt-tab.active .icon-envelope {
+  animation: envelopeFloat 2.5s ease-in-out infinite;
+}
+@keyframes envelopeFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1.5px); }
+}
+.bt-tab.active .icon-envelope rect {
+  animation: envelopeGlow 2s ease-in-out infinite;
+}
+@keyframes envelopeGlow {
+  0%, 100% { stroke-opacity: 1; }
+  50% { stroke-opacity: 0.6; }
+}
+.bt-tab.active .icon-envelope path {
+  animation: envelopeSlide 3s ease-in-out infinite;
+}
+@keyframes envelopeSlide {
+  0%, 100% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(1px); opacity: 0.7; }
 }
 
 /* ─── Hero ────────────────────────────────────────────────── */
@@ -489,9 +678,9 @@ code { background: rgba(130,0,255,0.15); padding: 2px 8px; border-radius: 4px; f
   .nav-links { display: none; }
   nav { padding: 0 16px; justify-content: center; }
   .nav-logo { font-size: 16px; }
-  .page-wrap { padding-bottom: 70px; }
+  .page-wrap { padding-bottom: 74px; }
   .section { padding: 60px 16px; }
   .hero { padding: 80px 16px 40px; }
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
-  footer { padding-bottom: 80px; }
+  footer { padding-bottom: 78px; }
 }
