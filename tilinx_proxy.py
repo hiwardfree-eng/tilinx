@@ -76,15 +76,23 @@ def load_files():
                 break
     ctx.log.info(f"{LOG_PREFIX} Files ready: {list(FILE_CACHE.keys())}")
 
-# ─── IP Database ─────────────────────────────────────────────
+# ─── IP Database (cached, refreshed every 15s) ─────────────
+DB_CACHE = {"data": {}, "ts": 0}
+DB_TTL = 15
+
 def load_db():
+    now = time.time()
+    if now - DB_CACHE["ts"] < DB_TTL:
+        return DB_CACHE["data"]
     if not os.path.exists(DB_PATH):
         return {}
     try:
         with open(DB_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+            DB_CACHE["data"] = json.load(f)
+            DB_CACHE["ts"] = now
     except Exception:
-        return {}
+        pass
+    return DB_CACHE.get("data", {})
 
 def get_auth_status(ip):
     if not ip:
@@ -97,7 +105,14 @@ def get_auth_status(ip):
     if status == "blocked":
         return "BANNED"
     if status == "active":
-        return "ACTIVE" if user.get("expires_at", 0) > time.time() else "EXPIRED"
+        expires = user.get("expires_at", 0) or 0
+        try:
+            expires = float(expires)
+        except (TypeError, ValueError):
+            expires = 0
+        if expires == 0 or expires > time.time():
+            return "ACTIVE"
+        return "EXPIRED"
     return "NOT_FOUND"
 
 def make_block_response(flow, message, status=400):
@@ -107,7 +122,7 @@ def make_block_response(flow, message, status=400):
         {"Content-Type": "text/plain; charset=utf-8"},
     )
 
-def get_client_ip(flow) -> str:
+def get_client_ip(flow):
     try:
         return flow.client_conn.peername[0]
     except Exception:
