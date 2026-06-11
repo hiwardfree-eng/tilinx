@@ -307,7 +307,7 @@ def bot_poll():
                 elif text.startswith("/api"):
                     is_admin = chat_id == ADMIN_ID
                     if not is_admin:
-                        bot_send(chat_id, "🚫 Comando solo para administradores.")
+                        bot_send(chat_id, f"🚫 Comando solo para administradores. (TU ID: {chat_id})")
                         continue
 
                     parts = text.split()
@@ -427,7 +427,7 @@ def bot_poll():
                 elif text.startswith("/adminx"):
                     is_admin = chat_id == ADMIN_ID
                     if not is_admin:
-                        bot_send(chat_id, "🚫 Comando solo para administradores.")
+                        bot_send(chat_id, f"🚫 Comando solo para administradores. (TU ID: {chat_id})")
                         continue
 
                     parts = text.split()
