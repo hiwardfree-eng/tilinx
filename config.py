@@ -32,4 +32,4 @@ ADMIN_IP_WHITELIST = os.environ.get("TilinX_ADMIN_IP_WHITELIST", "").split(",")
 ADMIN_IP_BIND = os.environ.get("TilinX_ADMIN_IP_BIND", "0") == "1"
 CORS_ORIGIN = os.environ.get("TilinX_CORS_ORIGIN", "https://tilinx.onrender.com")
 CSRF_ENABLED = os.environ.get("TilinX_CSRF_ENABLED", "1") == "1"
-ENCRYPT_DB = os.environ.get("TilinX_ENCRYPT_DB", "0") == "1"
+ENCRYPT_DB = os.environ.get("TilinX_ENCRYPT_DB", "1") == "1"

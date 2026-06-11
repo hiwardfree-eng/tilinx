@@ -21,14 +21,11 @@ EXPOSE 8884
 ENV TilinX_BASE_DIR=/opt/tilinx \
     TilinX_DB_PATH=/opt/tilinx/ips.json \
     TilinX_LOG_DIR=/opt/tilinx/logs \
-    TilinX_DATA_DIR=/opt/tilinx/data/TilinX
-
-# Default auth (override with env vars at runtime)
-ENV TilinX_PROXY_AUTH_USER=admin \
-    TilinX_PROXY_AUTH_PASS=$(python3 -c "import secrets; print(secrets.token_hex(16))")
+    TilinX_DATA_DIR=/opt/tilinx/data/TilinX \
+    TilinX_PROXY_PORT=8884 \
+    TilinX_RATE_LIMIT=30
 
 CMD mitmdump -p "$TilinX_PROXY_PORT" \
-    --set proxyauth="${TilinX_PROXY_AUTH_USER}:${TilinX_PROXY_AUTH_PASS}" \
     --set block_global=false \
     --ssl-insecure \
     -s /opt/tilinx/tilinx_proxy.py

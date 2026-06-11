@@ -41,6 +41,7 @@ mitmproxy-dhparam.pem
 
 # Credenciales auto-generadas
 .proxy.auth
+.db_key
 
 # Temp
 tmp/

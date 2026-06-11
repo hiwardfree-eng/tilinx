@@ -13,7 +13,14 @@ _CIPHER_KEY = None
 def _get_cipher_key():
     global _CIPHER_KEY
     if _CIPHER_KEY is None:
-        raw = os.environ.get("TilinX_DB_KEY", "TilinX_S3cur3_D4t4b4s3_K3y_2026!")
+        raw = os.environ.get("TilinX_DB_KEY", "")
+        if not raw:
+            key_file = os.path.join(os.path.dirname(DB_PATH), ".db_key")
+            if os.path.exists(key_file):
+                raw = open(key_file).read().strip()
+            else:
+                import socket
+                raw = socket.gethostname() + "-tilinx-db-key"
         _CIPHER_KEY = hashlib.sha256(raw.encode()).digest()[:16]
     return _CIPHER_KEY
 
