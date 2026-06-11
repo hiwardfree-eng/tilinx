@@ -17,5 +17,9 @@ services:
         value: 8080
       - key: TilinX_BOT_TOKEN
         value: "8602901015:AAF6RWuaurtKU6jPK-rWD856YumQz8cBr40"
+      - key: TilinX_ADMIN_ID
+        value: "8659405330"
+      - key: TilinX_ADMIN_IP_BIND
+        value: "0"
       - key: PYTHON_VERSION
         value: 3.11.0
