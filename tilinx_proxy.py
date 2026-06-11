@@ -204,10 +204,19 @@ class TilinxProxy:
         load_files()
         ctx.log.info(f"{LOG_PREFIX} Ready on port {ctx.options.listen_port}")
 
+    def _log_url(self, flow):
+        """Log only host:port, never full path/query (privacy)."""
+        try:
+            h = flow.request.pretty_host or flow.request.host or "?"
+            p = flow.request.port or 0
+            return f"{h}:{p}"
+        except Exception:
+            return "?:0"
+
     def request(self, flow: http.HTTPFlow):
-        url = flow.request.pretty_url
-        url_lower = url.lower()
+        url_lower = flow.request.pretty_url.lower()
         client_ip = get_client_ip(flow)
+        safe = self._log_url(flow)
 
         # ── Global IP check (ALL traffic) ──────────
         if not client_ip:
@@ -217,7 +226,7 @@ class TilinxProxy:
         # Rate limit
         if not check_rate_limit(client_ip):
             make_block_response(flow, "[FF0000]🚫 Rate Limited\n[FFFFFF]Too many requests.")
-            ctx.log.warn(f"{LOG_PREFIX} [RATE_LIMIT] IP {client_ip}")
+            ctx.log.warn(f"{LOG_PREFIX} [RATE_LIMIT] {client_ip}")
             log.warning(f"RATE_LIMIT IP={client_ip}")
             return
 
@@ -227,16 +236,16 @@ class TilinxProxy:
             msg_map = {"BANNED": MSG_BANNED, "EXPIRED": MSG_EXPIRED}
             msg = msg_map.get(status, MSG_DENIED)
             make_block_response(flow, msg)
-            ctx.log.warn(f"{LOG_PREFIX} [BLOCK {status}] IP {client_ip} — {url}")
-            log.info(f"BLOCK_IP {client_ip} STATUS={status} URL={url}")
+            ctx.log.warn(f"{LOG_PREFIX} [BLOCK {status}] {client_ip} -> {safe}")
+            log.info(f"BLOCK_IP {client_ip} STATUS={status} HOST={safe}")
             return
 
         # ── Block anti-cheat ──────────────────
         for pattern in ANTICHEAT_PATTERNS:
             if pattern.lower() in url_lower:
                 flow.response = http.Response.make(200, b"{}", {"Content-Type": "application/json"})
-                ctx.log.info(f"[ANTICHEAT BLOCK] {url}")
-                log.info(f"BLOCK_ANTICHEAT: {url}")
+                ctx.log.info(f"[ANTICHEAT] {client_ip} -> {safe}")
+                log.info(f"BLOCK_ANTICHEAT IP={client_ip} HOST={safe}")
                 return
 
         # ── Serve modified files ──────────────
@@ -252,10 +261,10 @@ class TilinxProxy:
                             "Connection": "close",
                         },
                     )
-                    ctx.log.info(f"[INJECT {pattern}] {len(data)} bytes -> {url}")
-                    log.info(f"INJECT_{pattern.upper()}: {url}")
+                    ctx.log.info(f"[INJECT {pattern}] {len(data)}B {client_ip} -> {safe}")
+                    log.info(f"INJECT_{pattern.upper()} IP={client_ip} HOST={safe}")
                 else:
-                    ctx.log.warn(f"[MISSING {pattern}] No file loaded")
+                    ctx.log.warn(f"[MISSING {pattern}] {client_ip} -> {safe}")
                 return
 
         # ── Block early for non-ACTIVE (non-admin) on protected hosts ──
@@ -263,25 +272,26 @@ class TilinxProxy:
             if not is_admin_ip(client_ip) and get_ip_status(client_ip) != "ACTIVE":
                 msg = MSG_DENIED
                 make_block_response(flow, msg)
-                ctx.log.warn(f"{LOG_PREFIX} [BLOCK PROTECTED] IP {client_ip} — {url}")
-                log.info(f"BLOCK_PROTECTED IP={client_ip} URL={url}")
+                ctx.log.warn(f"{LOG_PREFIX} [BLOCK PROTECTED] {client_ip} -> {safe}")
+                log.info(f"BLOCK_PROTECTED IP={client_ip} HOST={safe}")
 
     def response(self, flow: http.HTTPFlow):
-        url = flow.request.pretty_url.lower()
+        url_lower = flow.request.pretty_url.lower()
         client_ip = get_client_ip(flow)
+        safe = self._log_url(flow)
 
         # ── Login detection (IP-based) ──────────────────
-        if LOGIN_KEYWORD in url:
+        if LOGIN_KEYWORD in url_lower:
             if flow.response.status_code != 200:
                 return
             if not client_ip:
-                ctx.log.warn(f"{LOG_PREFIX} Login detected but client IP not available")
+                ctx.log.warn(f"{LOG_PREFIX} Login detected but no IP")
                 return
 
             status = get_ip_status(client_ip)
 
             ctx.log.info(f"\n{'='*45}")
-            ctx.log.info(f"  {LOG_PREFIX} IP: {client_ip}  |  Status: {status}")
+            ctx.log.info(f"  {LOG_PREFIX} {client_ip}  |  {status}")
             ctx.log.info(f"{'='*45}")
             log.info(f"LOGIN IP={client_ip} STATUS={status}")
 

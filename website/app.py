@@ -87,7 +87,8 @@ def _check_admin_ip():
         return True
     ip = _get_client_ip()
     if not ADMIN_IP_WHITELIST or ADMIN_IP_WHITELIST == [""]:
-        return True
+        log.warning(f"ADMIN_IP_BIND=1 but ADMIN_IP_WHITELIST empty — setting TilinX_ADMIN_IP_WHITELIST")
+        return False
     return ip in ADMIN_IP_WHITELIST
 
 SESSION_FINGERPRINTS = {}

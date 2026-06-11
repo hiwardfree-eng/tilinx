@@ -43,6 +43,10 @@ mitmproxy-dhparam.pem
 .proxy.auth
 .db_key
 
+# Datos operacionales
+chat_ips_pending.json
+chat_ips.json
+
 # Temp
 tmp/
 temp/
