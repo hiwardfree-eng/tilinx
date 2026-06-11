@@ -151,8 +151,8 @@ def before_request():
         if not stored:
             session["fingerprint"] = fp
 
-    # Admin IP check
-    if request.path.startswith("/admin") or request.path.startswith("/api/"):
+    # Admin IP check (skip login so users can authenticate from anywhere)
+    if not request.path.startswith("/api/login") and (request.path.startswith("/admin") or request.path.startswith("/api/")):
         if not _check_admin_ip():
             log.warning(f"Admin IP blocked: {ip}")
             return "Access Denied", 403
