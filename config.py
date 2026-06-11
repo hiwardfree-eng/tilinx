@@ -31,5 +31,8 @@ LOGIN_BLOCK_MINUTES = int(os.environ.get("TilinX_LOGIN_BLOCK_MINUTES", "15"))
 ADMIN_IP_WHITELIST = os.environ.get("TilinX_ADMIN_IP_WHITELIST", "").split(",")
 ADMIN_IP_BIND = os.environ.get("TilinX_ADMIN_IP_BIND", "1") == "1"
 CORS_ORIGIN = os.environ.get("TilinX_CORS_ORIGIN", "https://tilinx.onrender.com")
+
+# ─── Admin ──────────────────────────────────────────
+ADMIN_USER = os.environ.get("TilinX_ADMIN_USER", "tilinX")
 CSRF_ENABLED = os.environ.get("TilinX_CSRF_ENABLED", "1") == "1"
 ENCRYPT_DB = os.environ.get("TilinX_ENCRYPT_DB", "1") == "1"

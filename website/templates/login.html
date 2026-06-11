@@ -75,8 +75,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     </div>
     <p class="brand-sub">Command Center</p>
     <div class="field">
-      <label>Contraseña</label>
-      <input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password" autofocus/>
+      <label>Usuario</label>
+      <input type="text" id="inp-user" placeholder="tu usuario" autocomplete="username" autofocus/>
+    </div>
+    <div class="field">
+      <label>Key / Contraseña</label>
+      <input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"/>
     </div>
     <div class="login-err" id="login-err"></div>
     <button class="btn-login" onclick="doLogin()">Iniciar sesión →</button>
@@ -88,11 +92,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 <script>
 function doLogin(){
+  const user=document.getElementById('inp-user').value;
   const pass=document.getElementById('inp-pass').value;
   const err=document.getElementById('login-err');
-  if(!pass){err.textContent='Ingresa la contraseña.';return}
-  fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})})
-    .then(r=>{if(r.ok)window.location.href='/admin';else{r.text().then(t=>{err.textContent=t||'Contraseña incorrecta.';const c=document.querySelector('.login-card');c.style.animation='none';c.offsetHeight;c.style.animation='shake .4s ease'})}})
+  if(!user||!pass){err.textContent='Ingresa usuario y key.';return}
+  fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,key:pass})})
+    .then(r=>r.json().then(d=>{if(r.ok&&d.redirect)window.location.href=d.redirect;else{err.textContent=d.error||'Credenciales inválidas.';const c=document.querySelector('.login-card');c.style.animation='none';c.offsetHeight;c.style.animation='shake .4s ease'}}))
     .catch(e=>{err.textContent='Error de conexión: '+(e.message||'')})
 }
 document.addEventListener('keydown',function(e){var k=e.key||'';if((k==='Enter'||e.keyCode===13)&&document.getElementById('pg-login').classList.contains('active'))doLogin()});

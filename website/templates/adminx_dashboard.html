@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AdminX – TilinX Proxy</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a14;--card:#12111e;--border:#2a2740;--text:#e0daf5;--muted:#8070a0;--purple:#8b5cf6;--purple-dim:#6d4bd1;--red:#ef4444;--green:#22c55e;--radius:14px}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.container{width:100%;max-width:900px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px}
+h1{font-size:1.3rem;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+h1 svg{width:20px;height:20px;stroke:var(--purple);fill:none;stroke-width:2}
+.sub{color:var(--muted);font-size:.82rem;margin-bottom:24px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:end}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+input,select{padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:.85rem;outline:none;min-width:0}
+input:focus,select:focus{border-color:var(--purple)}
+.btn-primary{background:var(--purple);color:#fff;border:none;padding:9px 18px;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:500;white-space:nowrap}
+.btn-primary:hover{background:var(--purple-dim)}
+.btn-danger{background:#991b1b;color:#fff;border:none;padding:9px 18px;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:500}
+.btn-danger:hover{background:#7f1d1d}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);padding:9px 18px;border-radius:10px;cursor:pointer;font-size:.85rem}
+.btn-ghost:hover{color:var(--text);border-color:var(--purple)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th{text-align:left;padding:10px 8px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border)}
+td{padding:10px 8px;border-bottom:1px solid rgba(42,39,64,.5)}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:.72rem;font-weight:500}
+.badge.active{background:rgba(34,197,94,.15);color:var(--green)}
+.badge.expired{background:rgba(239,68,68,.15);color:var(--red)}
+.badge.warning{background:rgba(250,204,21,.15);color:#eab308}
+.empty{color:var(--muted);text-align:center;padding:40px 0;font-size:.85rem}
+.td-key{font-family:'JetBrains Mono',monospace;font-size:.78rem;display:flex;align-items:center;gap:6px}
+.icon-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px;line-height:1;font-size:.85rem}
+.icon-btn:hover{color:var(--text);background:rgba(255,255,255,.06)}
+.icon-btn.del:hover{color:var(--red)}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-size:.85rem;z-index:999;opacity:0;transition:opacity .3s}
+.toast.show{opacity:1}.toast.success{background:#166534;color:#bbf7d0}
+.toast.error{background:#7f1d1d;color:#fecaca}
+.row2{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+h2{font-size:1rem;font-weight:500}
+@media(max-width:600px){.container{padding:16px}.toolbar{flex-direction:column;align-items:stretch}.toolbar .field{width:100%}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>
+    <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    AdminX Panel
+  </h1>
+  <div class="sub">Gestión de access keys para sub-administradores.</div>
+
+  <div class="toolbar" id="generator">
+    <div class="field">
+      <label>Label</label>
+      <input type="text" id="m-label" placeholder="Ej: Cliente A, Demo…" />
+    </div>
+    <div class="field">
+      <label>Duración (días)</label>
+      <select id="m-duration">
+        <option value="1">1 día</option>
+        <option value="7">7 días</option>
+        <option value="15">15 días</option>
+        <option value="30">30 días</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Dispositivos</label>
+      <select id="m-devices">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="createKey()">+ Generar Key</button>
+  </div>
+
+  <div class="row2">
+    <h2>Mis Access Keys</h2>
+    <button class="btn-ghost" onclick="location.href='/login'">← Volver al login</button>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>Label</th><th>Key</th><th>Estado</th><th>Expira</th><th>Usos</th><th style="width:50px"></th>
+    </tr></thead>
+    <tbody id="keys-tbody"></tbody>
+  </table>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+async function loadKeys(){
+  try{
+    const r=await fetch('/api/adminx/my-keys');const data=await r.json()
+    const tb=document.getElementById('keys-tbody')
+    if(!data||!data.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">No creaste keys todavía.</div></td></tr>';return}
+    tb.innerHTML=data.map(k=>{
+      const status=k.status||'active'
+      const statusText=status==='active'?'Activa':status==='expired'?'Expirada':'Inactiva'
+      const statusClass=status==='active'?'active':'expired'
+      return `<tr>
+        <td class="td-label">${x(k.label)}</td>
+        <td><div class="td-key">${x(k.key)}<button class="icon-btn" title="Copiar" onclick="copyKey('${x(k.key)}')">⧉</button></div></td>
+        <td><span class="badge ${statusClass}">${statusText}</span></td>
+        <td style="font-family:monospace;font-size:.77rem;color:#9888c8">${k.expires==='never'?'<span style="color:var(--muted)">∞ Sin límite</span>':k.expires}</td>
+        <td>${k.uses||0}/${k.max_devices||1}</td>
+        <td><button class="icon-btn del" title="Eliminar" onclick="deleteKey('${x(k.key)}')">✕</button></td>
+      </tr>`
+    }).join('')
+  }catch{}
+}
+
+async function createKey(){
+  const label=document.getElementById('m-label').value.trim()
+  if(!label){toast('Escribe un label para la key','error');return}
+  const duration=parseInt(document.getElementById('m-duration').value)
+  const max_devices=parseInt(document.getElementById('m-devices').value)
+  try{
+    const r=await fetch('/api/adminx/my-keys',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label,duration,max_devices})})
+    if(r.ok){
+      document.getElementById('m-label').value=''
+      await loadKeys()
+      toast('Key "'+label+'" creada correctamente.','success')
+    } else {
+      const d=await r.json()
+      toast(d.error||'Error al crear key','error')
+    }
+  }catch{toast('Error de conexión','error')}
+}
+
+async function deleteKey(code){
+  if(!confirm('Eliminar key '+code+'?'))return
+  try{
+    const r=await fetch('/api/adminx/my-keys/'+encodeURIComponent(code),{method:'DELETE'})
+    if(r.ok){toast('Key eliminada','success');loadKeys()}
+    else toast('Error al eliminar','error')
+  }catch{toast('Error de conexión','error')}
+}
+
+function copyKey(k){
+  navigator.clipboard.writeText(k).then(()=>toast('Key copiada','success')).catch(()=>toast('Error al copiar','error'))
+}
+
+function x(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+let toastT
+function toast(msg,type){
+  const el=document.getElementById('toast')
+  el.textContent=msg;el.className='toast '+type+' show'
+  clearTimeout(toastT);toastT=setTimeout(()=>el.className='toast',3000)
+}
+
+loadKeys()
+</script>
+</body>
+</html>

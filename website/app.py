@@ -5,7 +5,8 @@ from flask import Flask, render_template, jsonify, request, redirect, session, u
 from models import db, Log, init_db
 from logger import log
 from database import load as load_db
-from config import RATE_LIMIT, SESSION_TIMEOUT, MAX_LOGIN_ATTEMPTS, LOGIN_BLOCK_MINUTES, ADMIN_IP_WHITELIST, ADMIN_IP_BIND, CORS_ORIGIN, CSRF_ENABLED
+from config import RATE_LIMIT, SESSION_TIMEOUT, MAX_LOGIN_ATTEMPTS, LOGIN_BLOCK_MINUTES, ADMIN_IP_WHITELIST, ADMIN_IP_BIND, CORS_ORIGIN, CSRF_ENABLED, ADMIN_USER
+from adminx import get_user as adminx_get_user, find_by_key as adminx_find_by_key
 
 app = Flask(__name__)
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
@@ -250,27 +251,50 @@ def api_login():
         return jsonify(success=False, error=f"Demasiados intentos. Esperá {remaining}s."), 429
 
     data = request.get_json() or {}
-    if not data or "password" not in data:
-        return jsonify(success=False), 400
+    username = (data.get("username") or "").strip().lower()
+    key = data.get("key") or data.get("password") or ""
 
-    password = data.get("password") or data.get("pass", "")
-    if password == DASH_PASSWORD:
+    if not username or not key:
+        return jsonify(success=False, error="Usuario y key requeridos."), 400
+
+    # Main admin (tilinX + DASH_PASSWORD)
+    if username == ADMIN_USER.lower() and key == DASH_PASSWORD:
         session.clear()
         session.permanent = True
         session["logged_in"] = True
+        session["user_type"] = "admin"
+        session["username"] = ADMIN_USER
         session["fingerprint"] = _get_fingerprint()
         session["last_activity"] = time.time()
         LOGIN_ATTEMPTS.pop(ip, None)
         log_event("admin_login", f"Admin login from {ip}")
-        return jsonify(success=True)
+        return jsonify(success=True, redirect="/admin")
+
+    # AdminX (any username + adminX key)
+    adminx_user, adminx_info = adminx_find_by_key(key)
+    if adminx_user and adminx_info.get("active"):
+        display_name = username or adminx_user
+        session.clear()
+        session.permanent = True
+        session["logged_in"] = True
+        session["user_type"] = "adminx"
+        session["username"] = display_name
+        session["adminx_username"] = adminx_user
+        session["fingerprint"] = _get_fingerprint()
+        session["last_activity"] = time.time()
+        LOGIN_ATTEMPTS.pop(ip, None)
+        log_event("adminx_login", f"AdminX '{display_name}' ({adminx_user}) login from {ip}")
+        return jsonify(success=True, redirect="/adminx")
+    elif adminx_user and not adminx_info.get("active"):
+        return jsonify(success=False, error="Cuenta desactivada. Contacta al administrador."), 403
 
     entry["count"] += 1
     if entry["count"] >= MAX_LOGIN_ATTEMPTS:
         entry["blocked_until"] = now + LOGIN_BLOCK_MINUTES * 60
         log.warning(f"Login blocked after {entry['count']} attempts: {ip}")
     LOGIN_ATTEMPTS[ip] = entry
-    log_event("login_failed", f"Invalid password attempt from {ip}", "warn")
-    return jsonify(success=False), 401
+    log_event("login_failed", f"Invalid login attempt from {ip}", "warn")
+    return jsonify(success=False, error="Credenciales inválidas."), 401
 
 @app.route("/api/logout", methods=["POST"])
 def api_logout():
@@ -511,6 +535,95 @@ def api_home_stats():
         log.warning(f"Error fetching home stats: {e}")
         total = active = used = 0
     return jsonify(total=total, active=active, used=used)
+
+# ─── AdminX Routes ────────────────────────────────────────
+@app.route("/adminx")
+def adminx_index():
+    if session.get("user_type") != "adminx":
+        return redirect("/login")
+    return render_template("adminx_dashboard.html")
+
+@app.route("/api/adminx/my-keys")
+def adminx_my_keys():
+    if session.get("user_type") != "adminx":
+        return jsonify([]), 401
+    adminx_user = session.get("adminx_username")
+    if not adminx_user:
+        return jsonify([]), 401
+    from keys import list_keys
+    all_keys = list_keys()
+    # AdminX can only see keys created via the website (filtered below)
+    return jsonify(all_keys)
+
+@app.route("/api/adminx/my-keys", methods=["POST"])
+def adminx_create_key():
+    if session.get("user_type") != "adminx":
+        return jsonify(success=False), 401
+    adminx_user = session.get("adminx_username")
+    info = adminx_get_user(adminx_user)
+    if not info or not info.get("active"):
+        return jsonify(success=False, error="Cuenta desactivada."), 403
+    data = request.get_json() or {}
+    label = (data.get("label") or "").strip()
+    days = int(data.get("duration", 7))
+    max_days = info.get("max_key_duration_days", 30)
+    if days > max_days:
+        days = max_days
+    if days < 0:
+        days = 0
+    max_devices = int(data.get("max_devices", 1))
+    if max_devices < 1 or max_devices > 10:
+        max_devices = 1
+    from keys import generate_key
+    code = generate_key(days * 86400 if days > 0 else 0, label, max_devices)
+    log_event("adminx_key_created", f"AdminX '{adminx_user}' created key {code} ({days}d)")
+    return jsonify(success=True, code=code)
+
+@app.route("/api/adminx/my-keys/<code>", methods=["DELETE"])
+def adminx_delete_key(code):
+    if session.get("user_type") != "adminx":
+        return jsonify(success=False), 401
+    from keys import delete_key
+    ok = delete_key(code)
+    return jsonify(success=ok)
+
+# ─── Main Admin: AdminX Management ─────────────────────────
+@app.route("/api/adminx/users")
+def api_adminx_users():
+    if session.get("user_type") != "admin" or not session.get("logged_in"):
+        return jsonify([]), 401
+    from adminx import list_users as ax_list
+    users = ax_list()
+    out = []
+    for uname, info in users:
+        out.append({
+            "username": uname,
+            "key": info["key"],
+            "active": info.get("active", True),
+            "max_days": info.get("max_key_duration_days", 30),
+            "created": time.strftime("%Y-%m-%d %H:%M", time.localtime(info.get("created_at", 0))),
+        })
+    return jsonify(out)
+
+@app.route("/api/adminx/users/<username>", methods=["DELETE"])
+def api_adminx_delete_user(username):
+    if session.get("user_type") != "admin" or not session.get("logged_in"):
+        return jsonify(success=False), 401
+    from adminx import remove_user as ax_remove
+    ok = ax_remove(username)
+    return jsonify(success=ok)
+
+@app.route("/api/adminx/users/<username>/toggle", methods=["POST"])
+def api_adminx_toggle_user(username):
+    if session.get("user_type") != "admin" or not session.get("logged_in"):
+        return jsonify(success=False), 401
+    from adminx import get_user as ax_get, set_active as ax_set_active
+    info = ax_get(username)
+    if not info:
+        return jsonify(success=False), 404
+    new_active = not info.get("active", True)
+    ax_set_active(username, new_active)
+    return jsonify(success=True, active=new_active)
 
 # ─── Admin Routes ──────────────────────────────────────────
 @app.route("/admin")

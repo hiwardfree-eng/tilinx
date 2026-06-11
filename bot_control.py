@@ -2,8 +2,9 @@ import sys, os, re, time, json, threading, secrets
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import BOT_TOKEN, CHAT_IPS_PATH, ADMIN_ID
 from logger import log
-from keys import redeem_key, list_keys
-from database import load as load_db
+from keys import redeem_key, list_keys, modify_key_duration, delete_key, remove_ip_from_key
+from database import load as load_db, save as save_db
+from adminx import create_user as adminx_create, remove_user as adminx_remove, set_active as adminx_set_active, list_users as adminx_list, get_user as adminx_get, find_by_key as adminx_find_by_key
 
 try:
     import requests
@@ -302,6 +303,202 @@ def bot_poll():
                         bot_send(chat_id, msg[:idx])
                         msg = msg[idx:]
                     bot_send(chat_id, msg)
+
+                elif text.startswith("/api"):
+                    is_admin = chat_id == ADMIN_ID
+                    if not is_admin:
+                        bot_send(chat_id, "🚫 Comando solo para administradores.")
+                        continue
+
+                    parts = text.split()
+                    sub = parts[1].lower() if len(parts) > 1 else ""
+
+                    if sub == "list" or sub == "ls":
+                        db = load_db()
+                        keys_data = list_keys()
+                        keys_map = {k["code"]: k for k in keys_data}
+                        now = time.time()
+                        lines = ["<b>📋 USUARIOS REGISTRADOS</b>\n"]
+                        for ip, info in sorted(db.items()):
+                            if ip == "_integrity":
+                                continue
+                            status = info.get("status", "?")
+                            exp = info.get("expires_at", 0)
+                            exp_str = "Permanente" if exp == 0 else time.strftime("%d/%m %H:%M", time.localtime(exp)) if exp > now else "Expirada"
+                            key_code = info.get("key_used", "N/A")
+                            lines.append(
+                                f"🌐 <code>{ip}</code>\n"
+                                f"  🔑 {key_code}\n"
+                                f"  📌 {status} | ⏱ {exp_str}\n"
+                            )
+                        footer = f"\n<b>Total:</b> {len([k for k in db if k != '_integrity'])} IP(s)"
+                        msg = "\n".join(lines) + footer if len(lines) > 1 else "<b>📋 No hay usuarios registrados.</b>"
+                        while len(msg) > 4000:
+                            idx = msg.rfind("\n", 0, 4000)
+                            bot_send(chat_id, msg[:idx]) if idx > 0 else bot_send(chat_id, msg[:4000])
+                            msg = msg[idx+1:] if idx > 0 else msg[4000:]
+                        bot_send(chat_id, msg)
+
+                    elif sub == "remove" and len(parts) >= 3:
+                        ip = parts[2]
+                        db = load_db()
+                        if ip not in db:
+                            bot_send(chat_id, f"❌ IP <code>{ip}</code> no encontrada.")
+                            continue
+                        key_code = db[ip].get("key_used", "")
+                        if key_code and key_code.startswith("TILINX-"):
+                            remove_ip_from_key(key_code, ip)
+                        del db[ip]
+                        save_db(db)
+                        bot_send(chat_id, f"✅ IP <code>{ip}</code> eliminada y key removida.")
+
+                    elif sub == "extend" and len(parts) >= 4:
+                        ip = parts[2]
+                        try:
+                            days = float(parts[3])
+                        except ValueError:
+                            bot_send(chat_id, "⚠️ Los días deben ser un número.")
+                            continue
+                        db = load_db()
+                        if ip not in db:
+                            bot_send(chat_id, f"❌ IP <code>{ip}</code> no encontrada.")
+                            continue
+                        key_code = db[ip].get("key_used", "")
+                        if key_code and key_code.startswith("TILINX-"):
+                            modify_key_duration(key_code, int(days * 86400))
+                        current_exp = db[ip].get("expires_at", 0)
+                        if current_exp != 0:
+                            db[ip]["expires_at"] = current_exp + (days * 86400)
+                        save_db(db)
+                        bot_send(chat_id, f"✅ IP <code>{ip}</code> extendida {days} día(s).")
+
+                    elif sub == "reduce" and len(parts) >= 4:
+                        ip = parts[2]
+                        try:
+                            days = float(parts[3])
+                        except ValueError:
+                            bot_send(chat_id, "⚠️ Los días deben ser un número.")
+                            continue
+                        db = load_db()
+                        if ip not in db:
+                            bot_send(chat_id, f"❌ IP <code>{ip}</code> no encontrada.")
+                            continue
+                        key_code = db[ip].get("key_used", "")
+                        if key_code and key_code.startswith("TILINX-"):
+                            modify_key_duration(key_code, -int(days * 86400))
+                        current_exp = db[ip].get("expires_at", 0)
+                        if current_exp != 0:
+                            db[ip]["expires_at"] = max(current_exp - (days * 86400), time.time())
+                        save_db(db)
+                        bot_send(chat_id, f"✅ IP <code>{ip}</code> reducida {days} día(s).")
+
+                    elif sub == "block" and len(parts) >= 3:
+                        ip = parts[2]
+                        db = load_db()
+                        if ip not in db:
+                            bot_send(chat_id, f"❌ IP <code>{ip}</code> no encontrada.")
+                            continue
+                        db[ip]["status"] = "blocked"
+                        save_db(db)
+                        bot_send(chat_id, f"⛔ IP <code>{ip}</code> bloqueada.")
+
+                    elif sub == "unblock" and len(parts) >= 3:
+                        ip = parts[2]
+                        db = load_db()
+                        if ip not in db:
+                            bot_send(chat_id, f"❌ IP <code>{ip}</code> no encontrada.")
+                            continue
+                        db[ip]["status"] = "active"
+                        save_db(db)
+                        bot_send(chat_id, f"✅ IP <code>{ip}</code> desbloqueada.")
+
+                    else:
+                        bot_send(chat_id,
+                            "<b>📋 /api — Gestión de usuarios</b>\n\n"
+                            "<code>/api list</code> — Ver todos los usuarios\n"
+                            "<code>/api remove IP</code> — Eliminar IP y su key\n"
+                            "<code>/api extend IP días</code> — Extender tiempo\n"
+                            "<code>/api reduce IP días</code> — Reducir tiempo\n"
+                            "<code>/api block IP</code> — Bloquear IP\n"
+                            "<code>/api unblock IP</code> — Desbloquear IP\n\n"
+                            "Ej: <code>/api extend 192.168.1.1 30</code>"
+                        )
+
+                elif text.startswith("/adminx"):
+                    is_admin = chat_id == ADMIN_ID
+                    if not is_admin:
+                        bot_send(chat_id, "🚫 Comando solo para administradores.")
+                        continue
+
+                    parts = text.split()
+                    sub = parts[1].lower() if len(parts) > 1 else ""
+
+                    if sub == "create" and len(parts) >= 3:
+                        username = parts[2]
+                        max_days = int(parts[3]) if len(parts) >= 4 and parts[3].isdigit() else 30
+                        if max_days > 30:
+                            max_days = 30
+                        key, result = adminx_create(username, chat_id, max_days)
+                        if result == "OK":
+                            bot_send(chat_id,
+                                f"✅ <b>AdminX creado</b>\n\n"
+                                f"👤 Usuario: <code>{username}</code>\n"
+                                f"🔑 Key: <code>{key}</code>\n"
+                                f"📆 Max días: {max_days}\n\n"
+                                f"El usuario puede entrar en:\n"
+                                f"https://tilinx.onrender.com/login\n"
+                                f"con ese usuario y key."
+                            )
+                        elif result == "USERNAME_EXISTS":
+                            bot_send(chat_id, f"❌ El usuario <code>{username}</code> ya existe.")
+
+                    elif sub == "list":
+                        users = adminx_list()
+                        if not users:
+                            bot_send(chat_id, "<b>📋 No hay usuarios AdminX.</b>")
+                            continue
+                        lines = ["<b>📋 ADMINX USERS</b>\n"]
+                        for uname, info in users:
+                            status = "✅" if info.get("active") else "❌"
+                            created = time.strftime("%d/%m %H:%M", time.localtime(info.get("created_at", 0)))
+                            lines.append(f"{status} <code>{uname}</code> | {info['key'][:16]}... | Max: {info['max_key_duration_days']}d | {created}")
+                        bot_send(chat_id, "\n".join(lines))
+
+                    elif sub == "remove" and len(parts) >= 3:
+                        username = parts[2]
+                        if adminx_remove(username):
+                            bot_send(chat_id, f"✅ AdminX <code>{username}</code> eliminado.")
+                        else:
+                            bot_send(chat_id, f"❌ Usuario <code>{username}</code> no encontrado.")
+
+                    elif sub == "activate" and len(parts) >= 3:
+                        username = parts[2]
+                        if adminx_set_active(username, True):
+                            bot_send(chat_id, f"✅ AdminX <code>{username}</code> activado.")
+                        else:
+                            bot_send(chat_id, f"❌ Usuario <code>{username}</code> no encontrado.")
+
+                    elif sub == "deactivate" and len(parts) >= 3:
+                        username = parts[2]
+                        if adminx_set_active(username, False):
+                            bot_send(chat_id, f"✅ AdminX <code>{username}</code> desactivado.")
+                        else:
+                            bot_send(chat_id, f"❌ Usuario <code>{username}</code> no encontrado.")
+
+                    else:
+                        bot_send(chat_id,
+                            "<b>🤖 /adminx — Gestión de AdminX</b>\n\n"
+                            "<code>/adminx create usuario [max_dias]</code>\n"
+                            "  Crear AdminX (max 30 días)\n\n"
+                            "<code>/adminx list</code>\n"
+                            "  Listar todos los AdminX\n\n"
+                            "<code>/adminx remove usuario</code>\n"
+                            "  Eliminar AdminX\n\n"
+                            "<code>/adminx activate usuario</code>\n"
+                            "  Activar AdminX\n\n"
+                            "<code>/adminx deactivate usuario</code>\n"
+                            "  Desactivar AdminX\n"
+                        )
 
                 elif text.startswith("/redeem") or text.startswith("/login"):
                     parts = text.split()

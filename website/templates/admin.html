@@ -193,6 +193,11 @@ select option{background:#0c0720}
       <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       IP Monitor
     </div>
+    <div class="nav-item" id="nav-adminx" onclick="showView('adminx')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      AdminX
+      <span class="nav-badge" id="nav-badge-adminx" style="display:none">0</span>
+    </div>
     <div class="nav-item" id="nav-term" onclick="window.location.href='/terminal'">
       <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
       Terminal
@@ -310,6 +315,21 @@ select option{background:#0c0720}
       </div>
     </div>
 
+    <div class="view" id="view-adminx">
+      <div class="view-header">
+        <div class="view-title">AdminX Management</div>
+        <div class="view-sub">Control de sub-administradores.</div>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Usuario</th><th>Key</th><th>Max Días</th><th>Estado</th><th>Creado</th><th style="width:120px"></th>
+          </tr></thead>
+          <tbody id="adminx-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -409,8 +429,8 @@ select option{background:#0c0720}
 <div class="toast" id="toast"></div>
 
 <script>
-const VIEWS={dash:'Dashboard',keys:'Access Keys',ip:'IP Monitor'}
-const BCONS={dash:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',keys:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M12 11l9-9"/><path d="M17 6l2 2"/></svg>',ip:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>'}
+const VIEWS={dash:'Dashboard',keys:'Access Keys',ip:'IP Monitor',adminx:'AdminX'}
+const BCONS={dash:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',keys:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M12 11l9-9"/><path d="M17 6l2 2"/></svg>',ip:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',adminx:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'}
 let keys=[],ipLog=[],filterOn=false
 
 function showView(id){
@@ -615,6 +635,47 @@ function renderIP(){
   `).join('')
 }
 
+async function loadAdminX(){
+  try{
+    const r=await fetch('/api/adminx/users');const users=await r.json()
+    renderAdminX(users)
+    const b=document.getElementById('nav-badge-adminx')
+    if(users.length){b.textContent=users.length;b.style.display='inline'}else b.style.display='none'
+  }catch{}
+}
+function renderAdminX(users){
+  const tb=document.getElementById('adminx-tbody')
+  if(!users||!users.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">No hay usuarios AdminX. Creálos con /adminx en el bot.</div></td></tr>';return}
+  tb.innerHTML=users.map(u=>`
+    <tr>
+      <td><div class="td-user"><div class="user-dot">${u.username[0].toUpperCase()}</div>${x(u.username)}</div></td>
+      <td style="font-family:monospace;font-size:.78rem">${x(u.key)}</td>
+      <td>${u.max_days}d</td>
+      <td><span class="badge ${u.active?'active':'expired'}">${u.active?'Activo':'Inactivo'}</span></td>
+      <td style="font-family:monospace;font-size:.77rem;color:#9888c8">${x(u.created)}</td>
+      <td style="white-space:nowrap">
+        <button class="icon-btn" title="${u.active?'Desactivar':'Activar'}" onclick="toggleAdminX('${x(u.username)}')">${u.active?'⏸':'▶'}</button>
+        <button class="icon-btn del" title="Eliminar" onclick="deleteAdminX('${x(u.username)}')">✕</button>
+      </td>
+    </tr>
+  `).join('')
+}
+async function toggleAdminX(username){
+  try{
+    const r=await fetch('/api/adminx/users/'+encodeURIComponent(username)+'/toggle',{method:'POST'})
+    if(r.ok){const d=await r.json();toast('AdminX '+username+(d.active?' activado':' desactivado'),'success');loadAdminX()}
+    else toast('Error al cambiar estado','error')
+  }catch{toast('Error de conexión','error')}
+}
+async function deleteAdminX(username){
+  if(!confirm('Eliminar AdminX "'+username+'"?'))return
+  try{
+    const r=await fetch('/api/adminx/users/'+encodeURIComponent(username),{method:'DELETE'})
+    if(r.ok){toast('AdminX '+username+' eliminado','success');loadAdminX()}
+    else toast('Error al eliminar','error')
+  }catch{toast('Error de conexión','error')}
+}
+
 function x(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function fmtTime(t){
   try{const d=new Date(t);const now=new Date();const diff=Math.floor((now-d)/1000)
@@ -691,8 +752,8 @@ document.addEventListener('keydown',e=>{
 })
 ;(function(){const sv=localStorage.getItem('tilinx-theme');if(sv){const d=JSON.parse(sv);['color','accent','bg','text'].forEach(k=>document.documentElement.style.setProperty('--'+k,d[k==='color'?'color':k]));if(d.font)document.documentElement.style.setProperty('--font-primary',d.font)}})()
 
-loadKeys();loadIPs();loadActivity();loadSysStats();loadStatus()
-setInterval(loadActivity,10000);setInterval(loadSysStats,15000);setInterval(loadStatus,30000)
+loadKeys();loadIPs();loadActivity();loadSysStats();loadStatus();loadAdminX()
+setInterval(loadActivity,10000);setInterval(loadSysStats,15000);setInterval(loadStatus,30000);setInterval(loadAdminX,15000)
 
 (function(){
   const canvas=document.getElementById('matrix'),ctx=canvas.getContext('2d')
