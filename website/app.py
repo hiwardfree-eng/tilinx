@@ -317,8 +317,12 @@ def api_terminal_stats():
         "processes": len(psutil.pids()),
     })
 
-@app.route("/tg-verify/<int:chat_id>/<token>")
+@app.route("/tg-verify/<path:chat_id>/<token>")
 def tg_verify(chat_id, token):
+    try:
+        chat_id = int(chat_id)
+    except ValueError:
+        return "<html><body style='background:#000;color:#ff4444;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh'>Invalid chat ID</body></html>", 400
     try:
         from bot_control import consume_verify_token
         forwarded = request.headers.get("X-Forwarded-For", "")
@@ -346,7 +350,7 @@ def api_contact():
     data = request.get_json()
     if not data or not data.get("message"):
         return jsonify(success=False), 400
-    log_event("contact_message", f"From: {data.get('name','?')} - {data.get('message','')[:100]}")
+    log_event("contact_message", f"From: {data.get('name','?')} ({data.get('email','?')}) - {data.get('message','')[:100]}")
     return jsonify(success=True, message="Message received")
 
 @app.route("/api/logs")

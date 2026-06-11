@@ -212,25 +212,6 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  // ── Contact Form ───────────────────────────────────
-  var contactForm = document.getElementById("contact-form");
-  if (contactForm) {
-    contactForm.addEventListener("submit", function(e) {
-      e.preventDefault();
-      var data = {
-        name: document.getElementById("cname").value,
-        email: document.getElementById("cemail").value,
-        message: document.getElementById("cmessage").value,
-      };
-      fetch("/api/contact", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(data),
-      }).then(function(r) { return r.json(); }).then(function(d) {
-        contactForm.innerHTML = "<div style=\"text-align:center;padding:30px;color:var(--accent);font-family:monospace;font-size:16px;\">✅ " + d.message + "</div>";
-      });
-    });
-  }
 });
 
 async function loadStatus() {

@@ -8,4 +8,4 @@ echo "  TilinX Web - :$TilinX_WEB_PORT"
 echo "  Password: $TilinX_DASH_PASSWORD"
 echo "════════════════════════════════════════════"
 pip install -r requirements.txt -q
-python website.py
+python app.py

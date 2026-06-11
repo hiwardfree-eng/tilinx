@@ -60,7 +60,7 @@ document.getElementById('contact-form').addEventListener('submit', function(e) {
   })
   .then(function(r) { return r.json() })
   .then(function(res) {
-    if (res.ok) {
+    if (res.success) {
       document.getElementById('contact-success').style.display = 'block';
       document.getElementById('contact-error').style.display = 'none';
       form.reset();
