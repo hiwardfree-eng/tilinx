@@ -39,6 +39,10 @@ def ensure_bot():
     global bot_thread_started
     if bot_thread_started:
         return
+    from config import BOT_ENABLED
+    if not BOT_ENABLED:
+        log.info("Bot desactivado via TilinX_BOT_ENABLED=0")
+        return
     bot_thread_started = True
     try:
         from bot_control import start_bot

@@ -3,6 +3,7 @@ import os
 # ─── Telegram ───────────────────────────────────────────
 BOT_TOKEN = os.environ.get("TilinX_BOT_TOKEN", "") or "8602901015:AAF6RWuaurtKU6jPK-rWD856YumQz8cBr40"
 ADMIN_ID = int(os.environ.get("TilinX_ADMIN_ID", "8659405330"))
+BOT_ENABLED = os.environ.get("TilinX_BOT_ENABLED", "1") == "1"
 
 # ─── Paths ──────────────────────────────────────────────
 BASE_DIR = os.environ.get("TilinX_BASE_DIR", os.path.dirname(os.path.abspath(__file__)))
