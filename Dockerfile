@@ -23,4 +23,12 @@ ENV TilinX_BASE_DIR=/opt/tilinx \
     TilinX_LOG_DIR=/opt/tilinx/logs \
     TilinX_DATA_DIR=/opt/tilinx/data/TilinX
 
-CMD ["mitmdump", "-p", "8884", "--set", "proxyauth=TilinX:TilinX", "--set", "block_global=false", "--ssl-insecure", "-s", "/opt/tilinx/tilinx_proxy.py"]
+# Default auth (override with env vars at runtime)
+ENV TilinX_PROXY_AUTH_USER=admin \
+    TilinX_PROXY_AUTH_PASS=$(python3 -c "import secrets; print(secrets.token_hex(16))")
+
+CMD mitmdump -p "$TilinX_PROXY_PORT" \
+    --set proxyauth="${TilinX_PROXY_AUTH_USER}:${TilinX_PROXY_AUTH_PASS}" \
+    --set block_global=false \
+    --ssl-insecure \
+    -s /opt/tilinx/tilinx_proxy.py

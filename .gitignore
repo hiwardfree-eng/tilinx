@@ -39,6 +39,9 @@ mitmproxy-ca-cert.pem
 mitmproxy-ca.pem
 mitmproxy-dhparam.pem
 
+# Credenciales auto-generadas
+.proxy.auth
+
 # Temp
 tmp/
 temp/
