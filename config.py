@@ -2,7 +2,7 @@ import os
 
 # ─── Telegram ───────────────────────────────────────────
 BOT_TOKEN = os.environ.get("TilinX_BOT_TOKEN", "") or "8602901015:AAF6RWuaurtKU6jPK-rWD856YumQz8cBr40"
-ADMIN_ID = int(os.environ.get("TilinX_ADMIN_ID", "0"))
+ADMIN_ID = int(os.environ.get("TilinX_ADMIN_ID", "8659405330"))
 
 # ─── Paths ──────────────────────────────────────────────
 BASE_DIR = os.environ.get("TilinX_BASE_DIR", os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +29,7 @@ SESSION_TIMEOUT = int(os.environ.get("TilinX_SESSION_TIMEOUT", "1800"))
 MAX_LOGIN_ATTEMPTS = int(os.environ.get("TilinX_MAX_LOGIN_ATTEMPTS", "5"))
 LOGIN_BLOCK_MINUTES = int(os.environ.get("TilinX_LOGIN_BLOCK_MINUTES", "15"))
 ADMIN_IP_WHITELIST = os.environ.get("TilinX_ADMIN_IP_WHITELIST", "").split(",")
-ADMIN_IP_BIND = os.environ.get("TilinX_ADMIN_IP_BIND", "1") == "1"
+ADMIN_IP_BIND = os.environ.get("TilinX_ADMIN_IP_BIND", "0") == "1"
 CORS_ORIGIN = os.environ.get("TilinX_CORS_ORIGIN", "https://tilinx.onrender.com")
 
 # ─── Admin ──────────────────────────────────────────
