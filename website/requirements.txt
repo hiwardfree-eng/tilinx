@@ -3,4 +3,3 @@ flask-sqlalchemy
 psutil
 gunicorn
 requests
-mitmproxy
