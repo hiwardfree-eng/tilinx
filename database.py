@@ -97,8 +97,16 @@ def _backup():
 def get_stats(db: dict) -> tuple:
     now = time.time()
     total = len(db)
-    active = sum(1 for u in db.values() if u.get("status") == "active" and u.get("expires_at", 0) > now)
-    expired = sum(1 for u in db.values() if u.get("status") == "active" and u.get("expires_at", 0) <= now)
+    active = 0
+    expired = 0
+    for u in db.values():
+        if u.get("status") != "active":
+            continue
+        exp = u.get("expires_at", 0) or 0
+        if exp == 0 or exp > now:
+            active += 1
+        else:
+            expired += 1
     blocked = sum(1 for u in db.values() if u.get("status") == "blocked")
     return total, active, expired, blocked
 
@@ -108,8 +116,11 @@ def get_user_status_label(user: dict) -> str:
     if status == "blocked":
         return "Banned"
     if status == "active":
-        if user.get("expires_at", 0) > now:
-            rem = user["expires_at"] - now
+        exp = user.get("expires_at", 0) or 0
+        if exp == 0:
+            return "Active (Permanent)"
+        if exp > now:
+            rem = exp - now
             return f"Active ({int(rem // 86400)}d {int((rem % 86400) // 3600)}h left)"
         return "Expired"
     return "Not Registered"
@@ -123,5 +134,8 @@ def get_auth_status(ip: str) -> str:
     if status == "blocked":
         return "BANNED"
     if status == "active":
-        return "ACTIVE" if user.get("expires_at", 0) > time.time() else "EXPIRED"
+        exp = user.get("expires_at", 0) or 0
+        if exp == 0 or exp > time.time():
+            return "ACTIVE"
+        return "EXPIRED"
     return "NOT_FOUND"

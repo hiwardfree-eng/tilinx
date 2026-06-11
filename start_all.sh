@@ -1,20 +1,41 @@
 #!/bin/bash
+set -e
 echo "========================================"
 echo " TilinX PROXY - Starting Services"
 echo "========================================"
-BASE_DIR=/home/runner/tilinx
-DB_PATH=$BASE_DIR/ips.json
-LOG_DIR=$BASE_DIR/logs
-DATA_DIR=$BASE_DIR/data/TilinX
+cd "$(dirname "$0")"
+BASE_DIR="$(pwd)"
+export TilinX_BASE_DIR="$BASE_DIR"
+export TilinX_DB_PATH="$BASE_DIR/ips.json"
+export TilinX_LOG_DIR="$BASE_DIR/logs"
+export TilinX_DATA_DIR="$BASE_DIR/data/TilinX"
+export TilinX_PROXY_PORT="${TilinX_PROXY_PORT:-8884}"
 
-echo "[1/2] Starting Proxy Port 8884..."
-TilinX_BASE_DIR=$BASE_DIR TilinX_DB_PATH=$DB_PATH TilinX_LOG_DIR=$LOG_DIR TilinX_DATA_DIR=$DATA_DIR \
-mitmdump -p 8884 --set proxyauth=TilinX:TilinX --set block_global=false --ssl-insecure \
--s $BASE_DIR/tilinx_proxy.py > $LOG_DIR/proxy.out 2>&1 &
+mkdir -p "$TilinX_LOG_DIR"
+
+echo "[1/2] Starting Proxy on port $TilinX_PROXY_PORT..."
+mitmdump -p "$TilinX_PROXY_PORT" \
+    --set proxyauth="${TilinX_PROXY_AUTH_USER:-TilinX}:${TilinX_PROXY_AUTH_PASS:-TilinX}" \
+    --set block_global=false \
+    --ssl-insecure \
+    -s "$BASE_DIR/tilinx_proxy.py" \
+    > "$TilinX_LOG_DIR/proxy.out" 2>&1 &
+PROXY_PID=$!
+echo "  Proxy PID: $PROXY_PID"
 sleep 2
 
 echo "[2/2] Starting Bot..."
-TilinX_DB_PATH=$DB_PATH TilinX_LOG_DIR=$LOG_DIR TilinX_DATA_DIR=$DATA_DIR \
-python3 $BASE_DIR/bot_control.py > $LOG_DIR/bot.out 2>&1 &
+python3 "$BASE_DIR/bot_control.py" \
+    > "$TilinX_LOG_DIR/bot.out" 2>&1 &
+BOT_PID=$!
+echo "  Bot PID: $BOT_PID"
 
-echo "Done! Check status: bash status.sh"
+echo ""
+echo "========================================"
+echo "  All services started!"
+echo "  Proxy PID: $PROXY_PID"
+echo "  Bot PID:   $BOT_PID"
+echo "  Logs: $TilinX_LOG_DIR/"
+echo "  Check: bash status.sh"
+echo "  Stop:  bash stop_all.sh"
+echo "========================================"

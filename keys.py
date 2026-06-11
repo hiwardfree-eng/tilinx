@@ -105,7 +105,7 @@ def redeem_key(code: str, ip: str) -> str:
         "max_devices": k.get("max_devices", 1),
     }
     save(db)
-    log.info(f"Key redeemed: {code} → IP {ip} ({duration}s, device {active_ips.index(ip)+1}/{k['max_devices']})")
+    log.info(f"Key redeemed: {code} -> IP {ip} ({duration}s, device {active_ips.index(ip)+1}/{k['max_devices']})")
     return "OK"
 
 def get_key_info(code: str) -> dict:
