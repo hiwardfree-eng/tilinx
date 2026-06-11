@@ -5,6 +5,10 @@ echo " TilinX PROXY - Starting Services"
 echo "========================================"
 cd "$(dirname "$0")"
 BASE_DIR="$(pwd)"
+
+# ─── Load .env if exists ─────────────────────────
+[ -f "$BASE_DIR/.env" ] && set -a && source "$BASE_DIR/.env" && set +a
+
 export TilinX_BASE_DIR="$BASE_DIR"
 export TilinX_DB_PATH="$BASE_DIR/ips.json"
 export TilinX_LOG_DIR="$BASE_DIR/logs"
@@ -13,8 +17,9 @@ export TilinX_PROXY_PORT="${TilinX_PROXY_PORT:-8884}"
 
 mkdir -p "$TilinX_LOG_DIR"
 
+echo "  Admin IPs: ${TilinX_ADMIN_IP_WHITELIST:-<none>}"
+echo "  Admin ID:  ${TilinX_ADMIN_ID:-<none>}"
 echo "[1/2] Starting Proxy on port $TilinX_PROXY_PORT..."
-echo "  Auth: IP database ($TilinX_DB_PATH)"
 mitmdump -p "$TilinX_PROXY_PORT" \
     --set block_global=false \
     --ssl-insecure \

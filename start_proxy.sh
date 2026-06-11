@@ -2,6 +2,10 @@
 set -e
 cd "$(dirname "$0")"
 BASE_DIR="$(pwd)"
+
+# ─── Load .env if exists ─────────────────────────
+[ -f "$BASE_DIR/.env" ] && set -a && source "$BASE_DIR/.env" && set +a
+
 export TilinX_BASE_DIR="$BASE_DIR"
 export TilinX_DB_PATH="$BASE_DIR/ips.json"
 export TilinX_LOG_DIR="$BASE_DIR/logs"
