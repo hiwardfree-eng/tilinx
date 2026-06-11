@@ -160,10 +160,6 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 
-  // Disable print
-  window.addEventListener("beforeprint", function(e) { e.preventDefault(); return false; });
-  window.addEventListener("afterprint", function(e) { e.preventDefault(); return false; });
-
   // ── Session Keepalive ──────────────────────────────
   if (window.location.pathname === "/admin") {
     setInterval(function() {
@@ -185,12 +181,12 @@ document.addEventListener("DOMContentLoaded", function() {
   if (statusEl) loadStatus();
 
   // ── Health Indicator ──────────────────────────────
-  var navRight = document.querySelector(".nav-right");
-  if (navRight) {
+  var healthContainer = document.getElementById("nav-health");
+  if (healthContainer) {
     var dot = document.createElement("span");
     dot.id = "health-dot";
     dot.className = "health-dot dot-red";
-    navRight.insertBefore(dot, navRight.firstChild);
+    healthContainer.appendChild(dot);
     loadHealth();
   }
   setInterval(loadHealth, 30000);
