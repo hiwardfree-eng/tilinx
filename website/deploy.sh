@@ -29,7 +29,7 @@ pip install gunicorn -q
 echo "[3/7] Setting up environment..."
 cat > /etc/tilinx.env << EOF
 TilinX_WEB_PORT=8080
-TilinX_DASH_PASSWORD=${TilinX_DASH_PASSWORD:-hw132319}
+TilinX_DASH_PASSWORD=${TilinX_DASH_PASSWORD:?Error: TilinX_DASH_PASSWORD no está definido}
 TilinX_DATABASE_URL=sqlite:///$WEB_DIR/tilinx.db
 TilinX_WEB_SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 EOF
@@ -46,7 +46,7 @@ Type=simple
 User=runner
 WorkingDirectory=/home/runner/tilinx/website
 EnvironmentFile=/etc/tilinx.env
-ExecStart=/usr/bin/python3 /home/runner/tilinx/website/website.py
+ExecStart=/usr/bin/python3 /home/runner/tilinx/website/wsgi.py
 Restart=always
 RestartSec=5
 
@@ -114,5 +114,5 @@ echo ""
 echo "════════════════════════════════════════════"
 echo "  ✅ TilinX deployed!"
 echo "  https://$DOMAIN"
-echo "  Password: ${TilinX_DASH_PASSWORD:-hw132319}"
+echo "  Password: [configurado en variable de entorno]"
 echo "════════════════════════════════════════════"

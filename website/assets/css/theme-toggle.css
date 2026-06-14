@@ -1,0 +1,62 @@
+/* ─── TilinX Dark/Light Theme Toggle ─────────────────── */
+/* Light mode overrides via CSS variables (not filter hack) */
+body.theme-light {
+  --bg: #f5f0ff;
+  --bg2: rgba(255,255,255,0.85);
+  --bg3: rgba(245,240,255,0.95);
+  --border: rgba(139,92,246,0.35);
+  --border-light: rgba(139,92,246,0.25);
+  --text: #1e0a3c;
+  --text2: rgba(80,40,140,0.85);
+  --accent: #7c3aed;
+  --accent2: #6d28d9;
+  --purple: rgba(124,58,237,0.7);
+  --purple-glow: rgba(124,58,237,0.3);
+  --purple-btn: rgba(124,58,237,0.5);
+  --red-dark: #fef2f2;
+  --red-bright: #dc2626;
+  --shadow: 0 0 30px rgba(124,58,237,0.2);
+  --glow-green: 0 0 15px rgba(124,58,237,0.2);
+}
+
+body.theme-light .nav-logo {
+  color: #6d28d9;
+  text-shadow: none;
+}
+
+body.theme-light canvas { display: none; }
+
+.theme-toggle-btn {
+  background: none;
+  border: 1px solid rgba(139,92,246,0.3);
+  color: rgba(139,92,246,0.8);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(139,92,246,0.15);
+  border-color: rgba(139,92,246,0.6);
+}
+
+.nav-theme-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .theme-toggle-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "users": {
+    "admin": {
+      "secret": "4SXGBPWJW3DCMWQ4PJMPAWXVFKBSZGGP",
+      "enabled": true,
+      "setup_at": 1781295794.9930828,
+      "backup_codes": [
+        "147D7DCE",
+        "11E6E8B1",
+        "979E6A7A",
+        "874F44DB",
+        "A2EB0DE4",
+        "A76CF950",
+        "634C1C31"
+      ]
+    },
+    "testadmin": {
+      "secret": "EJH4FHRWF244DIARSMTIEVNY3EGKJI56",
+      "enabled": false,
+      "setup_at": 1781309287.2882788,
+      "backup_codes": [
+        "2652E473",
+        "8A8B5E4E",
+        "68CEA60A",
+        "8FC4E03A",
+        "5D60EFDB",
+        "5C8C2749",
+        "F4384DA5",
+        "14F5213A"
+      ]
+    }
+  }
+}

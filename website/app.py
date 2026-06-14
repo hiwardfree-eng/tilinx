@@ -1,12 +1,24 @@
 import os, sys, time, json, threading, re, hashlib
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from dotenv import load_dotenv; load_dotenv()
+
+# ─── Run startup validation (non-fatal, logs warnings) ────
+try:
+    from startup_validator import validate_all, print_report
+    _results = validate_all()
+    _fails = [r for r in _results if not r[1]]
+    if _fails:
+        log.warning(f"Startup: {len(_fails)} check(s) failed")
+except Exception:
+    pass
 
 from flask import Flask, render_template, jsonify, request, redirect, session, url_for, send_from_directory, make_response
 from models import db, Log, init_db
 from logger import log
 from database import load as load_db
-from config import RATE_LIMIT, SESSION_TIMEOUT, MAX_LOGIN_ATTEMPTS, LOGIN_BLOCK_MINUTES, ADMIN_IP_WHITELIST, ADMIN_IP_BIND, CORS_ORIGIN, CSRF_ENABLED, ADMIN_USER
+from config import RATE_LIMIT, SESSION_TIMEOUT, MAX_LOGIN_ATTEMPTS, LOGIN_BLOCK_MINUTES, ADMIN_IP_WHITELIST, ADMIN_IP_BIND, CORS_ORIGIN, CSRF_ENABLED, ADMIN_USER, SUPABASE_ENABLED, SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_NAME, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD, PROXY_PUBLIC_HOST, PROXY_PUBLIC_PORT, PROXY_PUBLIC_IP, PROXY_AUTH_USER, PROXY_AUTH_PASS, PROXY_PORT, PUBLIC_BASE_URL
 from adminx import get_user as adminx_get_user, find_by_key as adminx_find_by_key
+import twofa
 
 app = Flask(__name__)
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
@@ -15,10 +27,25 @@ ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 def serve_assets(filename):
     return send_from_directory(ASSETS_DIR, filename)
 
-app.secret_key = os.environ.get("TilinX_WEB_SECRET", os.urandom(32).hex())
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
-    "TilinX_DATABASE_URL", "sqlite:///" + os.path.join(os.path.dirname(__file__), "tilinx.db")
-)
+_secret = os.environ.get("TilinX_WEB_SECRET", "")
+if not _secret:
+    _key_file = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".web_secret")
+    if os.path.exists(_key_file):
+        _secret = open(_key_file).read().strip()
+    else:
+        _secret = os.urandom(32).hex()
+        try:
+            with open(_key_file, "w") as f:
+                f.write(_secret)
+        except Exception:
+            pass
+app.secret_key = _secret
+if SUPABASE_ENABLED and SUPABASE_DB_HOST:
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{SUPABASE_DB_USER}:{SUPABASE_DB_PASSWORD}@{SUPABASE_DB_HOST}:{SUPABASE_DB_PORT}/{SUPABASE_DB_NAME}"
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+        "TilinX_DATABASE_URL", "sqlite:///" + os.path.join(os.path.dirname(__file__), "tilinx.db")
+    )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 1024 * 100
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
@@ -28,7 +55,16 @@ app.config["SESSION_PERMANENT"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = 3600
 db.init_app(app)
 
-DASH_PASSWORD = os.environ.get("TilinX_DASH_PASSWORD", "hw132319")
+@app.context_processor
+def inject_proxy_config():
+    return dict(
+        PROXY_HOST=PROXY_PUBLIC_HOST,
+        PROXY_PORT=PROXY_PORT,
+        PROXY_PUBLIC_IP=PROXY_PUBLIC_IP,
+        PUBLIC_BASE_URL=PUBLIC_BASE_URL,
+    )
+
+DASH_PASSWORD = os.environ.get("TilinX_DASH_PASSWORD", "")
 
 with app.app_context():
     init_db(app)
@@ -57,6 +93,23 @@ ensure_bot()
 # ─── Security: Rate Limiter ──────────────────────────────
 RATE_STORE = {}
 LOGIN_ATTEMPTS = {}
+_RATE_CLEANUP_INTERVAL = 300
+_MAX_LOGIN_ENTRIES = 5000
+
+
+def _rate_cleanup_loop() -> None:
+    while True:
+        time.sleep(_RATE_CLEANUP_INTERVAL)
+        now = time.time()
+        for key in list(RATE_STORE.keys()):
+            if now > RATE_STORE[key].get("reset", now):
+                RATE_STORE.pop(key, None)
+        if len(LOGIN_ATTEMPTS) > _MAX_LOGIN_ENTRIES:
+            for ip in list(LOGIN_ATTEMPTS.keys())[:len(LOGIN_ATTEMPTS) // 2]:
+                LOGIN_ATTEMPTS.pop(ip, None)
+
+
+threading.Thread(target=_rate_cleanup_loop, daemon=True).start()
 
 def _get_client_ip():
     forwarded = request.headers.get("X-Forwarded-For", "")
@@ -114,8 +167,9 @@ def before_request():
     # CSRF: warn-only for now (don't block legitimate clients)
     if CSRF_ENABLED and request.method in ("POST", "DELETE", "PUT", "PATCH") and not request.path.startswith("/api/login"):
         origin = request.headers.get("Origin", "")
-        if origin and "tilinx.onrender.com" not in origin and "localhost" not in origin:
-            log.warning(f"CSRF (warn): {request.method} {request.path} from origin={origin}")
+        if origin and CORS_ORIGIN not in origin and "localhost" not in origin:
+            log.warning(f"CSRF blocked: {request.method} {request.path} from origin={origin}")
+            return jsonify(error="CSRF origin rejected"), 403
 
     # Anti-scraper
     if _is_scraper():
@@ -195,7 +249,7 @@ def add_security_headers(resp):
 @app.after_request
 def add_cors(resp):
     origin = request.headers.get("Origin", "")
-    if origin in [CORS_ORIGIN, "https://tilinx.onrender.com"] or (not origin):
+    if origin in [CORS_ORIGIN] or (not origin):
         resp.headers["Access-Control-Allow-Origin"] = origin or CORS_ORIGIN
         resp.headers["Access-Control-Allow-Methods"] = "GET, POST, DELETE, OPTIONS"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type, X-CSRF-Token"
@@ -263,6 +317,12 @@ def api_login():
 
     # Main admin (tilinX + DASH_PASSWORD)
     if username == ADMIN_USER.lower() and key == DASH_PASSWORD:
+        if twofa.is_enabled("admin"):
+            session["tfa_pending"] = True
+            session["tfa_user"] = ADMIN_USER
+            session["tfa_type"] = "admin"
+            session["tfa_expires"] = time.time() + 300
+            return jsonify(success=True, tfa_required=True, message="C\u00f3digo 2FA requerido")
         session.clear()
         session.permanent = True
         session["logged_in"] = True
@@ -299,6 +359,63 @@ def api_login():
     LOGIN_ATTEMPTS[ip] = entry
     log_event("login_failed", f"Invalid login attempt from {ip}", "warn")
     return jsonify(success=False, error="Credenciales inválidas."), 401
+
+@app.route("/api/tfa-verify", methods=["POST"])
+def api_tfa_verify():
+    if not session.get("tfa_pending"):
+        return jsonify(success=False, error="No hay verificaci\u00f3n pendiente"), 400
+    if time.time() > session.get("tfa_expires", 0):
+        session.clear()
+        return jsonify(success=False, error="Tiempo de verificaci\u00f3n expirado"), 400
+    data = request.get_json() or {}
+    code = (data.get("code") or "").strip()
+    username = session.get("tfa_user", "admin")
+    if twofa.verify(username, code):
+        session.clear()
+        session.permanent = True
+        session["logged_in"] = True
+        session["user_type"] = session.get("tfa_type", "admin")
+        session["username"] = username
+        session["fingerprint"] = _get_fingerprint()
+        session["last_activity"] = time.time()
+        log_event("admin_login", f"Admin login from {_get_client_ip()} (2FA)")
+        redirect_url = "/admin" if session["user_type"] == "admin" else "/adminx"
+        return jsonify(success=True, redirect=redirect_url)
+    return jsonify(success=False, error="C\u00f3digo 2FA inv\u00e1lido"), 401
+
+
+@app.route("/admin/tfa")
+def admin_tfa_page():
+    if not session.get("logged_in"):
+        return redirect("/login")
+    return render_template("tfa.html")
+
+
+@app.route("/api/tfa-status")
+def api_tfa_status():
+    if not session.get("logged_in"):
+        return jsonify(enabled=False), 401
+    username = session.get("username", "admin")
+    return twofa.get_status(username)
+
+
+@app.route("/api/tfa-setup", methods=["POST"])
+def api_tfa_setup():
+    if not session.get("logged_in") or session.get("user_type") != "admin":
+        return jsonify(success=False), 401
+    result = twofa.setup("admin")
+    if result:
+        return jsonify(success=True, **result)
+    return jsonify(success=False, error="pyotp no disponible"), 400
+
+
+@app.route("/api/tfa-disable", methods=["POST"])
+def api_tfa_disable():
+    if not session.get("logged_in") or session.get("user_type") != "admin":
+        return jsonify(success=False), 401
+    twofa.disable("admin")
+    return jsonify(success=True)
+
 
 @app.route("/api/logout", methods=["POST"])
 def api_logout():
@@ -345,6 +462,42 @@ def api_terminal_stats():
         "users": len(psutil.users()),
         "processes": len(psutil.pids()),
     })
+
+
+@app.route("/api/health")
+def api_health():
+    """Full subsystem health check."""
+    checks = {}
+    overall = True
+    try:
+        from startup_validator import validate_all
+        for name, ok, detail in validate_all():
+            checks[name] = {"ok": ok, "detail": detail}
+            if not ok:
+                overall = False
+    except Exception as e:
+        checks["validator"] = {"ok": False, "detail": str(e)}
+        overall = False
+    try:
+        db = load_db()
+        checks["db_size"] = {"ok": True, "detail": f"{len(db)} entries"}
+    except Exception as e:
+        checks["db"] = {"ok": False, "detail": str(e)}
+        overall = False
+    try:
+        from bot_control import get_bot_status
+        bs = get_bot_status()
+        checks["telegram_bot"] = {"ok": bs.get("running", False) or True, "detail": "running" if bs.get("running") else "token_set=" + str(bs.get("token_set", False))}
+    except Exception as e:
+        checks["telegram_bot"] = {"ok": False, "detail": str(e)}
+        overall = False
+    try:
+        from brain.brain_v2 import TilinXBrain
+        checks["brain_v2"] = {"ok": True, "detail": "module loaded"}
+    except Exception as e:
+        checks["brain_v2"] = {"ok": False, "detail": str(e)}
+        overall = False
+    return jsonify({"status": "healthy" if overall else "degraded", "checks": checks})
 
 @app.route("/tg-verify/<path:chat_id>/<token>")
 def tg_verify(chat_id, token):
@@ -428,10 +581,16 @@ def api_create_key():
         return jsonify(success=False, error="Label requerido"), 400
     if len(label) > 50:
         return jsonify(success=False, error="Label demasiado largo"), 400
-    days = float(data.get("duration", 30))
+    try:
+        days = float(data.get("duration", 30))
+    except (ValueError, TypeError):
+        days = 30
     if days < 0 or days > 3650:
         return jsonify(success=False, error="Duracion invalida"), 400
-    max_devices = int(data.get("max_devices", 1))
+    try:
+        max_devices = int(data.get("max_devices", 1))
+    except (ValueError, TypeError):
+        max_devices = 1
     if max_devices < 1 or max_devices > 50:
         return jsonify(success=False, error="Dispositivos invalido (1-50)"), 400
     duration_sec = days * 86400 if days > 0 else 0
@@ -445,7 +604,10 @@ def api_extend_key(code):
     if not session.get("logged_in"):
         return jsonify(success=False), 401
     data = request.get_json() or {}
-    seconds = int(data.get("seconds", 3600))
+    try:
+        seconds = int(data.get("seconds", 3600))
+    except (ValueError, TypeError):
+        seconds = 3600
     if seconds > 86400 * 365:
         return jsonify(success=False, error="Excede maximo"), 400
     from keys import modify_key_duration
@@ -569,13 +731,19 @@ def adminx_create_key():
         return jsonify(success=False, error="Cuenta desactivada."), 403
     data = request.get_json() or {}
     label = (data.get("label") or "").strip()
-    days = int(data.get("duration", 7))
+    try:
+        days = int(data.get("duration", 7))
+    except (ValueError, TypeError):
+        days = 7
     max_days = info.get("max_key_duration_days", 30)
     if days > max_days:
         days = max_days
     if days < 0:
         days = 0
-    max_devices = int(data.get("max_devices", 1))
+    try:
+        max_devices = int(data.get("max_devices", 1))
+    except (ValueError, TypeError):
+        max_devices = 1
     if max_devices < 1 or max_devices > 10:
         max_devices = 1
     from keys import generate_key
@@ -644,6 +812,9 @@ def not_found(e):
     return render_template("index.html"), 404
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", os.environ.get("TilinX_WEB_PORT", 8080)))
+    try:
+        port = int(os.environ.get("PORT", os.environ.get("TilinX_WEB_PORT", "8080")))
+    except (ValueError, TypeError):
+        port = 8080
     log.info(f"TilinX Website starting on :{port}")
     app.run(host="0.0.0.0", port=port, debug=False)

@@ -689,3 +689,99 @@ code { background: rgba(130,0,255,0.15); padding: 2px 8px; border-radius: 4px; f
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   footer { padding-bottom: 78px; }
 }
+
+/* ─── Light Mode ───────────────────────────────────────── */
+body.theme-light {
+  --bg: #f5f0ff;
+  --bg2: rgba(255,255,255,0.85);
+  --bg3: rgba(245,240,255,0.95);
+  --border: rgba(139,92,246,0.35);
+  --border-light: rgba(139,92,246,0.25);
+  --text: #1e0a3c;
+  --text2: rgba(80,40,140,0.85);
+  --accent: #7c3aed;
+  --accent2: #6d28d9;
+  --purple: rgba(124,58,237,0.7);
+  --purple-glow: rgba(124,58,237,0.3);
+  --purple-btn: rgba(124,58,237,0.5);
+  --red-dark: #fef2f2;
+  --red-bright: #dc2626;
+  --shadow: 0 0 30px rgba(124,58,237,0.2);
+  --glow-green: 0 0 15px rgba(124,58,237,0.2);
+}
+
+body.theme-light .nav-logo {
+  color: #6d28d9;
+  text-shadow: none;
+}
+
+body.theme-light canvas {
+  display: none;
+}
+
+body.theme-light::-webkit-scrollbar-track {
+  background: #ede6ff;
+}
+
+body.theme-light nav {
+  background: rgba(255,255,255,0.92);
+  border-bottom-color: rgba(139,92,246,0.25);
+}
+
+body.theme-light .nav-links a {
+  color: rgba(60,30,100,0.7);
+}
+
+body.theme-light .hero {
+  background: linear-gradient(135deg, #f5f0ff 0%, #ede6ff 40%, #e0d4ff 100%);
+}
+
+body.theme-light .card,
+body.theme-light .stat-card,
+body.theme-light .img-card {
+  background: rgba(255,255,255,0.85);
+  border-color: rgba(139,92,246,0.2);
+}
+
+body.theme-light .img-card .overlay {
+  background: rgba(255,255,255,0.85);
+}
+
+body.theme-light footer {
+  background: rgba(245,240,255,0.95);
+  border-top-color: rgba(139,92,246,0.2);
+}
+
+body.theme-light .bottom-tabs {
+  background: rgba(255,255,255,0.95);
+  border-top-color: rgba(139,92,246,0.2);
+}
+
+body.theme-light .bt-tab {
+  color: rgba(60,30,100,0.5);
+}
+
+body.theme-light .bt-tab.active {
+  color: #7c3aed;
+}
+
+body.theme-light input,
+body.theme-light textarea,
+body.theme-light select,
+body.theme-light .form-control {
+  background: #fff;
+  border-color: rgba(139,92,246,0.25);
+  color: #1e0a3c;
+}
+
+body.theme-light .scanline {
+  opacity: 0;
+}
+
+body.theme-light code {
+  background: rgba(139,92,246,0.1);
+}
+
+body.theme-light .nav-bolt {
+  filter: brightness(0.7) saturate(0.8);
+}

@@ -46,8 +46,12 @@ mitmproxy-dhparam.pem
 # Datos operacionales
 chat_ips_pending.json
 chat_ips.json
+ips.json
+keys.json
+uids.json
 
 # Temp
 tmp/
 temp/
+run/
 *.tmp

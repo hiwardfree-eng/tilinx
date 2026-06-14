@@ -14,7 +14,7 @@ fi
 
 echo "[2/3] Installing Python dependencies..."
 pip install -r requirements.txt --quiet
-pip install mitmproxy python-telegram-bot requests flask --quiet
+pip install mitmproxy requests flask --quiet
 
 echo "[3/3] Done!"
 echo ""

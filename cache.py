@@ -1,12 +1,13 @@
 import time
 import threading
-from typing import Optional
+from typing import Optional, Dict, Any
 
 _lock = threading.Lock()
-_cache: dict[str, tuple] = {}
-CACHE_TTL = 300  # 5 min default
+_cache: Dict[str, tuple] = {}
+CACHE_TTL = 300
 
-def get(key: str) -> Optional[object]:
+
+def get(key: str) -> Optional[Any]:
     with _lock:
         entry = _cache.get(key)
         if entry is None:
@@ -17,19 +18,23 @@ def get(key: str) -> Optional[object]:
             return None
         return value
 
-def set(key: str, value: object, ttl: int = CACHE_TTL):
+
+def set(key: str, value: Any, ttl: int = CACHE_TTL) -> None:
     with _lock:
         _cache[key] = (value, time.time() + ttl)
 
-def delete(key: str):
+
+def delete(key: str) -> None:
     with _lock:
         _cache.pop(key, None)
 
-def clear():
+
+def clear() -> None:
     with _lock:
         _cache.clear()
 
-def stats() -> dict:
+
+def stats() -> Dict[str, Any]:
     with _lock:
         return {
             "entries": len(_cache),

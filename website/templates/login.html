@@ -15,12 +15,13 @@
   --border:rgba(139,92,246,0.22);--border-lt:rgba(139,92,246,0.1);
   --text:#ede9fe;--muted:rgba(196,181,253,0.5);
 }
+body.theme-light{--bg:#f4efff;--surface:rgba(255,255,255,0.92);--border:rgba(139,92,246,0.2);--border-lt:rgba(139,92,246,0.08);--text:#1e0a3c;--muted:rgba(100,60,170,0.5);--purple:#7c3aed;--purple-lt:#6d28d9}
 html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif}
 #matrix{position:fixed;inset:0;z-index:0;pointer-events:none}
 .page{position:fixed;inset:0;z-index:10;display:none;align-items:center;justify-content:center}
 .page.active{display:flex}
 .login-card{
-  background:rgba(12,7,28,0.85);border:1px solid rgba(139,92,246,0.3);
+  background:var(--surface);border:1px solid var(--border);
   border-radius:24px;padding:48px 44px 40px;width:400px;max-width:94vw;
   backdrop-filter:blur(24px);
   box-shadow:0 0 80px rgba(139,92,246,0.1),0 32px 80px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.05)
@@ -83,21 +84,45 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <input type="password" id="inp-pass" placeholder="••••••••" autocomplete="current-password"/>
     </div>
     <div class="login-err" id="login-err"></div>
+    <div id="tfa-section" style="display:none;margin-bottom:12px">
+      <label style="display:block;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:rgba(196,181,253,0.55);font-weight:700;margin-bottom:8px">Código 2FA</label>
+      <input type="text" id="inp-tfa" placeholder="000000" style="width:100%;background:rgba(8,4,20,0.9);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:13px 16px;font-size:.92rem;font-family:'Inter',sans-serif;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;text-align:center;letter-spacing:8px;font-weight:700"/>
+    </div>
     <button class="btn-login" onclick="doLogin()">Iniciar sesión →</button>
     <div style="margin-top:16px;text-align:center">
-      <a href="/home" style="color:rgba(180,80,255,0.5);font-size:12px;font-family:monospace">← BACK TO SITE</a>
+      <button onclick="document.body.classList.toggle('theme-light');localStorage.setItem('tilinx_theme',document.body.classList.contains('theme-light')?'light':'dark')" style="background:none;border:1px solid currentColor;color:currentColor;border-radius:50%;width:30px;height:30px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:14px;vertical-align:middle" title="Cambiar tema">☾</button>
+      <a href="/home" style="color:rgba(180,80,255,0.5);font-size:12px;font-family:monospace;vertical-align:middle">← BACK TO SITE</a>
     </div>
   </div>
 </div>
 
 <script>
+var loginStep = 'credentials';
 function doLogin(){
   const user=document.getElementById('inp-user').value;
   const pass=document.getElementById('inp-pass').value;
+  const tfa=document.getElementById('inp-tfa');
   const err=document.getElementById('login-err');
+  if(loginStep === 'tfa') {
+    if(!tfa.value){err.textContent='Ingresa el código 2FA.';return}
+    fetch('/api/tfa-verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:tfa.value})})
+      .then(r=>r.json().then(d=>{if(r.ok&&d.redirect)window.location.href=d.redirect;else{err.textContent=d.error||'Código inválido';tfa.value='';tfa.focus()}}))
+      .catch(e=>{err.textContent='Error: '+(e.message||'')})
+    return
+  }
   if(!user||!pass){err.textContent='Ingresa usuario y key.';return}
   fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user,key:pass})})
-    .then(r=>r.json().then(d=>{if(r.ok&&d.redirect)window.location.href=d.redirect;else{err.textContent=d.error||'Credenciales inválidas.';const c=document.querySelector('.login-card');c.style.animation='none';c.offsetHeight;c.style.animation='shake .4s ease'}}))
+    .then(r=>r.json().then(d=>{
+      if(r.ok && d.tfa_required) {
+        loginStep = 'tfa';
+        document.getElementById('tfa-section').style.display = 'block';
+        document.querySelector('.btn-login').textContent = 'Verificar 2FA →';
+        err.textContent = 'Ingresa el código de Google Authenticator';
+        tfa.focus();
+        return
+      }
+      if(r.ok&&d.redirect)window.location.href=d.redirect;else{err.textContent=d.error||'Credenciales inválidas.';const c=document.querySelector('.login-card');c.style.animation='none';c.offsetHeight;c.style.animation='shake .4s ease'}
+    }))
     .catch(e=>{err.textContent='Error de conexión: '+(e.message||'')})
 }
 document.addEventListener('keydown',function(e){var k=e.key||'';if((k==='Enter'||e.keyCode===13)&&document.getElementById('pg-login').classList.contains('active'))doLogin()});
@@ -127,6 +152,7 @@ document.addEventListener('keydown',function(e){var k=e.key||'';if((k==='Enter'|
   }
   resize();window.addEventListener('resize',resize);anim=requestAnimationFrame(draw);
 })();
+if(localStorage.getItem('tilinx_theme')==='light')document.body.classList.add('theme-light');
 </script>
 </body>
 </html>

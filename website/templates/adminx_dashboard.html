@@ -7,6 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0a0a14;--card:#12111e;--border:#2a2740;--text:#e0daf5;--muted:#8070a0;--purple:#8b5cf6;--purple-dim:#6d4bd1;--red:#ef4444;--green:#22c55e;--radius:14px}
+body.theme-light{--bg:#f4efff;--card:#ffffff;--border:rgba(139,92,246,0.2);--text:#1e0a3c;--muted:rgba(100,60,170,0.5);--purple:#7c3aed;--purple-dim:#6d28d9}
 body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .container{width:100%;max-width:900px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:32px}
 h1{font-size:1.3rem;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:10px}
@@ -52,10 +53,17 @@ h2{font-size:1rem;font-weight:500}
   <div class="sub">Gestión de access keys para sub-administradores.</div>
 
   <div style="background:#0a0a14;border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;gap:16px;flex-wrap:wrap;font-size:.82rem">
-    <div><span style="color:var(--muted)">Servidor:</span> <code style="color:#ddd4ff">tilinxproxy.duckdns.org</code></div>
-    <div><span style="color:var(--muted)">Puerto:</span> <code style="color:#ddd4ff">8884</code></div>
-    <div><span style="color:var(--muted)">IP:</span> <code style="color:#ddd4ff">138.255.249.150:8884</code></div>
-    <div style="margin-left:auto"><span class="badge active">● Online</span></div>
+    <div><span style="color:var(--muted)">Servidor:</span> <code style="color:#ddd4ff">{{ PROXY_HOST }}</code></div>
+    <div><span style="color:var(--muted)">Puerto:</span> <code style="color:#ddd4ff">{{ PROXY_PORT }}</code></div>
+    <div><span style="color:var(--muted)">IP:</span> <code style="color:#ddd4ff">{{ PROXY_PUBLIC_IP }}</code></div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:10px">
+      <button id="adminx-theme-btn" onclick="toggleTheme()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:50%;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .25s" onmouseover="this.style.borderColor='var(--purple)';this.style.color='var(--purple)'" onmouseout="this.style.borderColor='';this.style.color=''" title="Cambiar tema">☾</button>
+      <a href="/assets/mitmproxy-ca-cert.pem" download style="color:var(--purple);font-size:.72rem;text-decoration:none;display:flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:8px" onmouseover="this.style.background='rgba(139,92,246,.08)'" onmouseout="this.style.background='transparent'">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Certificado
+      </a>
+      <span class="badge active">● Online</span>
+    </div>
   </div>
 
   <div class="toolbar" id="generator">
@@ -161,6 +169,17 @@ function toast(msg,type){
   el.textContent=msg;el.className='toast '+type+' show'
   clearTimeout(toastT);toastT=setTimeout(()=>el.className='toast',3000)
 }
+
+function toggleTheme(){
+  document.body.classList.toggle('theme-light')
+  const btn=document.getElementById('adminx-theme-btn')
+  btn.textContent=document.body.classList.contains('theme-light')?'\u2600':'\u263e'
+  localStorage.setItem('tilinx_theme',document.body.classList.contains('theme-light')?'light':'dark')
+}
+;(function(){
+  const t=localStorage.getItem('tilinx_theme')
+  if(t==='light'){document.body.classList.add('theme-light');document.getElementById('adminx-theme-btn').textContent='\u2600'}
+})()
 
 loadKeys()
 </script>

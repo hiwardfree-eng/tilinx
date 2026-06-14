@@ -4,3 +4,8 @@ psutil
 gunicorn
 requests
 mitmproxy
+pyjwt
+pyotp
+qrcode[pil]
+psycopg2-binary
+python-dotenv

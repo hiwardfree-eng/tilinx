@@ -1,22 +1,45 @@
 {% extends "base.html" %}
 {% block content %}
-<section class="section" style="padding-top:140px;text-align:center">
-  <div style="font-size:64px;margin-bottom:20px">🔒</div>
+<section class="section" style="padding-top:100px;text-align:center">
   <h2 class="section-title">INF DEL PROXY</h2>
-  <p class="section-sub">SECCIÓN TEMPORALMENTE RESTRINGIDA</p>
+  <p class="section-sub">CONFIGURACIÓN Y CERTIFICADO</p>
 
-  <div class="glass" style="max-width:480px;margin:30px auto;padding:40px 30px;border-color:rgba(130,0,255,0.5)">
-    <div style="font-size:48px;margin-bottom:16px;color:rgba(180,80,255,0.5)">🚧</div>
-    <p style="font-family:monospace;font-size:14px;color:rgba(180,80,255,0.8);line-height:1.8">
-      Esta sección está en mantenimiento programado.
-    </p>
-    <p style="font-family:monospace;font-size:12px;color:rgba(180,80,255,0.4);margin-top:16px">
-      Pronto disponible con información actualizada.
-    </p>
+  <div class="glass" style="max-width:520px;margin:30px auto;padding:35px 28px;border-color:rgba(139,92,246,0.4)">
+    <div style="text-align:left;font-size:.9rem;line-height:1.9">
+      <div style="margin-bottom:18px;padding:14px 18px;background:rgba(139,92,246,0.08);border-radius:12px;border:1px solid rgba(139,92,246,0.2)">
+        <div style="font-size:.72rem;color:rgba(196,181,253,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Servidor Proxy</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.95rem;color:#ddd4ff"><span style="color:rgba(196,181,253,0.3)">Host:</span> {{ PROXY_HOST }}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.95rem;color:#ddd4ff;margin-top:4px"><span style="color:rgba(196,181,253,0.3)">Port:</span> {{ PROXY_PORT }}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.95rem;color:#ddd4ff;margin-top:4px"><span style="color:rgba(196,181,253,0.3)">IP:</span> {{ PROXY_PUBLIC_IP }}</div>
+      </div>
+
+      <div style="margin-bottom:18px;padding:14px 18px;background:rgba(34,197,94,0.06);border-radius:12px;border:1px solid rgba(34,197,94,0.2)">
+        <div style="font-size:.72rem;color:rgba(34,197,94,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Certificado SSL</div>
+        <p style="font-size:.82rem;color:rgba(196,181,253,0.6);margin-bottom:10px">
+          Descarga el certificado CA de mitmproxy e instálalo en tu dispositivo para conexiones seguras.
+        </p>
+        <a href="/assets/mitmproxy-ca-cert.pem" download class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;text-decoration:none">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar Certificado (.pem)
+        </a>
+      </div>
+
+      <div style="padding:14px 18px;background:rgba(250,204,21,0.06);border-radius:12px;border:1px solid rgba(250,204,21,0.2)">
+        <div style="font-size:.72rem;color:rgba(250,204,21,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Instalación</div>
+        <ol style="font-size:.82rem;color:rgba(196,181,253,0.6);padding-left:20px;line-height:1.8">
+          <li>Descarga el certificado (.pem) arriba</li>
+          <li>Configura tu proxy con los datos del servidor</li>
+          <li>Instala el certificado como CA de confianza en tu dispositivo</li>
+          <li>¡Listo! Conexión segura y anónima</li>
+        </ol>
+      </div>
+
+    </div>
   </div>
 
   <div style="margin-top:24px">
-    <a href="/home" class="btn btn-outline">← VOLVER AL INICIO</a>
+    <a href="/login" class="btn btn-primary" style="text-decoration:none">🔑 ACCEDER AL PANEL</a>
+    <a href="/home" class="btn btn-outline" style="margin-left:10px">← VOLVER</a>
   </div>
 </section>
 {% endblock %}

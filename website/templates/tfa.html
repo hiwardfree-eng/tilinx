@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}TilinX - 2FA{% endblock %}
+{% block content %}
+<div style="max-width:600px;margin:60px auto;padding:20px">
+  <h1 style="text-align:center;color:#b44aff;font-size:2rem">&#x1f510; Two-Factor Authentication</h1>
+  <div id="tfa-status" style="text-align:center;margin:20px 0"></div>
+  <div id="tfa-setup-area" style="display:none;text-align:center">
+    <div id="qr-container" style="margin:20px auto"></div>
+    <p style="color:rgba(180,80,255,0.7);font-size:0.9rem">O usa este c&oacute;digo manualmente:</p>
+    <p id="secret-display" style="font-family:monospace;font-size:1.2rem;background:rgba(0,0,0,0.3);padding:10px;border-radius:8px;word-break:break-all"></p>
+    <div style="margin:20px 0">
+      <p style="color:rgba(180,80,255,0.7)">Backup codes (guardalos):</p>
+      <div id="backup-codes" style="font-family:monospace;font-size:1rem;background:rgba(0,0,0,0.3);padding:15px;border-radius:8px"></div>
+    </div>
+    <button onclick="disableTFA()" style="background:#ff4444;color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer">Desactivar 2FA</button>
+  </div>
+  <div id="tfa-enable-area" style="text-align:center;margin-top:30px">
+    <button onclick="setupTFA()" style="background:linear-gradient(135deg,#6a0dad,#b44aff);color:#fff;border:none;padding:12px 30px;border-radius:8px;cursor:pointer;font-size:1rem">Configurar 2FA</button>
+  </div>
+</div>
+<script>
+function loadStatus() {
+  fetch('/api/tfa-status').then(r=>r.json()).then(d=>{
+    if(d.enabled) {
+      document.getElementById('tfa-status').innerHTML = '<p style="color:#0f0">&#x2705; 2FA activado</p>';
+      document.getElementById('tfa-setup-area').style.display = 'block';
+      document.getElementById('tfa-enable-area').style.display = 'none';
+    } else {
+      document.getElementById('tfa-status').innerHTML = '<p style="color:rgba(180,80,255,0.6)">&#x274c; 2FA desactivado</p>';
+      document.getElementById('tfa-setup-area').style.display = 'none';
+      document.getElementById('tfa-enable-area').style.display = 'block';
+    }
+  }).catch(()=>{});
+}
+function setupTFA() {
+  fetch('/api/tfa-setup',{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.success) {
+      if(d.qr_base64) {
+        document.getElementById('qr-container').innerHTML = '<img src="data:image/png;base64,'+d.qr_base64+'" style="border-radius:12px;border:2px solid rgba(180,80,255,0.3)">';
+      }
+      document.getElementById('secret-display').textContent = d.secret || '';
+      var codesDiv = document.getElementById('backup-codes');
+      codesDiv.innerHTML = '';
+      (d.backup_codes||[]).forEach(function(c){
+        var p = document.createElement('div');
+        p.textContent = c;
+        codesDiv.appendChild(p);
+      });
+      loadStatus();
+    } else {
+      alert('Error: '+ (d.error||'desconocido'));
+    }
+  });
+}
+function disableTFA() {
+  if(!confirm('Desactivar 2FA?')) return;
+  fetch('/api/tfa-disable',{method:'POST'}).then(r=>r.json()).then(d=>{
+    if(d.success) loadStatus();
+    else alert('Error');
+  });
+}
+loadStatus();
+</script>
+{% endblock %}

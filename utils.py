@@ -1,9 +1,12 @@
+from typing import Union
 from datetime import datetime
 
-def format_date(ts) -> str:
+
+def format_date(ts: Union[float, int, None]) -> str:
     if not ts or ts == 0:
-        return "—"
+        return "\u2014"
     return datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
+
 
 def parse_duration(text: str) -> int:
     text = text.strip().lower()

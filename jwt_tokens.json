@@ -1,0 +1,14 @@
+{
+  "refresh_tokens": {
+    "c30d9a829b99e75d58dc0b52ec554922": {
+      "subject": "admin",
+      "scopes": [
+        "api",
+        "admin"
+      ],
+      "created": 1781295794,
+      "expires": 1781382194
+    }
+  },
+  "revoked": []
+}

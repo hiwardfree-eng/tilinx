@@ -19,6 +19,13 @@
   --font-mono:'JetBrains Mono',monospace;
   --ray-color:rgba(139,92,246,0.12);
 }
+body.theme-light{
+  --bg:#f4efff;--surface:rgba(255,255,255,0.92);--surface2:rgba(250,247,255,0.9);
+  --border:rgba(139,92,246,0.2);--border-lt:rgba(139,92,246,0.08);
+  --text:#1e0a3c;--muted:rgba(100,60,170,0.5);
+  --purple:#7c3aed;--purple-lt:#6d28d9;--purple-glow:rgba(124,58,237,0.2);
+  --ray-color:transparent;
+}
 /* ── Animated Rays ── */
 @keyframes rayMove{
   0%{transform:translateX(-30%) rotate(0deg);opacity:0}
@@ -60,6 +67,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .nav-icon{width:17px;height:17px;flex-shrink:0;opacity:.85}
 .nav-badge{margin-left:auto;background:var(--purple);color:#fff;font-size:.65rem;border-radius:99px;padding:2px 8px;font-weight:700}
 .sb-spacer{flex:1}
+.theme-btn{background:none;border:1px solid rgba(139,92,246,0.2);color:rgba(196,181,253,0.35);border-radius:50%;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;transition:all .25s;font-size:15px}
+.theme-btn:hover{color:var(--purple-lt);border-color:rgba(139,92,246,0.4)}
 .sb-user{border-top:1px solid var(--border-lt);padding:14px 12px;display:flex;align-items:center;gap:10px}
 .sb-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#c084fc);display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;color:#fff;flex-shrink:0}
 .sb-uname{font-size:.84rem;font-weight:700;color:#d8d0f0}
@@ -207,6 +216,7 @@ select option{background:#0c0720}
       Back to Site
     </div>
     <div class="sb-spacer"></div>
+    <button class="theme-btn" id="admin-theme-btn" title="Cambiar tema" onclick="toggleAdminTheme()">☾</button>
     <div class="sb-user">
       <div class="sb-avatar">A</div>
       <div>
@@ -271,17 +281,21 @@ select option{background:#0c0720}
       <div style="background:rgba(14,8,32,0.8);border:1px solid var(--border);border-radius:16px;padding:18px 22px;margin-bottom:20px;display:flex;gap:24px;flex-wrap:wrap">
         <div>
           <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Servidor</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:.92rem;color:#ddd4ff">tilinxproxy.duckdns.org</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.92rem;color:#ddd4ff">{{ PROXY_HOST }}</div>
         </div>
         <div>
           <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Puerto</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:.92rem;color:#ddd4ff">8884</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.92rem;color:#ddd4ff">{{ PROXY_PORT }}</div>
         </div>
         <div>
           <div style="font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">IP Directa</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:.92rem;color:#ddd4ff">138.255.249.150:8884</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.92rem;color:#ddd4ff">{{ PROXY_PUBLIC_IP }}</div>
         </div>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <div style="margin-left:auto;display:flex;align-items:center;gap:12px">
+          <a href="/assets/mitmproxy-ca-cert.pem" download style="color:var(--purple-lt);font-size:.75rem;text-decoration:none;display:flex;align-items:center;gap:5px;padding:6px 12px;border:1px solid rgba(139,92,246,0.3);border-radius:8px;transition:background .15s" onmouseover="this.style.background='rgba(139,92,246,0.12)'" onmouseout="this.style.background='transparent'">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Certificado
+          </a>
           <span class="badge active" style="font-size:.72rem">● Online</span>
         </div>
       </div>
@@ -764,11 +778,22 @@ function resetTheme(){
   applyTheme()
 }
 
+function toggleAdminTheme(){
+  document.body.classList.toggle('theme-light')
+  const btn=document.getElementById('admin-theme-btn')
+  btn.textContent=document.body.classList.contains('theme-light')?'\u2600':'\u263e'
+  localStorage.setItem('tilinx_theme',document.body.classList.contains('theme-light')?'light':'dark')
+}
 document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closeModal();closeSettings()}
   if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();openModal()}
 })
-;(function(){const sv=localStorage.getItem('tilinx-theme');if(sv){const d=JSON.parse(sv);['color','accent','bg','text'].forEach(k=>document.documentElement.style.setProperty('--'+k,d[k==='color'?'color':k]));if(d.font)document.documentElement.style.setProperty('--font-primary',d.font)}})()
+;(function(){
+  const sv=localStorage.getItem('tilinx-theme');if(sv){const d=JSON.parse(sv);['color','accent','bg','text'].forEach(k=>document.documentElement.style.setProperty('--'+k,d[k==='color'?'color':k]));if(d.font)document.documentElement.style.setProperty('--font-primary',d.font)}
+  const theme=localStorage.getItem('tilinx_theme')
+  if(theme==='dark'||!theme)document.body.classList.remove('theme-light')
+  else{document.body.classList.add('theme-light');document.getElementById('admin-theme-btn').textContent='\u2600'}
+})()
 
 loadKeys();loadIPs();loadActivity();loadSysStats();loadStatus();loadAdminX()
 setInterval(loadActivity,10000);setInterval(loadSysStats,15000);setInterval(loadStatus,30000);setInterval(loadAdminX,15000)

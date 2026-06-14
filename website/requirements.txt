@@ -3,3 +3,9 @@ flask-sqlalchemy
 psutil
 gunicorn
 requests
+python-telegram-bot
+pyjwt
+pyotp
+qrcode[pil]
+psycopg2-binary
+python-dotenv

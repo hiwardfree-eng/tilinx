@@ -1,0 +1,21 @@
+[Unit]
+Description=TilinX Proxy (mitmproxy)
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/tilinx
+EnvironmentFile=/opt/tilinx/.env
+ExecStart=/usr/local/bin/mitmdump -p ${TilinX_PROXY_PORT:-8884} \
+    --set block_global=false \
+    --ssl-insecure \
+    -s /opt/tilinx/tilinx_proxy.py
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/tilinx/proxy.log
+StandardError=append:/var/log/tilinx/proxy.log
+
+[Install]
+WantedBy=multi-user.target

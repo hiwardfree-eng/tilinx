@@ -5,6 +5,8 @@ echo " TilinX PROXY - Starting Services"
 echo "========================================"
 cd "$(dirname "$0")"
 BASE_DIR="$(pwd)"
+RUN_DIR="$BASE_DIR/run"
+mkdir -p "$RUN_DIR"
 
 # ─── Load .env if exists ─────────────────────────
 [ -f "$BASE_DIR/.env" ] && set -a && source "$BASE_DIR/.env" && set +a
@@ -26,6 +28,7 @@ mitmdump -p "$TilinX_PROXY_PORT" \
     -s "$BASE_DIR/tilinx_proxy.py" \
     > "$TilinX_LOG_DIR/proxy.out" 2>&1 &
 PROXY_PID=$!
+echo "$PROXY_PID" > "$RUN_DIR/proxy.pid"
 echo "  Proxy PID: $PROXY_PID"
 sleep 2
 
@@ -33,6 +36,7 @@ echo "[2/2] Starting Bot..."
 python3 "$BASE_DIR/bot_control.py" \
     > "$TilinX_LOG_DIR/bot.out" 2>&1 &
 BOT_PID=$!
+echo "$BOT_PID" > "$RUN_DIR/bot.pid"
 echo "  Bot PID: $BOT_PID"
 
 echo ""

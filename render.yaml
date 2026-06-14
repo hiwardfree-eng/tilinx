@@ -10,18 +10,20 @@ services:
       - key: TilinX_ADMIN_USER
         value: tilinX
       - key: TilinX_DASH_PASSWORD
-        value: hw132319
+        sync: false
       - key: TilinX_WEB_SECRET
         generateValue: true
       - key: TilinX_WEB_PORT
         value: 8080
       - key: TilinX_BOT_TOKEN
-        value: "8602901015:AAF6RWuaurtKU6jPK-rWD856YumQz8cBr40"
+        sync: false
       - key: TilinX_ADMIN_ID
-        value: "8659405330"
+        sync: false
       - key: TilinX_ADMIN_IP_BIND
         value: "0"
       - key: TilinX_BOT_ENABLED
-        value: "0"
+        value: "1"
+      - key: TilinX_ENV
+        value: production
       - key: PYTHON_VERSION
         value: 3.11.0

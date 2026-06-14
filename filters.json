@@ -1,0 +1,7 @@
+{
+  "url_blacklist": [],
+  "url_whitelist": [],
+  "header_rules": [],
+  "geoip_blocked_countries": [],
+  "enabled": true
+}
