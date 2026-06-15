@@ -42,7 +42,7 @@ if not _secret:
             pass
 app.secret_key = _secret
 if SUPABASE_ENABLED and SUPABASE_DB_HOST:
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{SUPABASE_DB_USER}:{urllib.parse.quote_plus(SUPABASE_DB_PASSWORD)}@{SUPABASE_DB_HOST}:{SUPABASE_DB_PORT}/{SUPABASE_DB_NAME}"
+    app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{SUPABASE_DB_USER}:{urllib.parse.quote_plus(SUPABASE_DB_PASSWORD)}@{SUPABASE_DB_HOST}:{SUPABASE_DB_PORT}/{SUPABASE_DB_NAME}?sslmode=require"
 else:
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
         "TilinX_DATABASE_URL", "sqlite:///" + os.path.join(os.path.dirname(__file__), "tilinx.db")
