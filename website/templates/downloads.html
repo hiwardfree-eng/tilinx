@@ -4,32 +4,41 @@
   <h2 class="section-title">INF DEL PROXY</h2>
   <p class="section-sub">CONFIGURACIÓN Y CERTIFICADO</p>
 
-  <div class="glass" style="max-width:520px;margin:30px auto;padding:35px 28px;border-color:rgba(139,92,246,0.4)">
+  <div class="glass" style="max-width:560px;margin:30px auto;padding:35px 28px;border-color:rgba(139,92,246,0.4)">
     <div style="text-align:left;font-size:.9rem;line-height:1.9">
       <div style="margin-bottom:18px;padding:14px 18px;background:rgba(139,92,246,0.08);border-radius:12px;border:1px solid rgba(139,92,246,0.2)">
         <div style="font-size:.72rem;color:rgba(196,181,253,0.5);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Servidor Proxy</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:.95rem;color:#ddd4ff"><span style="color:rgba(196,181,253,0.3)">Host:</span> {{ PROXY_HOST }}</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:.95rem;color:#ddd4ff;margin-top:4px"><span style="color:rgba(196,181,253,0.3)">Port:</span> {{ PROXY_PORT }}</div>
         <div style="font-family:'JetBrains Mono',monospace;font-size:.95rem;color:#ddd4ff;margin-top:4px"><span style="color:rgba(196,181,253,0.3)">IP:</span> {{ PROXY_PUBLIC_IP }}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.95rem;color:#ddd4ff;margin-top:4px"><span style="color:rgba(196,181,253,0.3)">Tipo:</span> HTTP/HTTPS</div>
       </div>
 
       <div style="margin-bottom:18px;padding:14px 18px;background:rgba(34,197,94,0.06);border-radius:12px;border:1px solid rgba(34,197,94,0.2)">
-        <div style="font-size:.72rem;color:rgba(34,197,94,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Certificado SSL</div>
+        <div style="font-size:.72rem;color:rgba(34,197,94,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Certificado MITM — tilinX my king</div>
         <p style="font-size:.82rem;color:rgba(196,181,253,0.6);margin-bottom:10px">
-          Descarga el certificado CA de mitmproxy e instálalo en tu dispositivo para conexiones seguras.
+          Emitido por: <strong style="color:#c084fc">tilinx proxy el mejor producto</strong><br>
+          Descarga e instala en tu iPhone/iPad para conexiones HTTPS seguras.
         </p>
-        <a href="/assets/mitmproxy-ca-cert.pem" download class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;text-decoration:none">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Descargar Certificado (.pem)
-        </a>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <a href="/assets/tilinx-mitm-ca.der" download class="btn btn-primary" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;text-decoration:none">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Certificado iOS (.der)
+          </a>
+          <a href="/assets/mitmproxy-ca-cert.pem" download class="btn btn-outline" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;text-decoration:none">
+            Cert .pem
+          </a>
+        </div>
       </div>
 
       <div style="padding:14px 18px;background:rgba(250,204,21,0.06);border-radius:12px;border:1px solid rgba(250,204,21,0.2)">
-        <div style="font-size:.72rem;color:rgba(250,204,21,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Instalación</div>
+        <div style="font-size:.72rem;color:rgba(250,204,21,0.6);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Instalación en iPhone/iPad</div>
         <ol style="font-size:.82rem;color:rgba(196,181,253,0.6);padding-left:20px;line-height:1.8">
-          <li>Descarga el certificado (.pem) arriba</li>
-          <li>Configura tu proxy con los datos del servidor</li>
-          <li>Instala el certificado como CA de confianza en tu dispositivo</li>
+          <li>Descarga el archivo <strong>Certificado iOS (.der)</strong></li>
+          <li>Ve a <strong>Ajustes → Perfil Descargado</strong> y pulsa "Instalar"</li>
+          <li>Ve a <strong>Ajustes → General → Información → Certificados de confianza</strong></li>
+          <li>Activa <strong>"tilinX my king"</strong> como CA de confianza</li>
+          <li>Configura el proxy: {{ PROXY_HOST }} puerto {{ PROXY_PORT }}</li>
           <li>¡Listo! Conexión segura y anónima</li>
         </ol>
       </div>

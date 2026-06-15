@@ -35,8 +35,8 @@ PROXY_AUTH_PASS = os.environ.get("TilinX_PROXY_AUTH_PASS", "TilinX")
 PROXY_PORT = _int_env("TilinX_PROXY_PORT", 8884)
 
 # ─── Proxy público (endpoint visible a usuarios) ────────
-PROXY_PUBLIC_HOST = os.environ.get("TilinX_PROXY_PUBLIC_HOST", "tilinxproxy.duckdns.org")
-PROXY_PUBLIC_PORT = _int_env("TilinX_PROXY_PUBLIC_PORT", PROXY_PORT)
+PROXY_PUBLIC_HOST = os.environ.get("TilinX_PROXY_PUBLIC_HOST", "bore.pub")
+PROXY_PUBLIC_PORT = _int_env("TilinX_PROXY_PUBLIC_PORT", 31028)
 PROXY_PUBLIC_IP = os.environ.get("TilinX_PROXY_PUBLIC_IP", "")  # IP directa opcional
 if not PROXY_PUBLIC_IP:
     PROXY_PUBLIC_IP = f"{PROXY_PUBLIC_HOST}:{PROXY_PUBLIC_PORT}"
