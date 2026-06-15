@@ -1,5 +1,6 @@
-import os, json, time, threading, logging
+import os, time, threading, logging
 from typing import Dict, Any, List, Optional, Callable
+from file_utils import safe_read_json, safe_write_json
 
 logger = logging.getLogger("tilinx.scheduler")
 
@@ -21,29 +22,18 @@ def _load() -> Dict[str, Any]:
     with _slock:
         if now - _sched_cache["ts"] < _sched_ttl:
             return _sched_cache["data"]
-    if not os.path.exists(SCHED_PATH):
-        return {}
-    try:
-        with open(SCHED_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        with _slock:
-            _sched_cache["data"] = data
-            _sched_cache["ts"] = now
-        return data
-    except Exception as e:
-        logger.error(f"Error loading tasks: {e}")
-        return {}
+    data = safe_read_json(SCHED_PATH, {})
+    with _slock:
+        _sched_cache["data"] = data
+        _sched_cache["ts"] = now
+    return data
 
 
 def _save(data: dict) -> None:
     with _slock:
-        try:
-            with open(SCHED_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            _sched_cache["data"] = data
-            _sched_cache["ts"] = time.time()
-        except Exception as e:
-            logger.error(f"Error saving tasks: {e}")
+        safe_write_json(SCHED_PATH, data)
+        _sched_cache["data"] = data
+        _sched_cache["ts"] = time.time()
 
 
 def register_task(task_type: str, interval_seconds: int, config: Optional[Dict[str, Any]] = None) -> str:

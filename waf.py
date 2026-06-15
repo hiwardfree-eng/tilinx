@@ -1,6 +1,7 @@
-import re, os, json, time, logging
+import re, os, time, logging
 from typing import Dict, Any, List, Optional, Tuple
 from urllib.parse import unquote
+from file_utils import safe_read_json, safe_write_json
 
 logger = logging.getLogger("tilinx.waf")
 
@@ -111,29 +112,14 @@ def _load_rules() -> Dict[str, Any]:
     now = time.time()
     if now - _RULES_CACHE["ts"] < 30 and _RULES_CACHE["data"] is not None:
         return _RULES_CACHE["data"]
-    if not os.path.exists(WAF_PATH):
-        data = {"enabled": True, "block_threshold": 6, "mode": "block"}
-        _RULES_CACHE["data"] = data
-        _RULES_CACHE["ts"] = now
-        return data
-    try:
-        with open(WAF_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        _RULES_CACHE["data"] = data
-        _RULES_CACHE["ts"] = now
-        return data
-    except Exception:
-        _RULES_CACHE["data"] = {"enabled": True, "block_threshold": 6, "mode": "block"}
-        _RULES_CACHE["ts"] = now
-        return _RULES_CACHE["data"]
+    data = safe_read_json(WAF_PATH, {"enabled": True, "block_threshold": 6, "mode": "block"})
+    _RULES_CACHE["data"] = data
+    _RULES_CACHE["ts"] = now
+    return data
 
 
 def _save_rules(data: dict) -> None:
-    try:
-        with open(WAF_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
-    except Exception as e:
-        logger.error(f"WAF save error: {e}")
+    safe_write_json(WAF_PATH, data)
 
 
 class WAFResult:

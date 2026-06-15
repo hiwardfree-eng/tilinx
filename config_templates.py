@@ -1,5 +1,6 @@
-import json, os, time, threading, logging
+import os, time, threading, logging
 from typing import Dict, Any, List, Optional
+from file_utils import safe_read_json, safe_write_json
 
 logger = logging.getLogger("tilinx.templates")
 
@@ -14,29 +15,18 @@ def _load() -> Dict[str, Any]:
     with _tlock:
         if now - _t_cache["ts"] < _t_ttl:
             return _t_cache["data"]
-    if not os.path.exists(TEMPLATES_PATH):
-        return {}
-    try:
-        with open(TEMPLATES_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        with _tlock:
-            _t_cache["data"] = data
-            _t_cache["ts"] = now
-        return data
-    except Exception as e:
-        logger.error(f"Error loading templates: {e}")
-        return {}
+    data = safe_read_json(TEMPLATES_PATH, {})
+    with _tlock:
+        _t_cache["data"] = data
+        _t_cache["ts"] = now
+    return data
 
 
 def _save(data: dict) -> None:
     with _tlock:
-        try:
-            with open(TEMPLATES_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            _t_cache["data"] = data
-            _t_cache["ts"] = time.time()
-        except Exception as e:
-            logger.error(f"Error saving templates: {e}")
+        safe_write_json(TEMPLATES_PATH, data)
+        _t_cache["data"] = data
+        _t_cache["ts"] = time.time()
 
 
 _BUILTIN_TEMPLATES = {
