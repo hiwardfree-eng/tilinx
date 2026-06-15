@@ -42,7 +42,8 @@ if not _secret:
             pass
 app.secret_key = _secret
 if SUPABASE_ENABLED and SUPABASE_DB_HOST:
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"postgresql://{SUPABASE_DB_USER}:{urllib.parse.quote_plus(SUPABASE_DB_PASSWORD)}@{SUPABASE_DB_HOST}:{SUPABASE_DB_PORT}/{SUPABASE_DB_NAME}?sslmode=require"
+    _pg_uri = f"postgresql://{SUPABASE_DB_USER}:{urllib.parse.quote_plus(SUPABASE_DB_PASSWORD)}@{SUPABASE_DB_HOST}:{SUPABASE_DB_PORT}/{SUPABASE_DB_NAME}?sslmode=require&pgbouncer=true"
+    app.config["SQLALCHEMY_DATABASE_URI"] = _pg_uri
 else:
     app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
         "TilinX_DATABASE_URL", "sqlite:///" + os.path.join(os.path.dirname(__file__), "tilinx.db")
@@ -84,7 +85,19 @@ if not DASH_PASSWORD_HASH:
         log.warning("No DASH_PASSWORD set — admin login disabled")
 
 with app.app_context():
-    init_db(app)
+    try:
+        init_db(app)
+    except Exception as e:
+        if SUPABASE_ENABLED and SUPABASE_DB_HOST:
+            log.warning(f"PostgreSQL fail, falling back to SQLite: {e}")
+            import website.models as m
+            app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(os.path.dirname(__file__), "tilinx.db")
+            db.session.remove()
+            db.engine.dispose()
+            db.create_all()
+            init_db(app)
+        else:
+            raise
 
 bot_thread_started = False
 

@@ -65,7 +65,7 @@ SUPABASE_ENABLED = os.environ.get("SUPABASE_ENABLED", "0") == "1"
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 SUPABASE_DB_HOST = os.environ.get("SUPABASE_DB_HOST", "")
-SUPABASE_DB_PORT = _int_env("SUPABASE_DB_PORT", 5432)
+SUPABASE_DB_PORT = _int_env("SUPABASE_DB_PORT", 6543)
 SUPABASE_DB_NAME = os.environ.get("SUPABASE_DB_NAME", "postgres")
 SUPABASE_DB_USER = os.environ.get("SUPABASE_DB_USER", "postgres")
 SUPABASE_DB_PASSWORD = os.environ.get("SUPABASE_DB_PASSWORD", "")
