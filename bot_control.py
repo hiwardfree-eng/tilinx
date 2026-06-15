@@ -33,61 +33,40 @@ _BOT_THREADS: list[threading.Thread] = []
 HandlerFn = Callable[[int, str, dict], None]
 
 def get_chat_ip(chat_id: int) -> Optional[str]:
-    if not os.path.exists(CHAT_IPS_PATH):
-        return None
     try:
-        with open(CHAT_IPS_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        from file_utils import safe_read_json
+        data = safe_read_json(CHAT_IPS_PATH, {})
         return data.get(str(chat_id))
     except Exception:
         return None
 
 def set_chat_ip(chat_id: int, ip: str) -> None:
     with CHAT_IP_LOCK:
-        data: dict = {}
-        if os.path.exists(CHAT_IPS_PATH):
-            try:
-                with open(CHAT_IPS_PATH, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except Exception:
-                data = {}
+        from file_utils import safe_read_json, safe_write_json
+        data = safe_read_json(CHAT_IPS_PATH, {})
         data[str(chat_id)] = ip
-        with open(CHAT_IPS_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        safe_write_json(CHAT_IPS_PATH, data)
 
 def generate_verify_token(chat_id: int, code: str) -> str:
     token = secrets.token_hex(8)
     verify_path = CHAT_IPS_PATH.replace(".json", "_pending.json")
-    data: dict = {}
-    if os.path.exists(verify_path):
-        try:
-            with open(verify_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-        except Exception:
-            data = {}
+    from file_utils import safe_read_json, safe_write_json
+    data = safe_read_json(verify_path, {})
     data[token] = {"chat_id": chat_id, "code": code, "time": time.time()}
-    with open(verify_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+    safe_write_json(verify_path, data)
     return token
 
 def consume_verify_token(token: str, ip: str) -> Optional[Dict[str, Any]]:
     verify_path = CHAT_IPS_PATH.replace(".json", "_pending.json")
-    if not os.path.exists(verify_path):
-        return None
-    try:
-        with open(verify_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except Exception:
-        return None
+    from file_utils import safe_read_json, safe_write_json
+    data = safe_read_json(verify_path, {})
     entry = data.pop(token, None)
     if not entry:
         return None
     if time.time() - entry["time"] > 300:
-        with open(verify_path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2)
+        safe_write_json(verify_path, data)
         return None
-    with open(verify_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2)
+    safe_write_json(verify_path, data)
     chat_id = entry["chat_id"]
     code = entry["code"]
     set_chat_ip(chat_id, ip)
@@ -980,7 +959,7 @@ def bot_poll() -> None:
         return
     offset = 0
     BOT_RUNNING = True
-    log.info("\U0001f916 Bot TilinX iniciado (polling HTTP)")
+    log.info("[Bot] TilinX iniciado (polling HTTP)")
     while BOT_RUNNING:
         try:
             r = requests.get(

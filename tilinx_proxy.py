@@ -190,22 +190,26 @@ def load_db() -> Dict[str, Any]:
     return {}
 
 
-def load_uids() -> Dict[str, Any]:
+def load_uids() -> dict:
     if not os.path.exists(UID_PATH):
         return {}
     try:
-        with open(UID_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+        from file_utils import safe_read_json
+        return safe_read_json(UID_PATH, {})
     except Exception:
         return {}
 
 
 def save_uids(data: dict) -> None:
     try:
-        with open(UID_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, ensure_ascii=False)
+        from file_utils import safe_write_json
+        safe_write_json(UID_PATH, data)
     except Exception as e:
         log.error(f"Error saving uids.json: {e}")
+        from file_utils import safe_read_json
+        return safe_read_json(UID_PATH, {})
+    except Exception:
+        return {}
 
 
 def get_uid_status(uid: str) -> str:

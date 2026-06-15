@@ -1,4 +1,5 @@
 import json, os, time, threading, logging
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Dict, Any, List, Callable
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
@@ -10,6 +11,8 @@ WEBHOOKS_PATH = os.environ.get("TilinX_WEBHOOKS_PATH", os.path.join(os.path.dirn
 _wlock = threading.Lock()
 _wh_cache: Dict[str, Any] = {"data": None, "ts": 0.0}
 _wh_ttl = 60
+
+_EXECUTOR = ThreadPoolExecutor(max_workers=8, thread_name_prefix="wh")
 
 EVENT_KEY_REDEEMED = "key.redeemed"
 EVENT_KEY_EXPIRED = "key.expired"
@@ -89,8 +92,7 @@ def dispatch(event: str, payload: Dict[str, Any]) -> None:
             continue
         if event not in cfg.get("events", _all_events):
             continue
-        t = threading.Thread(target=_send, args=(wid, cfg["url"], cfg.get("secret", ""), event, payload), daemon=True)
-        t.start()
+        _EXECUTOR.submit(_send, wid, cfg["url"], cfg.get("secret", ""), event, payload)
 
 
 def _send(wid: str, url: str, secret: str, event: str, payload: Dict[str, Any]) -> None:

@@ -21,11 +21,9 @@ _tfa_lock = threading.Lock()
 
 
 def _load() -> Dict[str, Any]:
-    if not os.path.exists(TFA_PATH):
-        return {"users": {}}
     try:
-        with open(TFA_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+        from file_utils import safe_read_json
+        return safe_read_json(TFA_PATH, {"users": {}})
     except Exception:
         return {"users": {}}
 
@@ -33,8 +31,8 @@ def _load() -> Dict[str, Any]:
 def _save(data: dict) -> None:
     with _tfa_lock:
         try:
-            with open(TFA_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+            from file_utils import safe_write_json
+            safe_write_json(TFA_PATH, data)
         except Exception as e:
             logger.error(f"2FA save error: {e}")
 

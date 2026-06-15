@@ -19,6 +19,7 @@ from database import load as load_db
 from config import RATE_LIMIT, SESSION_TIMEOUT, MAX_LOGIN_ATTEMPTS, LOGIN_BLOCK_MINUTES, ADMIN_IP_WHITELIST, ADMIN_IP_BIND, CORS_ORIGIN, CSRF_ENABLED, ADMIN_USER, SUPABASE_ENABLED, SUPABASE_DB_HOST, SUPABASE_DB_PORT, SUPABASE_DB_NAME, SUPABASE_DB_USER, SUPABASE_DB_PASSWORD, PROXY_PUBLIC_HOST, PROXY_PUBLIC_PORT, PROXY_PUBLIC_IP, PROXY_AUTH_USER, PROXY_AUTH_PASS, PROXY_PORT, PUBLIC_BASE_URL
 from adminx import get_user as adminx_get_user, find_by_key as adminx_find_by_key
 import twofa
+from werkzeug.security import check_password_hash, generate_password_hash
 
 app = Flask(__name__)
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
@@ -55,6 +56,15 @@ app.config["SESSION_PERMANENT"] = True
 app.config["PERMANENT_SESSION_LIFETIME"] = 3600
 db.init_app(app)
 
+with app.app_context():
+    try:
+        from sqlalchemy import text
+        db.session.execute(text("PRAGMA journal_mode=WAL"))
+        db.session.execute(text("PRAGMA synchronous=NORMAL"))
+        db.session.commit()
+    except Exception:
+        pass
+
 @app.context_processor
 def inject_proxy_config():
     return dict(
@@ -64,7 +74,14 @@ def inject_proxy_config():
         PUBLIC_BASE_URL=PUBLIC_BASE_URL,
     )
 
-DASH_PASSWORD = os.environ.get("TilinX_DASH_PASSWORD", "")
+DASH_PASSWORD_HASH = os.environ.get("TilinX_DASH_PASSWORD_HASH", "")
+if not DASH_PASSWORD_HASH:
+    _plain = os.environ.get("TilinX_DASH_PASSWORD", "")
+    if _plain:
+        DASH_PASSWORD_HASH = generate_password_hash(_plain)
+    else:
+        DASH_PASSWORD_HASH = ""
+        log.warning("No DASH_PASSWORD set — admin login disabled")
 
 with app.app_context():
     init_db(app)
@@ -162,8 +179,25 @@ def log_event(event, detail="", level="info"):
         db.session.add(l)
         db.session.commit()
 
+class ProxyFix:
+    def __init__(self, app):
+        self.app = app
+    def __call__(self, environ, start_response):
+        proto = environ.get("HTTP_X_FORWARDED_PROTO", "")
+        if proto == "https":
+            environ["wsgi.url_scheme"] = "https"
+        return self.app(environ, start_response)
+
+app.wsgi_app = ProxyFix(app.wsgi_app)
+
 @app.before_request
 def before_request():
+    if not request.is_secure and os.environ.get("TilinX_HTTPS_REDIRECT", "0") == "1":
+        https_url = "https://" + request.host + request.path
+        if request.query_string:
+            https_url += "?" + request.query_string.decode()
+        return redirect(https_url, 301)
+
     # CSRF: warn-only for now (don't block legitimate clients)
     if CSRF_ENABLED and request.method in ("POST", "DELETE", "PUT", "PATCH") and not request.path.startswith("/api/login"):
         origin = request.headers.get("Origin", "")
@@ -289,7 +323,13 @@ def terminal():
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok"})
+    try:
+        from watchdog import get_watchdog
+        wd = get_watchdog()
+        svc_status = wd.get_status()
+        return jsonify({"status": "ok", "services": svc_status})
+    except Exception:
+        return jsonify({"status": "ok"})
 
 @app.route("/login")
 def login_page():
@@ -316,7 +356,7 @@ def api_login():
         return jsonify(success=False, error="Usuario y key requeridos."), 400
 
     # Main admin (tilinX + DASH_PASSWORD)
-    if username == ADMIN_USER.lower() and key == DASH_PASSWORD:
+    if username == ADMIN_USER.lower() and check_password_hash(DASH_PASSWORD_HASH, key):
         if twofa.is_enabled("admin"):
             session["tfa_pending"] = True
             session["tfa_user"] = ADMIN_USER
@@ -466,7 +506,12 @@ def api_terminal_stats():
 
 @app.route("/api/health")
 def api_health():
-    """Full subsystem health check."""
+    try:
+        from watchdog import get_watchdog
+        wd = get_watchdog()
+        svc_status = wd.get_status()
+    except Exception:
+        svc_status = {}
     checks = {}
     overall = True
     try:
@@ -497,6 +542,7 @@ def api_health():
     except Exception as e:
         checks["brain_v2"] = {"ok": False, "detail": str(e)}
         overall = False
+    checks["watchdog"] = svc_status
     return jsonify({"status": "healthy" if overall else "degraded", "checks": checks})
 
 @app.route("/tg-verify/<path:chat_id>/<token>")
@@ -816,5 +862,36 @@ if __name__ == "__main__":
         port = int(os.environ.get("PORT", os.environ.get("TilinX_WEB_PORT", "8080")))
     except (ValueError, TypeError):
         port = 8080
-    log.info(f"TilinX Website starting on :{port}")
-    app.run(host="0.0.0.0", port=port, debug=False)
+
+    ssl_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "ssl")
+    cert_file = os.path.join(ssl_dir, "cert.pem")
+    key_file = os.path.join(ssl_dir, "key.pem")
+    ssl_ctx = None
+    if os.path.exists(cert_file) and os.path.exists(key_file):
+        try:
+            ssl_ctx = (cert_file, key_file)
+            log.info(f"HTTPS enabled (cert={cert_file})")
+        except Exception as e:
+            log.warning(f"SSL init failed: {e}")
+
+    log.info(f"TilinX Website starting on :{port}" + (" HTTPS" if ssl_ctx else " HTTP"))
+
+    try:
+        from watchdog import start_watchdog, get_watchdog
+        wd = get_watchdog()
+        try:
+            from bot_control import safe_send
+            def _alert_service_restart(name):
+                try:
+                    safe_send(f"[WATCHDOG] Service restarted: {name}")
+                except Exception:
+                    pass
+            wd.on_restart(_alert_service_restart)
+        except ImportError:
+            pass
+        start_watchdog()
+        log.info("[WATCHDOG] Started")
+    except Exception as e:
+        log.warning(f"[WATCHDOG] Init failed: {e}")
+
+    app.run(host="0.0.0.0", port=port, ssl_context=ssl_ctx, debug=False)

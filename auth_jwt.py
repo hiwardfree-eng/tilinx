@@ -27,11 +27,9 @@ SCOPE_READONLY = "readonly"
 
 
 def _load_tokens() -> Dict[str, Any]:
-    if not os.path.exists(TOKENS_PATH):
-        return {"refresh_tokens": {}, "revoked": []}
     try:
-        with open(TOKENS_PATH, "r", encoding="utf-8") as f:
-            return json.load(f)
+        from file_utils import safe_read_json
+        return safe_read_json(TOKENS_PATH, {"refresh_tokens": {}, "revoked": []})
     except Exception:
         return {"refresh_tokens": {}, "revoked": []}
 
@@ -39,8 +37,8 @@ def _load_tokens() -> Dict[str, Any]:
 def _save_tokens(data: dict) -> None:
     with _tlock:
         try:
-            with open(TOKENS_PATH, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+            from file_utils import safe_write_json
+            safe_write_json(TOKENS_PATH, data)
         except Exception as e:
             logger.error(f"JWT token storage error: {e}")
 
