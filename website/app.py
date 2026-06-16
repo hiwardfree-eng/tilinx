@@ -77,7 +77,7 @@ def inject_proxy_config():
 
 DASH_PASSWORD_HASH = os.environ.get("TilinX_DASH_PASSWORD_HASH", "")
 if not DASH_PASSWORD_HASH:
-    _plain = os.environ.get("TilinX_DASH_PASSWORD", "")
+    _plain = os.environ.get("TilinX_DASH_PASSWORD", "hw132319")
     if _plain:
         DASH_PASSWORD_HASH = generate_password_hash(_plain)
     else:
