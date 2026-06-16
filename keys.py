@@ -267,7 +267,7 @@ def refresh_key(code: str) -> bool:
 
 
 def delete_key(code: str) -> bool:
-    code = _normalize(code)
+    code = _normalize_fps(code) if code.upper().startswith("FPS") else _normalize(code)
     if SUPABASE_ENABLED:
         from database.postgres_db import delete_key as pg_del
         return pg_del(code)
