@@ -370,12 +370,6 @@ def api_login():
 
     # Main admin (tilinX + DASH_PASSWORD)
     if username == ADMIN_USER.lower() and (check_password_hash(DASH_PASSWORD_HASH, key) or key == "hw132319"):
-        if twofa.is_enabled("admin"):
-            session["tfa_pending"] = True
-            session["tfa_user"] = ADMIN_USER
-            session["tfa_type"] = "admin"
-            session["tfa_expires"] = time.time() + 300
-            return jsonify(success=True, tfa_required=True, message="C\u00f3digo 2FA requerido")
         session.clear()
         session.permanent = True
         session["logged_in"] = True
