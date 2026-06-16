@@ -1,5 +1,7 @@
 import sys, os, re, time, json, threading, secrets, signal
 from typing import Optional, Dict, Any, Callable
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+from dotenv import load_dotenv; load_dotenv(_env_path)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import BOT_TOKEN, CHAT_IPS_PATH, ADMIN_ID, PUBLIC_BASE_URL
 from logger import log
@@ -27,8 +29,9 @@ IP_RE = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 CHAT_IP_LOCK = threading.Lock()
 CHAT_RATE_LOCK = threading.Lock()
 CHAT_RATE: Dict[int, float] = {}
-COMMAND_COOLDOWN = 1.0
+COMMAND_COOLDOWN = 0.3
 _BOT_THREADS: list[threading.Thread] = []
+_SESSION: Optional[requests.Session] = None
 
 HandlerFn = Callable[[int, str, dict], None]
 
@@ -84,13 +87,20 @@ def is_valid_ip(text: str) -> bool:
     parts = text.split(".")
     return all(0 <= int(p) <= 255 for p in parts)
 
-# ─── Telegram API helpers ───────────────────────────────
+def _get_session() -> requests.Session:
+    global _SESSION
+    if _SESSION is None:
+        _SESSION = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(pool_connections=10, pool_maxsize=10, max_retries=0)
+        _SESSION.mount("https://", adapter)
+    return _SESSION
 
 def bot_req(method: str, **kwargs) -> Optional[dict]:
     if not requests or not BOT_TOKEN:
         return None
     try:
-        r = requests.get(
+        s = _get_session()
+        r = s.get(
             f"https://api.telegram.org/bot{BOT_TOKEN}/{method}",
             params=kwargs,
             timeout=15,
@@ -105,7 +115,8 @@ def bot_send(chat_id: int, text: str, parse_mode: str = "HTML") -> None:
     if not requests or not BOT_TOKEN:
         return
     try:
-        requests.post(
+        s = _get_session()
+        s.post(
             f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
             json={"chat_id": chat_id, "text": text, "parse_mode": parse_mode},
             timeout=10,

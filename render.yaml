@@ -16,7 +16,7 @@ services:
       - key: TilinX_WEB_PORT
         value: 8080
       - key: TilinX_BOT_TOKEN
-        value: "8659405330:AAF6RWuaurtKU6jPK-rWD856YumQz8cBr40"
+        value: "8602901015:AAENb3MwiIKrSDZGLZ_Jg8v44IaNrvS7MpU"
       - key: TilinX_ADMIN_ID
         value: "8659405330"
       - key: TilinX_ADMIN_IP_BIND
@@ -28,4 +28,18 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: SUPABASE_ENABLED
-        value: "0"
+        value: "1"
+      - key: SUPABASE_URL
+        value: "https://zbenluxgoargangohlwv.supabase.co"
+      - key: SUPABASE_KEY
+        value: "sb_publishable_cyZWspjSknKoCs-rLkhqAA_1Ov9Huqt"
+      - key: SUPABASE_DB_HOST
+        value: "db.zbenluxgoargangohlwv.supabase.co"
+      - key: SUPABASE_DB_PORT
+        value: "5432"
+      - key: SUPABASE_DB_NAME
+        value: "postgres"
+      - key: SUPABASE_DB_USER
+        value: "postgres"
+      - key: SUPABASE_DB_PASSWORD
+        value: "P2RGF6kJWqtY0oJm"

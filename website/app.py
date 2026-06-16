@@ -634,11 +634,13 @@ def api_create_key():
         return jsonify(success=False, error="Label requerido"), 400
     if len(label) > 50:
         return jsonify(success=False, error="Label demasiado largo"), 400
+    dur_str = str(data.get("duration", "30d")).strip()
     try:
-        days = float(data.get("duration", 30))
-    except (ValueError, TypeError):
-        days = 30
-    if days < 0 or days > 3650:
+        from utils import parse_duration
+        duration_sec = parse_duration(dur_str)
+    except ValueError:
+        return jsonify(success=False, error="Duracion invalida (ej: 1h, 6h, 1d, 30d)"), 400
+    if duration_sec < 0 or duration_sec > 3650 * 86400:
         return jsonify(success=False, error="Duracion invalida"), 400
     try:
         max_devices = int(data.get("max_devices", 1))
@@ -646,10 +648,9 @@ def api_create_key():
         max_devices = 1
     if max_devices < 1 or max_devices > 50:
         return jsonify(success=False, error="Dispositivos invalido (1-50)"), 400
-    duration_sec = days * 86400 if days > 0 else 0
     from keys import generate_key
     code = generate_key(duration_sec, label, max_devices)
-    log_event("key_created", f"Key {code} ({days}d, max={max_devices}) label={label}")
+    log_event("key_created", f"Key {code} ({dur_str}, max={max_devices}) label={label}")
     return jsonify(success=True, code=code)
 
 @app.route("/api/keys/<code>/extend", methods=["POST"])
@@ -714,16 +715,18 @@ def api_fps_generate():
         return jsonify(success=False), 401
     data = request.get_json() or {}
     label = (data.get("label") or "FPS Boost").strip()
+    dur_str = str(data.get("duration", "1d")).strip()
     try:
-        days = int(data.get("duration", 30))
-    except (ValueError, TypeError):
-        days = 30
-    if days < 1 or days > 365:
-        return jsonify(success=False, error="Duracion invalida (1-365)"), 400
-    from keys import generate_fps_key
-    code = generate_fps_key(days, label)
-    log_event("fps_key_created", f"FPS key {code} ({days}d) label={label}")
-    return jsonify(success=True, code=code, duration_days=days)
+        from utils import parse_duration
+        duration_sec = parse_duration(dur_str)
+    except ValueError:
+        return jsonify(success=False, error="Duracion invalida (ej: 1h, 6h, 1d, 3d)"), 400
+    if duration_sec < 3600 or duration_sec > 365 * 86400:
+        return jsonify(success=False, error="Duracion invalida (1h - 365d)"), 400
+    from keys import generate_key
+    code = generate_key(duration_sec, label, max_devices=1, key_type="fps")
+    log_event("fps_key_created", f"FPS key {code} ({dur_str}) label={label}")
+    return jsonify(success=True, code=code, duration=duration_sec)
 
 @app.route("/api/keys/fps/validate", methods=["POST"])
 def api_fps_validate():
