@@ -16,9 +16,9 @@ services:
       - key: TilinX_WEB_PORT
         value: 8080
       - key: TilinX_BOT_TOKEN
-        sync: false
+        value: "8659405330:AAF6RWuaurtKU6jPK-rWD856YumQz8cBr40"
       - key: TilinX_ADMIN_ID
-        sync: false
+        value: "8659405330"
       - key: TilinX_ADMIN_IP_BIND
         value: "0"
       - key: TilinX_BOT_ENABLED
