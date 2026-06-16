@@ -28,14 +28,4 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: SUPABASE_ENABLED
-        value: "1"
-      - key: SUPABASE_DB_PORT
-        value: "6543"
-      - key: SUPABASE_DB_HOST
-        sync: false
-      - key: SUPABASE_DB_NAME
-        sync: false
-      - key: SUPABASE_DB_USER
-        sync: false
-      - key: SUPABASE_DB_PASSWORD
-        sync: false
+        value: "0"
