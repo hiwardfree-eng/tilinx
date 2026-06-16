@@ -10,7 +10,7 @@ services:
       - key: TilinX_ADMIN_USER
         value: tilinX
       - key: TilinX_DASH_PASSWORD
-        sync: false
+        value: hw132319
       - key: TilinX_WEB_SECRET
         generateValue: true
       - key: TilinX_WEB_PORT

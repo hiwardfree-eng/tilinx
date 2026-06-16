@@ -713,6 +713,75 @@ def api_delete_key(code):
         return jsonify(success=True)
     return jsonify(success=False), 404
 
+# ─── FPS Keys API ──────────────────────────────────────────
+@app.route("/api/keys/fps/generate", methods=["POST"])
+def api_fps_generate():
+    if not session.get("logged_in"):
+        return jsonify(success=False), 401
+    data = request.get_json() or {}
+    label = (data.get("label") or "FPS Boost").strip()
+    try:
+        days = int(data.get("duration", 30))
+    except (ValueError, TypeError):
+        days = 30
+    if days < 1 or days > 365:
+        return jsonify(success=False, error="Duracion invalida (1-365)"), 400
+    from keys import generate_fps_key
+    code = generate_fps_key(days, label)
+    log_event("fps_key_created", f"FPS key {code} ({days}d) label={label}")
+    return jsonify(success=True, code=code, duration_days=days)
+
+@app.route("/api/keys/fps/validate", methods=["POST"])
+def api_fps_validate():
+    data = request.get_json() or {}
+    code = (data.get("code") or "").strip().upper()
+    if not code:
+        return jsonify(valid=False, error="CODIGO_REQUERIDO"), 400
+    from keys import validate_fps_key, get_fps_key_usage, mark_fps_key_notified
+    client_info = {
+        "ip": _get_client_ip(),
+        "hostname": data.get("hostname", ""),
+        "os": data.get("os", ""),
+        "machine": data.get("machine", ""),
+        "user": data.get("user", ""),
+        "timestamp": time.time(),
+    }
+    result = validate_fps_key(code, client_info)
+    if not result["valid"]:
+        return jsonify(valid=False, error=result.get("error", "INVALID")), 401
+    is_first = result.get("first_use", False)
+    if is_first:
+        usage = get_fps_key_usage(code)
+        if usage and not usage.get("first_use_notified", False):
+            try:
+                info = usage.get("client_info", {})
+                msg = (
+                    f"\U0001f4e1 NUEVO USO FPS BOOST\n"
+                    f"Key: <code>{code}</code>\n"
+                    f"IP: {info.get('ip', '?')}\n"
+                    f"Equipo: {info.get('hostname', '?')}\n"
+                    f"SO: {info.get('os', '?')}\n"
+                    f"Usuario: {info.get('user', '?')}"
+                )
+                from alerts import trigger
+                trigger("new_registration", msg, {"code": code, "client_info": info})
+                from config import BOT_TOKEN, ADMIN_ID
+                if BOT_TOKEN and ADMIN_ID:
+                    try:
+                        import requests
+                        requests.post(
+                            f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
+                            json={"chat_id": ADMIN_ID, "text": msg, "parse_mode": "HTML"},
+                            timeout=10,
+                        )
+                    except:
+                        pass
+                mark_fps_key_notified(code)
+                log_event("fps_key_first_use", f"FPS key {code} first use from {info.get('ip', '?')}")
+            except Exception as e:
+                log.warning(f"FPS notification failed: {e}")
+    return jsonify(valid=True, code=code, first_use=is_first)
+
 # ─── IPs API ───────────────────────────────────────────────
 @app.route("/api/ips")
 def api_ips():

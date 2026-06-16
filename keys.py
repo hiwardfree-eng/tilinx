@@ -6,6 +6,7 @@ from file_utils import safe_read_json, safe_write_json
 
 _lock = threading.Lock()
 PREFIX = "TILINX-"
+FPS_PREFIX = "FPS-"
 IP_RE = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 
 
@@ -36,8 +37,9 @@ def is_valid_ip(text: str) -> bool:
     return all(0 <= int(p) <= 255 for p in parts)
 
 
-def generate_key(duration: int, label: str = "", max_devices: int = 1) -> str:
-    code = PREFIX + secrets.token_hex(6).upper()
+def generate_key(duration: int, label: str = "", max_devices: int = 1, key_type: str = "proxy") -> str:
+    prefix = FPS_PREFIX if key_type == "fps" else PREFIX
+    code = prefix + secrets.token_hex(6).upper()
     if SUPABASE_ENABLED:
         from database.postgres_db import add_key
         add_key(code, duration, label, max_devices)
@@ -53,9 +55,11 @@ def generate_key(duration: int, label: str = "", max_devices: int = 1) -> str:
             "used_at": None,
             "active_ips": [],
             "locked_ips": [],
+            "key_type": key_type,
+            "first_use_notified": False,
         }
         _save(keys)
-    log.info(f"Key generated: {code} ({duration}s, max_devices={max_devices}) label={label}")
+    log.info(f"Key generated: {code} ({duration}s, max_devices={max_devices}) label={label} type={key_type}")
     return code
 
 
@@ -273,4 +277,71 @@ def delete_key(code: str) -> bool:
     del keys[code]
     _save(keys)
     log.info(f"Key deleted: {code}")
+    return True
+
+
+def _normalize_fps(code: str) -> str:
+    code = code.upper()
+    if not code.startswith(FPS_PREFIX):
+        code = FPS_PREFIX + code
+    return code
+
+
+def generate_fps_key(duration_days: int, label: str = "") -> str:
+    return generate_key(duration_days * 86400, label, max_devices=1, key_type="fps")
+
+
+def validate_fps_key(code: str, client_info: dict = None) -> dict:
+    code = _normalize_fps(code)
+    if SUPABASE_ENABLED:
+        from database.postgres_db import get_key as pg_get_key
+        k = pg_get_key(code)
+        if not k:
+            return {"valid": False, "error": "INVALID"}
+        if k.get("key_type", "proxy") != "fps":
+            return {"valid": False, "error": "WRONG_TYPE"}
+        return {"valid": True, "code": code, "duration": k.get("duration", 0), "first_use": not k.get("used", False)}
+    keys = _load()
+    k = keys.get(code)
+    if not k:
+        return {"valid": False, "error": "INVALID"}
+    if k.get("key_type", "proxy") != "fps":
+        return {"valid": False, "error": "WRONG_TYPE"}
+    is_first = not k.get("used", False)
+    if not k.get("used", False):
+        k["used"] = True
+        k["used_at"] = time.time()
+    if client_info:
+        k.setdefault("active_ips", []).append(client_info.get("ip", "unknown"))
+        k["used_by_ip"] = client_info.get("ip", k.get("used_by_ip"))
+        k["client_info"] = client_info
+    _save(keys)
+    return {"valid": True, "code": code, "duration": k.get("duration", 0), "first_use": is_first}
+
+
+def get_fps_key_usage(code: str) -> Optional[dict]:
+    code = _normalize_fps(code)
+    keys = _load()
+    k = keys.get(code)
+    if not k or k.get("key_type") != "fps":
+        return None
+    return {
+        "code": code,
+        "used": k.get("used", False),
+        "used_at": k.get("used_at"),
+        "used_by_ip": k.get("used_by_ip"),
+        "client_info": k.get("client_info"),
+        "first_use_notified": k.get("first_use_notified", False),
+    }
+
+
+def mark_fps_key_notified(code: str) -> bool:
+    code = _normalize_fps(code)
+    if SUPABASE_ENABLED:
+        return True
+    keys = _load()
+    if code not in keys:
+        return False
+    keys[code]["first_use_notified"] = True
+    _save(keys)
     return True

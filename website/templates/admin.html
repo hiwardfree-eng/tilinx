@@ -198,6 +198,10 @@ select option{background:#0c0720}
       Access Keys
       <span class="nav-badge" id="nav-badge">0</span>
     </div>
+    <div class="nav-item" id="nav-fps" onclick="showView('fps')">
+      <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      FPS Keys
+    </div>
     <div class="nav-item" id="nav-ip" onclick="showView('ip')">
       <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       IP Monitor
@@ -362,6 +366,40 @@ select option{background:#0c0720}
       </div>
     </div>
 
+    <div class="view" id="view-fps">
+      <div class="view-header">
+        <div class="view-title">FPS Boost Keys</div>
+        <div class="view-sub">Generate keys for tilinX FPS Boost tool.</div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total FPS Keys <span class="stat-icon">🎮</span></div>
+          <div class="stat-value purple" id="fps-total">—</div>
+          <div class="stat-trend">Claves FPS registradas</div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-label purple">Used <span class="stat-icon">⚡</span></div>
+          <div class="stat-value purple" id="fps-used">—</div>
+          <div class="stat-trend up">Keys ya utilizadas</div>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn-primary" onclick="openFPSModal()">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Generar Key FPS
+        </button>
+        <input class="search-box" id="search-fps" type="text" placeholder="Buscar key FPS…" oninput="renderFPSKeys()"/>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Label</th><th>Key</th><th>Estado</th><th>Usada por</th><th>Info</th><th style="width:100px"></th>
+          </tr></thead>
+          <tbody id="fps-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -404,6 +442,33 @@ select option{background:#0c0720}
     <div class="modal-actions">
       <button class="btn-ghost" onclick="closeModal()">Cancelar</button>
       <button class="btn-primary" onclick="generateKey()">Generar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="fps-modal-overlay" onclick="bgCloseFPS(event)">
+  <div class="modal">
+    <h2>Nueva Key FPS Boost</h2>
+    <p>Key exclusiva para tilinX FPS Boost tool. Se genera con prefijo FPS-.</p>
+    <div class="field">
+      <label>Label</label>
+      <input type="text" id="fps-label" placeholder="Ej: Cliente VIP, Test, etc…" style="width:100%;background:rgba(8,4,20,0.9);border:1px solid var(--border);border-radius:12px;padding:13px 16px;font-size:.9rem;font-family:'Inter',sans-serif;color:var(--text);outline:none"/>
+    </div>
+    <div class="field" style="margin-top:16px">
+      <label>Duración</label>
+      <select id="fps-duration" style="width:100%;background:rgba(8,4,20,0.9);border:1px solid var(--border);border-radius:12px;padding:13px 16px;font-size:.9rem;font-family:'Inter',sans-serif;color:var(--text);outline:none">
+        <option value="7">7 días</option>
+        <option value="15">15 días</option>
+        <option value="30" selected>30 días</option>
+        <option value="60">60 días</option>
+        <option value="90">90 días</option>
+        <option value="180">180 días</option>
+        <option value="365">1 año</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeFPSModal()">Cancelar</button>
+      <button class="btn-primary" onclick="generateFPSKey()">Generar</button>
     </div>
   </div>
 </div>
@@ -461,9 +526,9 @@ select option{background:#0c0720}
 <div class="toast" id="toast"></div>
 
 <script>
-const VIEWS={dash:'Dashboard',keys:'Access Keys',ip:'IP Monitor',adminx:'AdminX'}
-const BCONS={dash:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',keys:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M12 11l9-9"/><path d="M17 6l2 2"/></svg>',ip:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',adminx:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'}
-let keys=[],ipLog=[],filterOn=false
+const VIEWS={dash:'Dashboard',keys:'Access Keys',fps:'FPS Keys',ip:'IP Monitor',adminx:'AdminX'}
+const BCONS={dash:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',keys:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="8" cy="15" r="4"/><path d="M12 11l9-9"/><path d="M17 6l2 2"/></svg>',fps:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',ip:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',adminx:'<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>'}
+let keys=[],fpsKeys=[],ipLog=[],filterOn=false
 
 function showView(id){
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'))
@@ -482,6 +547,64 @@ async function loadKeys(){
     const r=await fetch('/api/keys');keys=await r.json()
     renderKeys();updateStats()
   }catch{}
+}
+
+async function loadFPSKeys(){
+  try{
+    const r=await fetch('/api/keys');const all=await r.json()
+    fpsKeys=all.filter(k=>k.key.startsWith('FPS-'))
+    renderFPSKeys()
+    document.getElementById('fps-total').textContent=fpsKeys.length
+    document.getElementById('fps-used').textContent=fpsKeys.filter(k=>k.uses>0).length
+  }catch{}
+}
+
+function renderFPSKeys(){
+  const q=document.getElementById('search-fps').value.toLowerCase()
+  let data=q?fpsKeys.filter(k=>k.key.toLowerCase().includes(q)||k.label.toLowerCase().includes(q)):[...fpsKeys]
+  const tb=document.getElementById('fps-tbody')
+  if(!data.length){tb.innerHTML='<tr><td colspan="6"><div class="empty">No hay keys FPS todavía.</div></td></tr>';return}
+  tb.innerHTML=data.map(k=>{
+    const ipInfo=k.active_ips&&k.active_ips.length?k.active_ips[0]:'—'
+    const isUsed=k.uses>0
+    return `<tr>
+      <td class="td-label">${x(k.label)}</td>
+      <td><div class="td-key">${x(k.key)}<button class="icon-btn" title="Copiar" onclick="copyKey('${x(k.key)}')">⧉</button></div></td>
+      <td><span class="badge ${isUsed?'active':'expired'}">${isUsed?'Usada':'Disponible'}</span></td>
+      <td style="font-family:monospace;font-size:.78rem;color:#9888c8">${x(ipInfo)}</td>
+      <td style="font-size:.78rem;color:var(--muted)">${k.expires}</td>
+      <td style="white-space:nowrap">
+        <button class="icon-btn del" title="Eliminar" onclick="deleteFPSKey('${x(k.key)}')">✕</button>
+      </td>
+    </tr>`
+  }).join('')
+}
+
+async function deleteFPSKey(code){
+  if(!confirm('Eliminar FPS key '+code+'?'))return
+  try{
+    const r=await fetch('/api/keys/'+encodeURIComponent(code),{method:'DELETE'})
+    if(r.ok){await loadFPSKeys();toast('FPS key eliminada','success')}
+    else toast('Error al eliminar','error')
+  }catch{toast('Error de conexión','error')}
+}
+
+function openFPSModal(){document.getElementById('fps-modal-overlay').classList.add('open')}
+function closeFPSModal(){document.getElementById('fps-modal-overlay').classList.remove('open')}
+function bgCloseFPS(e){if(e.target===document.getElementById('fps-modal-overlay'))closeFPSModal()}
+
+async function generateFPSKey(){
+  const label=document.getElementById('fps-label').value.trim()||'FPS Boost'
+  const days=parseInt(document.getElementById('fps-duration').value)
+  try{
+    const r=await fetch('/api/keys/fps/generate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label,duration:days})})
+    if(r.ok){
+      const d=await r.json()
+      closeFPSModal()
+      await loadFPSKeys()
+      toast('FPS Key creada: '+d.code,'success')
+    }else toast('Error al crear FPS key','error')
+  }catch{toast('Error de conexión','error')}
 }
 
 async function loadIPs(){
@@ -795,8 +918,8 @@ document.addEventListener('keydown',e=>{
   else{document.body.classList.add('theme-light');document.getElementById('admin-theme-btn').textContent='\u2600'}
 })()
 
-loadKeys();loadIPs();loadActivity();loadSysStats();loadStatus();loadAdminX()
-setInterval(loadActivity,10000);setInterval(loadSysStats,15000);setInterval(loadStatus,30000);setInterval(loadAdminX,15000)
+loadKeys();loadFPSKeys();loadIPs();loadActivity();loadSysStats();loadStatus();loadAdminX()
+setInterval(loadActivity,10000);setInterval(loadSysStats,15000);setInterval(loadStatus,30000);setInterval(loadAdminX,15000);setInterval(loadFPSKeys,15000)
 
 (function(){
   const canvas=document.getElementById('matrix'),ctx=canvas.getContext('2d')
