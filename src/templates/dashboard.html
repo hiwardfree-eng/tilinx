@@ -72,7 +72,12 @@ td { padding:12px 16px; border-top:1px solid #2a2a3a; font-size:14px; }
 <div id="panel-keys" class="panel">
   <h2 style="margin-bottom:15px">🔑 Generate Key</h2>
   <div class="key-gen">
-    <input class="input" id="key-duration" placeholder="30d / 7d / 6h / 1h" value="30d">
+    <select class="input" id="key-type" style="width:160px">
+      <option value="proxy">🔓 Proxy Key</option>
+      <option value="fps">⚡ FPS Boost</option>
+    </select>
+    <input class="input" id="key-label" placeholder="Label (ej: cliente1, trial)" value="" style="width:200px">
+    <input class="input" id="key-duration" placeholder="1h / 6h / 1d / 3d / 30d" value="1d" style="width:160px">
     <button class="btn btn-primary" onclick="generateKey()">Generate</button>
   </div>
   <div class="key-gen" style="margin-top:10px">
@@ -81,29 +86,12 @@ td { padding:12px 16px; border-top:1px solid #2a2a3a; font-size:14px; }
     <button class="btn btn-small" style="background:#333;color:#aaa" onclick="setDur('6h')">6h</button>
     <button class="btn btn-small" style="background:#333;color:#aaa" onclick="setDur('1d')">1d</button>
     <button class="btn btn-small" style="background:#333;color:#aaa" onclick="setDur('3d')">3d</button>
+    <button class="btn btn-small" style="background:#333;color:#aaa" onclick="setDur('30d')">30d</button>
   </div>
   <div class="key-result" id="key-result">
     <div style="margin-bottom:5px;color:#888">New key:</div>
     <div class="code" id="key-code"></div>
     <div style="margin-top:5px;color:#888" id="key-dur"></div>
-  </div>
-
-  <h2 style="margin:30px 0 15px">⚡ FPS Boost Keys</h2>
-  <div class="key-gen">
-    <input class="input" id="fps-duration" placeholder="1h / 6h / 1d / 3d" value="1d">
-    <button class="btn btn-primary" onclick="generateFPSKey()" style="background:#00aaff">Generate FPS Boost</button>
-  </div>
-  <div class="key-gen" style="margin-top:10px">
-    <span style="color:#888;font-size:12px">Presets:</span>
-    <button class="btn btn-small" style="background:#333;color:#aaa" onclick="setFPSDur('1h')">1h</button>
-    <button class="btn btn-small" style="background:#333;color:#aaa" onclick="setFPSDur('6h')">6h</button>
-    <button class="btn btn-small" style="background:#333;color:#aaa" onclick="setFPSDur('1d')">1d</button>
-    <button class="btn btn-small" style="background:#333;color:#aaa" onclick="setFPSDur('3d')">3d</button>
-  </div>
-  <div class="key-result" id="fps-result" style="border-color:#00aaff">
-    <div style="margin-bottom:5px;color:#888">FPS Boost key:</div>
-    <div class="code" id="fps-code"></div>
-    <div style="margin-top:5px;color:#888" id="fps-dur"></div>
   </div>
 
   <h2 style="margin:30px 0 15px">📋 All Keys</h2>
@@ -161,21 +149,28 @@ async function loadKeys() {
   }).join('');
 }
 async function generateKey() {
+  const type = document.getElementById('key-type').value;
+  const label = document.getElementById('key-label').value || (type === 'fps' ? 'FPS Boost' : 'Proxy Key');
   const dur = document.getElementById('key-duration').value;
-  const r = await fetch('/api/keys/generate', {
+  const endpoint = type === 'fps' ? '/api/keys/fps/generate' : '/api/keys';
+  const body = type === 'fps' ? {duration: dur, label} : {duration: dur, label, max_devices: 1};
+  const r = await fetch(endpoint, {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({duration: dur}),
+    body: JSON.stringify(body),
   });
   const d = await r.json();
   if (d.success) {
     document.getElementById('key-code').textContent = d.code;
-    document.getElementById('key-dur').textContent = 'Duration: ' + d.duration;
+    document.getElementById('key-dur').textContent = 'Duration: ' + (d.duration || d.duration_days + 'd');
     document.getElementById('key-result').style.display = 'block';
     loadKeys();
   } else {
     alert('Error: ' + d.error);
   }
+}
+function setDur(val) {
+  document.getElementById('key-duration').value = val;
 }
 async function deleteKey(code) {
   if (!confirm(`Delete key ${code}?`)) return;
@@ -190,26 +185,6 @@ async function deleteKey(code) {
 }
 function setDur(val) {
   document.getElementById('key-duration').value = val;
-}
-function setFPSDur(val) {
-  document.getElementById('fps-duration').value = val;
-}
-async function generateFPSKey() {
-  const dur = document.getElementById('fps-duration').value;
-  const r = await fetch('/api/keys/fps/generate', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({duration: dur}),
-  });
-  const d = await r.json();
-  if (d.success) {
-    document.getElementById('fps-code').textContent = d.code;
-    document.getElementById('fps-dur').textContent = 'Duration: ' + d.duration;
-    document.getElementById('fps-result').style.display = 'block';
-    loadKeys();
-  } else {
-    alert('Error: ' + d.error);
-  }
 }
 function switchTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
